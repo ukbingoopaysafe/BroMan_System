@@ -1,0 +1,182 @@
+/* rtl_styles.css */
+body {
+    direction: rtl;
+    text-align: right;
+}
+
+.navbar ul {
+    padding-right: 0; /* Reset padding for RTL */
+}
+
+.navbar ul li {
+    float: right; /* Float items right */
+    margin-left: 15px; /* Add margin to the left */
+    margin-right: 0; /* Remove margin from the right */
+}
+
+.navbar .logo-container {
+    float: right;
+}
+
+.navbar .lang-switch {
+    float: left; /* Keep lang switch on the opposite side */
+    margin-left: 0;
+    margin-right: 15px;
+}
+
+.page-header h1 {
+    float: right;
+}
+
+.page-header .btn-add {
+    float: left;
+}
+
+.search-form input[type="text"] {
+    float: right;
+    margin-left: 10px;
+    margin-right: 0;
+}
+
+.search-form input[type="submit"] {
+    float: right;
+}
+
+.data-table th, .data-table td {
+    text-align: right;
+}
+
+.actions a {
+    margin-left: 5px; /* Space between action buttons */
+    margin-right: 0;
+}
+
+.form-container div label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.form-container div input[type="text"],
+.form-container div input[type="email"],
+.form-container div input[type="password"],
+.form-container div input[type="number"],
+.form-container div select,
+.form-container div textarea {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+.form-container div input[type="submit"],
+.form-container div .btn {
+    float: right; /* Align buttons to the right */
+    margin-left: 10px;
+    margin-right: 0;
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 0.9em;
+    display: block;
+    margin-top: -5px;
+    margin-bottom: 10px;
+}
+
+/* Adjust specific elements if needed */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.quick-links .btn {
+    margin: 5px;
+}
+
+/* Ensure logo and text align correctly */
+.logo-container {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    margin-left: 10px; /* Add space between logo and potential text */
+    margin-right: 0;
+}
+
+/* Clear floats */
+.page-header::after,
+.search-form::after,
+.form-container form::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+
+/* ================================================== */
+/* == Enhanced Navbar RTL Fixes for Consistency == */
+/* ================================================== */
+
+/* Override any conflicting navbar styles */
+.navbar {
+    direction: rtl !important;
+}
+
+.navbar ul {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+.navbar ul li {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+.navbar ul li a {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+/* Fix dropdown menus */
+.navbar ul li.dropdown .dropdown-content {
+    direction: rtl !important;
+    text-align: right !important;
+    left: auto !important;
+    right: 0 !important;
+}
+
+.navbar ul li.dropdown .dropdown-content a {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+/* Fix navbar buttons */
+.navbar .btn-logout {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+.navbar .lang-switch {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+/* Ensure consistent navbar appearance across all pages */
+.navbar * {
+    direction: rtl !important;
+}
+
+/* Fix any remaining text direction issues */
+.navbar ul li.dropdown a.dropbtn {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+.navbar ul li.dropdown a.dropbtn .arrow {
+    margin-left: 0 !important;
+    margin-right: 5px !important;
+}
+

@@ -1,0 +1,557 @@
+/* Enhanced RTL Styles for Property Tables - Broman System */
+
+/* ================================================== */
+/* == RTL Support for Enhanced Property Tables == */
+/* ================================================== */
+
+/* Base RTL adjustments */
+html[dir="rtl"] body {
+    direction: rtl;
+    text-align: right;
+}
+
+/* ================================================== */
+/* == Navbar RTL Adjustments == */
+/* ================================================== */
+
+html[dir="rtl"] .navbar {
+    direction: rtl;
+}
+
+html[dir="rtl"] .navbar ul {
+    padding-right: 0;
+    flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .navbar ul li {
+    margin-left: 20px;
+    margin-right: 0;
+}
+
+html[dir="rtl"] .navbar .logo-container {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+html[dir="rtl"] .navbar .logo {
+    margin-left: 10px;
+    margin-right: 0;
+}
+
+/* ================================================== */
+/* == Page Header RTL == */
+/* ================================================== */
+
+html[dir="rtl"] .page-header {
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] .page-header h1 {
+    text-align: right;
+}
+
+/* ================================================== */
+/* == Enhanced Table RTL Support == */
+/* ================================================== */
+
+html[dir="rtl"] .properties-table {
+    direction: rtl;
+}
+
+html[dir="rtl"] .properties-table thead th {
+    text-align: right;
+    direction: rtl;
+}
+
+html[dir="rtl"] .properties-table tbody td {
+    text-align: right;
+    direction: rtl;
+}
+
+/* RTL adjustments for specific cells */
+html[dir="rtl"] .cell-id {
+    text-align: center; /* Keep ID centered regardless of direction */
+}
+
+html[dir="rtl"] .cell-price,
+html[dir="rtl"] .cell-area {
+    text-align: right;
+}
+
+html[dir="rtl"] .cell-actions {
+    text-align: left; /* Actions stay on the left in RTL */
+}
+
+/* ================================================== */
+/* == Action Buttons RTL == */
+/* ================================================== */
+
+html[dir="rtl"] .table-actions {
+    justify-content: flex-start;
+    direction: ltr; /* Keep button order logical */
+}
+
+html[dir="rtl"] .table-actions a {
+    margin-left: 0;
+    margin-right: 8px;
+}
+
+html[dir="rtl"] .table-actions a:last-child {
+    margin-right: 0;
+}
+
+/* ================================================== */
+/* == Status and Type Badges RTL == */
+/* ================================================== */
+
+html[dir="rtl"] .status-badge {
+    direction: rtl;
+}
+
+html[dir="rtl"] .status-badge i {
+    margin-left: 6px;
+    margin-right: 0;
+}
+
+html[dir="rtl"] .property-type-badge {
+    direction: rtl;
+}
+
+html[dir="rtl"] .property-type-badge i {
+    margin-left: 6px;
+    margin-right: 0;
+}
+
+/* ================================================== */
+/* == Filter Section RTL == */
+/* ================================================== */
+
+html[dir="rtl"] .filter-section {
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] .filter-row {
+    direction: rtl;
+}
+
+html[dir="rtl"] .filter-item {
+    direction: rtl;
+}
+
+html[dir="rtl"] .filter-item label {
+    text-align: right;
+    direction: rtl;
+}
+
+html[dir="rtl"] .filter-item .form-control {
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] .filter-buttons {
+    justify-content: flex-start;
+    direction: rtl;
+}
+
+html[dir="rtl"] .filter-buttons .btn {
+    margin-left: 0;
+    margin-right: 12px;
+}
+
+html[dir="rtl"] .filter-buttons .btn:last-child {
+    margin-right: 0;
+}
+
+/* ================================================== */
+/* == Advanced Filters Toggle RTL == */
+/* ================================================== */
+
+html[dir="rtl"] .advanced-filters-toggle {
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] .advanced-filters-toggle i {
+    margin-left: 8px;
+    margin-right: 0;
+}
+
+html[dir="rtl"] .advanced-filters {
+    direction: rtl;
+    text-align: right;
+}
+
+/* ================================================== */
+/* == Property Type Tabs RTL == */
+/* ================================================== */
+
+html[dir="rtl"] .property-type-tabs {
+    direction: rtl;
+    justify-content: flex-start;
+}
+
+html[dir="rtl"] .property-type-tabs a {
+    direction: rtl;
+    text-align: right;
+}
+
+/* ================================================== */
+/* == View Toggle RTL == */
+/* ================================================== */
+
+html[dir="rtl"] .view-toggle {
+    text-align: left;
+    justify-content: flex-start;
+    direction: rtl;
+}
+
+html[dir="rtl"] .view-toggle .btn {
+    margin-left: 0;
+    margin-right: 8px;
+}
+
+html[dir="rtl"] .view-toggle .btn:last-child {
+    margin-right: 0;
+}
+
+html[dir="rtl"] .view-toggle .btn i {
+    margin-left: 6px;
+    margin-right: 0;
+}
+
+/* ================================================== */
+/* == Property Cards RTL == */
+/* ================================================== */
+
+html[dir="rtl"] .property-cards {
+    direction: rtl;
+}
+
+html[dir="rtl"] .property-card {
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] .property-card .property-content {
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] .property-card .property-title {
+    text-align: right;
+    direction: rtl;
+}
+
+html[dir="rtl"] .property-card .property-details {
+    direction: rtl;
+}
+
+html[dir="rtl"] .property-card .property-info {
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] .property-card .property-info i {
+    margin-left: 8px;
+    margin-right: 0;
+}
+
+html[dir="rtl"] .property-card .property-actions {
+    direction: ltr; /* Keep button order logical */
+    justify-content: flex-start;
+}
+
+/* ================================================== */
+/* == Project Title and Subtitle RTL == */
+/* ================================================== */
+
+html[dir="rtl"] .project-title {
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] .project-subtitle {
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] .location-main {
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] .location-sub {
+    direction: rtl;
+    text-align: right;
+}
+
+/* ================================================== */
+/* == No Properties Message RTL == */
+/* ================================================== */
+
+html[dir="rtl"] .no-properties {
+    direction: rtl;
+    text-align: center; /* Keep centered for better visual balance */
+}
+
+html[dir="rtl"] .no-properties h3 {
+    direction: rtl;
+}
+
+html[dir="rtl"] .no-properties p {
+    direction: rtl;
+}
+
+/* ================================================== */
+/* == Form Controls RTL == */
+/* ================================================== */
+
+html[dir="rtl"] .form-control {
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] .form-control option {
+    direction: rtl;
+    text-align: right;
+}
+
+/* ================================================== */
+/* == Responsive RTL Adjustments == */
+/* ================================================== */
+
+@media (max-width: 768px) {
+    html[dir="rtl"] .navbar {
+        direction: rtl;
+    }
+    
+    html[dir="rtl"] .navbar ul {
+        direction: rtl;
+        align-items: flex-start;
+    }
+    
+    html[dir="rtl"] .navbar ul li {
+        margin-left: 0;
+        margin-right: 0;
+        width: 100%;
+        text-align: right;
+    }
+    
+    html[dir="rtl"] .page-header {
+        align-items: flex-start;
+        text-align: right;
+    }
+    
+    html[dir="rtl"] .filter-row {
+        direction: rtl;
+    }
+    
+    html[dir="rtl"] .filter-item {
+        direction: rtl;
+    }
+    
+    html[dir="rtl"] .filter-buttons {
+        justify-content: center;
+        direction: rtl;
+    }
+    
+    html[dir="rtl"] .view-toggle {
+        justify-content: center;
+        direction: rtl;
+    }
+    
+    html[dir="rtl"] .table-responsive {
+        direction: rtl;
+    }
+    
+    html[dir="rtl"] .property-cards {
+        direction: rtl;
+    }
+}
+
+/* ================================================== */
+/* == Additional RTL Typography == */
+/* ================================================== */
+
+html[dir="rtl"] h1, 
+html[dir="rtl"] h2, 
+html[dir="rtl"] h3, 
+html[dir="rtl"] h4, 
+html[dir="rtl"] h5, 
+html[dir="rtl"] h6 {
+    text-align: right;
+    direction: rtl;
+}
+
+html[dir="rtl"] p {
+    text-align: right;
+    direction: rtl;
+}
+
+html[dir="rtl"] label {
+    text-align: right;
+    direction: rtl;
+}
+
+/* ================================================== */
+/* == RTL Icon Adjustments == */
+/* ================================================== */
+
+html[dir="rtl"] .fas,
+html[dir="rtl"] .far,
+html[dir="rtl"] .fab {
+    /* Flip certain directional icons for RTL */
+}
+
+html[dir="rtl"] .fa-arrow-right:before {
+    content: "\f060"; /* fa-arrow-left */
+}
+
+html[dir="rtl"] .fa-arrow-left:before {
+    content: "\f061"; /* fa-arrow-right */
+}
+
+html[dir="rtl"] .fa-chevron-right:before {
+    content: "\f053"; /* fa-chevron-left */
+}
+
+html[dir="rtl"] .fa-chevron-left:before {
+    content: "\f054"; /* fa-chevron-right */
+}
+
+/* ================================================== */
+/* == Clear Floats for RTL == */
+/* ================================================== */
+
+html[dir="rtl"] .page-header::after,
+html[dir="rtl"] .filter-section::after,
+html[dir="rtl"] .filter-row::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+/* ================================================== */
+/* == RTL Dropdown Adjustments == */
+/* ================================================== */
+
+html[dir="rtl"] .dropdown-content {
+    left: auto;
+    right: 0;
+    text-align: right;
+    direction: rtl;
+}
+
+html[dir="rtl"] .dropdown-content a {
+    text-align: right;
+    direction: rtl;
+}
+
+/* ================================================== */
+/* == RTL Print Styles == */
+/* ================================================== */
+
+@media print {
+    html[dir="rtl"] .properties-table {
+        direction: rtl;
+    }
+    
+    html[dir="rtl"] .properties-table th,
+    html[dir="rtl"] .properties-table td {
+        text-align: right;
+        direction: rtl;
+    }
+}
+
+
+/* ================================================== */
+/* == Enhanced Navbar RTL Fixes == */
+/* ================================================== */
+
+/* Fix navbar dropdown direction issues */
+html[dir="rtl"] .navbar ul li.dropdown .dropdown-content {
+    left: auto;
+    right: 0;
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] .navbar ul li.dropdown .dropdown-content a {
+    text-align: right;
+    direction: rtl;
+    padding-right: 16px;
+    padding-left: 12px;
+}
+
+html[dir="rtl"] .navbar ul li.dropdown a.dropbtn {
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] .navbar ul li.dropdown a.dropbtn .arrow {
+    margin-left: 0;
+    margin-right: 5px;
+}
+
+/* Fix navbar main links direction */
+html[dir="rtl"] .navbar ul li a {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Fix navbar button direction */
+html[dir="rtl"] .navbar .btn-logout {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Fix language switcher direction */
+html[dir="rtl"] .navbar .lang-switch {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Ensure consistent navbar text direction across all pages */
+html[dir="rtl"] .navbar,
+html[dir="rtl"] .navbar * {
+    direction: rtl;
+}
+
+/* Override any conflicting LTR styles in navbar */
+html[dir="rtl"] .navbar ul li.dropdown .dropdown-content a:not(.active-sub) {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+html[dir="rtl"] .navbar ul li.dropdown .dropdown-content a.active-sub {
+    direction: rtl !important;
+    text-align: right !important;
+    background-color: #ddd;
+    font-weight: bold;
+}
+
+/* Fix navbar container direction */
+html[dir="rtl"] .navbar .logo-container {
+    direction: rtl;
+}
+
+html[dir="rtl"] .navbar .logo-container a {
+    direction: rtl;
+}
+
+/* Ensure proper text flow in navbar items */
+html[dir="rtl"] .navbar ul li {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Fix any remaining navbar text alignment issues */
+html[dir="rtl"] .navbar ul li a,
+html[dir="rtl"] .navbar ul li button {
+    direction: rtl !important;
+    text-align: right !important;
+    unicode-bidi: embed;
+}
+

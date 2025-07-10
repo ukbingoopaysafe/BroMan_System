@@ -1,0 +1,55 @@
+/* Clickable row styles - simplified for JavaScript implementation */
+.property-row {
+    position: relative;
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Visual feedback for clickable rows */
+.property-row::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: transparent;
+    transition: background-color 0.2s ease;
+}
+
+.property-row:hover::after {
+    background-color: #007bff;
+}
+
+/* Action buttons styling */
+.table-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.btn-edit,
+.btn-delete {
+    padding: 6px 8px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+
+.btn-edit {
+    color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.btn-edit:hover {
+    background-color: #e9ecef;
+}
+
+.btn-delete {
+    color: #dc3545;
+    background-color: #f8f9fa;
+}
+
+.btn-delete:hover {
+    background-color: #f5c6cb;
+}
+
