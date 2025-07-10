@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 10, 2025 at 03:05 PM
+-- Generation Time: Jul 10, 2025 at 03:38 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -64,8 +64,8 @@ CREATE TABLE `employees` (
 --
 
 INSERT INTO `employees` (`EmployeeID`, `FullName`, `Username`, `Password`, `Role`, `DateJoined`) VALUES
-(1, 'Admin User', 'admin', '$2b$10$y28UH0xkAQdz2jTaLWQnb.bhSiUu8YSN54k9rsuhdkApec5JKWCZq', 'admin', '2025-06-02 11:21:40'),
-(2, 'Regular User', 'user', '$2b$10$y28UH0xkAQdz2jTaLWQnb.bhSiUu8YSN54k9rsuhdkApec5JKWCZq', 'user', '2025-06-02 11:21:40');
+(1, 'Admin User', 'admin', '$2y$10$pTYzJYft28wnBtXezheMjOrdvz/I2Sa7sR0Xo.oNmBJ/5JPGCd3Au', 'admin', '2025-06-02 11:21:40'),
+(2, 'Regular User', 'user', '$2y$10$SjOm7do.ylFNxc5VRFLl3.YwsrilOXLgT5QvOaYAdI9yffaxIrz3S', 'user', '2025-06-02 11:21:40');
 
 -- --------------------------------------------------------
 

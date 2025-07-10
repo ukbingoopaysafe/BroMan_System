@@ -479,7 +479,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
         <!-- Card View -->
         <div class="property-cards">
             <?php foreach ($properties as $property): ?>
-                <div class="property-card" data-property-type="<?php echo $property['PropertyTypeID']; ?>">
+                <div class="property-card" data-property-id="<?php echo $property['PropertyID']; ?>" data-property-type="<?php echo $property['PropertyTypeID']; ?>">
                     <div class="property-image">
                         <?php echo generatePropertyCardImageHTML($property, $conn); ?>
                         <div class="property-status-badge status-<?php echo $property['Status']; ?>">
@@ -519,9 +519,6 @@ function getPropertyTypeBadge($typeId, $typeName) {
                         </div>
                         
                         <div class="property-actions">
-                            <a href="view_property.php?id=<?php echo $property['PropertyID']; ?>" class="btn btn-sm btn-info">
-                                <i class="fas fa-eye"></i> <?php echo t('view'); ?>
-                            </a>
                             <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
                             <a href="edit_property.php?id=<?php echo $property['PropertyID']; ?>" class="btn btn-sm btn-warning">
                                 <i class="fas fa-edit"></i> <?php echo t('edit'); ?>
