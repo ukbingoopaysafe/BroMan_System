@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/lang/translate.php'; // Include translation handler
+require_once 'session_check.php'; // Include session timeout check
 
 // Check if the user is logged in, if not then redirect to login page
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
@@ -248,6 +249,7 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
             }
         }
     </style>
+    <script src="session_timeout.js"></script>
 </head>
 <body>
     <?php include 'navbar.php'; ?>

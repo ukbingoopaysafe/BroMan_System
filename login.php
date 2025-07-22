@@ -18,6 +18,15 @@ require_once 'db.php';
 $error_message = '';
 $username_value = ''; // To retain username on error
 
+// Check for timeout messages
+if (isset($_GET['timeout'])) {
+    if ($_GET['timeout'] === 'idle') {
+        $error_message = t('session_timeout_idle');
+    } elseif ($_GET['timeout'] === 'absolute') {
+        $error_message = t('session_timeout_absolute');
+    }
+}
+
 // Process form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username_value = isset($_POST['username']) ? trim($_POST['username']) : '';
@@ -55,6 +64,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             $_SESSION["username"] = $db_username;
                             $_SESSION["role"] = $role;
                             $_SESSION["full_name"] = $full_name;
+                            $_SESSION["created_at"] = time();
+                            $_SESSION["last_activity"] = time();
                             // Language preference could be saved here if needed
                             
                             header("Location: dashboard.php");

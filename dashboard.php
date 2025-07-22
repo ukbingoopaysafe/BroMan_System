@@ -1,22 +1,13 @@
 <?php
-require_once __DIR__ . '/lang/translate.php'; // Include translation handler
-
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Check if the user is logged in, if not then redirect to login page
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("Location: login.php");
-    exit;
-}
+require_once __DIR__ . 
+'/lang/translate.php'; // Include translation handler
+require_once 'session_check.php'; // Include session timeout check
 
 require_once 'db.php'; // Include database connection
 
 // Fetch statistics for the dashboard
 $stats = [
     'total_properties' => 0,
-    'total_clients' => 0,
     'total_employees' => 0,
     'residential_count' => 0,
     'coastal_count' => 0,
@@ -39,16 +30,6 @@ if ($result = $conn->query($sql_properties)) {
     $result->free();
 } else {
     error_log("Error fetching property counts: " . $conn->error);
-}
-
-// Get total clients
-$sql_clients = "SELECT COUNT(ClientID) AS count FROM clients";
-if ($result = $conn->query($sql_clients)) {
-    $row = $result->fetch_assoc();
-    $stats['total_clients'] = $row['count'] ?? 0;
-    $result->free();
-} else {
-    error_log("Error fetching client count: " . $conn->error);
 }
 
 // Get total employees (if admin)
@@ -124,6 +105,7 @@ if (isset($_SESSION["role"]) && $_SESSION["role"] === 'admin') {
             margin: 5px;
         }
     </style>
+    <script src="session_timeout.js"></script>
 </head>
 <body>
 
@@ -141,12 +123,6 @@ if (isset($_SESSION["role"]) && $_SESSION["role"] === 'admin') {
                  <a href="index_properties.php"> <!-- Fixed link to properties page -->
                     <h3><?php echo t('total_properties'); ?></h3>
                     <p><?php echo $stats['total_properties']; ?></p>
-                 </a>
-            </div>
-            <div class="stat-card">
-                 <a href="index.php"> <!-- Link to clients list -->
-                    <h3><?php echo t('total_clients'); ?></h3>
-                    <p><?php echo $stats['total_clients']; ?></p>
                  </a>
             </div>
             <?php if (isset($_SESSION["role"]) && $_SESSION["role"] === 'admin'): ?>
@@ -189,7 +165,6 @@ if (isset($_SESSION["role"]) && $_SESSION["role"] === 'admin') {
                 <a href="add_residential_property.php" class="btn btn-primary"><?php echo t('add_new_residential_property'); ?></a>
                 <a href="add_coastal_property.php" class="btn btn-primary"><?php echo t('add_new_coastal_property'); ?></a>
                 <a href="add_other_property.php" class="btn btn-primary"><?php echo t('add_new_commercial_property'); ?></a>
-                <a href="add_client.php" class="btn btn-primary"><?php echo t('add_new_client'); ?></a>
                 <?php if (isset($_SESSION["role"]) && $_SESSION["role"] === 'admin'): ?>
                     <a href="add_employee.php" class="btn btn-primary"><?php echo t('add_new_employee'); ?></a>
                 <?php endif; ?>
@@ -207,3 +182,5 @@ if (file_exists($footer_path)) {
 ?>
 </body>
 </html>
+
+

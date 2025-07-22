@@ -2,6 +2,7 @@
 // navbar.php (v3 - Updated for separate add property pages)
 require_once __DIR__ .
 '/lang/translate.php'; // Include translation handler
+require_once 'session_check.php'; // Include session timeout check
 
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
@@ -70,7 +71,7 @@ $property_pages = [
                  </div>
             </li>
 
-            <li><a href="index.php" class="<?php echo ($active_page == "index.php" || $active_page == "add_client.php" || $active_page == "edit_client.php") ? "active" : ""; ?>"><?php echo t('clients'); ?></a></li>
+
             <?php if ($user_role === "admin"): ?>
                 <li><a href="employees_list.php" class="<?php echo ($active_page == "employees_list.php" || $active_page == "add_employee.php" || $active_page == "edit_employee.php") ? "active" : ""; ?>"><?php echo t('employees'); ?></a></li>
             <?php endif; ?>

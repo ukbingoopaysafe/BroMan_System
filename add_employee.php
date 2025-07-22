@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/lang/translate.php'; // Include translation handler
+require_once 'session_check.php'; // Include session timeout check
 
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
@@ -111,6 +112,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css"> 
     <?php endif; ?>
+    <script src="session_timeout.js"></script>
 </head>
 <body>
 

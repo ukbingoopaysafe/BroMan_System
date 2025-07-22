@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/lang/translate.php'; // Include translation handler
+require_once 'session_check.php'; // Include session timeout check
 require_once __DIR__ . '/db.php'; // Database connection
 require_once __DIR__ . '/sorting_helpers.php'; // Include sorting helper functions
 require_once __DIR__ . '/property_image_helper.php'; // Include image helper functions
@@ -338,6 +339,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
     <link rel="stylesheet" href="property_card_styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
+    <script src="session_timeout.js"></script>
 </head>
 <body>
 

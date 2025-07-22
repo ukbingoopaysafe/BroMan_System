@@ -1,8 +1,8 @@
 <?php
-session_start();
+require_once 'session_check.php'; // Include session timeout check
 
 // Ensure user is logged in and is an admin
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !isset($_SESSION["role"]) || $_SESSION["role"] !== "admin") {
+if (!isset($_SESSION["role"]) || $_SESSION["role"] !== "admin") {
     $_SESSION["error_message"] = "You do not have permission to access this page.";
     header("Location: login.php");
     exit;

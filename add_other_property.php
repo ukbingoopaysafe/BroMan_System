@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/lang/translate.php'; // Translation handler
+require_once 'session_check.php'; // Include session timeout check
 require_once __DIR__ . '/db.php'; // Database connection
 
 if (session_status() == PHP_SESSION_NONE) {
@@ -206,6 +207,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .form-section h3 { margin-bottom: 15px; color: #0056b3; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
     </style>
+    <script src="session_timeout.js"></script>
 </head>
 <body>
 
