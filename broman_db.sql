@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 10, 2025 at 03:38 PM
+-- Generation Time: Jul 23, 2025 at 11:07 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -64,9 +64,9 @@ CREATE TABLE `employees` (
 --
 
 INSERT INTO `employees` (`EmployeeID`, `FullName`, `Username`, `Password`, `Role`, `DateJoined`) VALUES
-(1, 'Admin User', 'admin', '$2y$10$pTYzJYft28wnBtXezheMjOrdvz/I2Sa7sR0Xo.oNmBJ/5JPGCd3Au', 'admin', '2025-06-02 11:21:40'),
-(2, 'Regular User', 'user', '$2y$10$SjOm7do.ylFNxc5VRFLl3.YwsrilOXLgT5QvOaYAdI9yffaxIrz3S', 'user', '2025-06-02 11:21:40'),
-(3, 'مدير النظام', 'manager', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'manager', '2025-06-02 11:21:40');
+(1, 'Admin User', 'admin', '$2y$10$SRaI4J8k6U0J.ER0RdXbCeQwWE1kyupXy.kI4jK1X1sYojQGIVQPm', 'admin', '2025-06-02 11:21:40'),
+(2, 'Regular User', 'user', '$2y$10$SRaI4J8k6U0J.ER0RdXbCeQwWE1kyupXy.kI4jK1X1sYojQGIVQPm', 'user', '2025-06-02 11:21:40'),
+(3, 'مدير النظام', 'manager', '$2y$10$SRaI4J8k6U0J.ER0RdXbCeQwWE1kyupXy.kI4jK1X1sYojQGIVQPm', 'manager', '2025-07-22 14:11:53');
 
 -- --------------------------------------------------------
 
@@ -124,7 +124,7 @@ INSERT INTO `properties` (`PropertyID`, `PropertyTypeID`, `Title`, `Description`
 (10, 5, 'hfhfhf', '', 'grggrrgr', 3333333.00, 333.00, NULL, NULL, 'available', '2025-06-16 09:07:27', NULL, NULL, NULL, 3, NULL, NULL, 3, NULL, 'جراند اوتيل 2', NULL, NULL, NULL, NULL, NULL, 'rgrgrgr', 'hrrgrg', 'fhfhfhfg', 22, '', '', '', ''),
 (11, 1, 'سبسببس', '', 'يبييبيب', 33333333.00, 333.00, NULL, 4, 'available', '2025-06-16 09:13:15', 1, NULL, 5, 2, 4444.00, NULL, 3, NULL, 'يبسبسيب', NULL, NULL, NULL, NULL, NULL, 'سبسببسي', 'بسبسب', 'سبببب', 2, '', '', '', ''),
 (12, 1, 'سبسببس', '', 'يبييبيب', 33333333.00, 333.00, NULL, 4, 'available', '2025-06-16 09:19:01', 1, NULL, 5, 2, 4444.00, NULL, 3, NULL, 'يبسبسيب', NULL, NULL, NULL, NULL, NULL, 'سبسببسي', 'بسبسب', 'سبببب', 2, '', '', '', ''),
-(13, 1, 'سبسببس', '', 'يبييبيب', 33333333.00, 333.00, NULL, 4, 'available', '2025-06-16 09:19:09', 1, NULL, 5, 2, 4444.00, NULL, 3, NULL, 'يبسبسيبيي', NULL, NULL, NULL, NULL, NULL, 'سبسببسي', 'بسبسب', 'سبببب', 2, '', '', '', '');
+(14, 1, 'sass', '', '', 1.00, 1.00, NULL, NULL, 'available', '2025-07-23 09:02:17', 3, NULL, 1, 1, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, 'sa', 'sa', '', NULL, '', '', '', '');
 
 -- --------------------------------------------------------
 
@@ -207,14 +207,6 @@ CREATE TABLE `property_audio_notes` (
   `duration` int(11) DEFAULT NULL COMMENT 'Duration in seconds'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `property_audio_notes`
---
-
-INSERT INTO `property_audio_notes` (`note_id`, `property_id`, `file_path`, `upload_date`, `duration`) VALUES
-(1, 1, 'uploads/audio/property_1_audio_686f92c052da1.mp3', '2025-07-10 10:15:28', NULL),
-(4, 5, 'uploads/audio/property_5_audio_686fb799122b1.m4a', '2025-07-10 12:52:41', NULL);
-
 -- --------------------------------------------------------
 
 --
@@ -234,11 +226,7 @@ CREATE TABLE `property_images` (
 --
 
 INSERT INTO `property_images` (`image_id`, `property_id`, `file_path`, `upload_date`, `is_primary`) VALUES
-(1, 1, 'uploads/images/property_1_686f905b9ed17.jpg', '2025-07-10 10:05:15', 1),
-(4, 1, 'uploads/images/property_1_686f905bd072f.jpg', '2025-07-10 10:05:15', 0),
-(7, 3, 'uploads/images/property_3_686f98c04f816.jpeg', '2025-07-10 10:41:04', 1),
-(8, 1, 'uploads/images/property_1_686fae82e7891.jpeg', '2025-07-10 12:13:54', 0),
-(9, 5, 'uploads/images/property_5_686fafcc92d31.jpeg', '2025-07-10 12:19:24', 1);
+(10, 6, 'uploads/images/property_6_688098d33c29d.jpg', '2025-07-23 08:09:55', 1);
 
 --
 -- Indexes for dumped tables
@@ -318,13 +306,13 @@ ALTER TABLE `clients`
 -- AUTO_INCREMENT for table `employees`
 --
 ALTER TABLE `employees`
-  MODIFY `EmployeeID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `EmployeeID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `properties`
 --
 ALTER TABLE `properties`
-  MODIFY `PropertyID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `PropertyID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `propertyfinishingtypes`
@@ -354,7 +342,7 @@ ALTER TABLE `property_audio_notes`
 -- AUTO_INCREMENT for table `property_images`
 --
 ALTER TABLE `property_images`
-  MODIFY `image_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `image_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- Constraints for dumped tables
