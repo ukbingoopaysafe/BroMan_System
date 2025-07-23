@@ -209,7 +209,7 @@ return [
     'assign_client' => 'Assign to Client:',
     'mark_as_featured' => 'Mark as Featured',
     'area_and_specs' => 'Area and Specifications',
-    'unit_title_optional' => 'Unit Title (Optional)',
+    'unit_title_optional' => 'Unit Title',
     'select_unit_design' => 'Select Unit Design...', // Existing
     'select_finishing_type' => 'Select Finishing Type...', // Existing
     'error_fetching_property_details' => 'Error fetching property details',
@@ -332,7 +332,7 @@ return [
     'specific_price_note' => 'Note: You can enter a specific price or a price range',
     'description' => 'Description',
     'assign_to_client' => 'Assign to Client',
-    'unit_address_optional' => 'Unit Address (Optional)',
+    'unit_address_optional' => 'Unit Address',
     'unit_price_egp' => 'Unit Price (EGP)',
     'unit_area_sqm' => 'Unit Area (sqm)',
     'payment_period' => 'Payment Period',

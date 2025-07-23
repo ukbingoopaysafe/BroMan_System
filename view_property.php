@@ -258,7 +258,7 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
         <div class="page-header">
             <h1><?php echo $page_title; ?></h1>
             <div class="actions">
-                <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+                <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'manager'])): ?>
                 <a href="edit_property.php?id=<?php echo $property_id; ?>" class="btn btn-primary"><i class="fas fa-edit"></i> <?php echo t('edit'); ?></a>
                 <?php endif; ?>
                 <a href="javascript:history.back()" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> <?php echo t('back'); ?></a>
@@ -483,19 +483,21 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                 </div>
             </div>
 
-            <div class="property-section">
-                <h2><?php echo t('additional_information'); ?></h2>
-                <div class="detail-grid">
-                    <div class="detail-item">
-                        <span class="detail-label"><?php echo t('added_by_employee'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['EmployeeName'] ?: t('undefined')); ?></span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label"><?php echo t('date_added'); ?>:</span>
-                        <span class="detail-value"><?php echo !empty($property['DateAdded']) ? date("Y-m-d", strtotime($property['DateAdded'])) : t('undefined'); ?></span>
-                    </div>
-                </div>
-            </div>
+            <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'manager'): ?>
+<div class="property-section">
+    <h2><?php echo t('additional_information'); ?></h2>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label"><?php echo t('added_by_employee'); ?>:</span>
+            <span class="detail-value"><?php echo htmlspecialchars($property['EmployeeName'] ?: t('undefined')); ?></span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label"><?php echo t('date_added'); ?>:</span>
+            <span class="detail-value"><?php echo !empty($property['DateAdded']) ? date("Y-m-d", strtotime($property['DateAdded'])) : t('undefined'); ?></span>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
             <?php if (!empty($property['Description'])): ?>
             <div class="property-section">

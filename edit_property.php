@@ -25,7 +25,7 @@ const HOTEL_PROPERTY_TYPE_ID = 5;
 const MEDICAL_PROPERTY_TYPE_ID = 6;
 
 // Initialize variables
-$property_id = $title = $property_type_id = $price = $location = $description = $client_id = $status = "";
+$property_id = $title = $property_type_id = $price = $location = $description = $status = "";
 $unit_design_id = $finishing_type_id = $compound_area = $down_payment_percentage = $payment_years = $delivery_date = "";
 $project_name = $min_price = $max_price = $min_area = $max_area = $avg_area = $district = $governorate = $company_name = $floors_count = $bathrooms = "";
 $sales_manager_name = $sales_manager_phone = $salesperson_name = $salesperson_phone = "";
@@ -73,18 +73,6 @@ if ($result_finishing_types = $conn->query($sql_finishing_types)) {
     error_log("Error fetching finishing types: " . $conn->error);
 }
 
-// Clients (Optional assignment)
-$clients_list = [];
-$sql_clients = "SELECT ClientID, FullName FROM Clients ORDER BY FullName";
-if ($result_clients = $conn->query($sql_clients)) {
-    while ($row_client = $result_clients->fetch_assoc()) {
-        $clients_list[] = $row_client;
-    }
-    $result_clients->free();
-} else {
-    $errors['db_fetch'] = t('error_fetching_clients') . ': ' . $conn->error;
-    error_log("Error fetching clients: " . $conn->error);
-}
 
 // --- Fetch existing property data ---
 if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
@@ -107,7 +95,6 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $area = $row["Area"];
                 $bathrooms = $row["Bathrooms"];
                 $status = $row["Status"];
-                $client_id = $row["ClientID"];
                 $unit_design_id = $row["unit_design_id"];
                 $finishing_type_id = $row["finishing_type_id"];
                 $compound_area = $row["compound_area"];
@@ -169,7 +156,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $area_posted = isset($_POST["area"]) && trim($_POST["area"]) !== "" ? trim($_POST["area"]) : null;
     $bathrooms_posted = isset($_POST["bathrooms"]) && trim($_POST["bathrooms"]) !== "" ? trim($_POST["bathrooms"]) : null;
     $status_posted = isset($_POST["status"]) ? trim($_POST["status"]) : "available";
-    $client_id_posted = isset($_POST['client_id']) && trim($_POST['client_id']) !== '' ? trim($_POST['client_id']) : null;
     $unit_design_id_posted = isset($_POST['unit_design_id']) && trim($_POST['unit_design_id']) !== '' ? trim($_POST['unit_design_id']) : null;
     $finishing_type_id_posted = isset($_POST['finishing_type_id']) && trim($_POST['finishing_type_id']) !== '' ? trim($_POST['finishing_type_id']) : null;
     $compound_area_posted = isset($_POST['compound_area']) && trim($_POST['compound_area']) !== '' ? trim($_POST['compound_area']) : null;
@@ -239,7 +225,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($errors)) {
         $sql_update = "UPDATE Properties SET 
             PropertyTypeID = ?, Title = ?, Description = ?, Location = ?, Price = ?, Area = ?, 
-            Bathrooms = ?, Status = ?, ClientID = ?, unit_design_id = ?, finishing_type_id = ?, 
+            Bathrooms = ?, Status = ?, unit_design_id = ?, finishing_type_id = ?, 
             compound_area = ?, down_payment_percentage = ?, payment_years = ?, delivery_date = ?, 
             ProjectName = ?, min_price = ?, max_price = ?, min_area = ?, max_area = ?, avg_area = ?, 
             district = ?, governorate = ?, company_name = ?, FloorsCount = ?,
@@ -248,7 +234,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if ($stmt_update = $conn->prepare($sql_update)) {
             $stmt_update->bind_param(
-                "isssddisiiiddissdddddsssissssi",
+                "isssddisiiddissdddddsssissssi",
                 $property_type_id_posted,
                 $title_posted,
                 $description_posted,
@@ -257,7 +243,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $area_posted,
                 $bathrooms_posted,
                 $status_posted,
-                $client_id_posted,
                 $unit_design_id_posted,
                 $finishing_type_id_posted,
                 $compound_area_posted,
@@ -797,18 +782,6 @@ $conn->close();
                 <div class="form-group">
                     <label for="description"><?php echo t('description'); ?></label>
                     <textarea id="description" name="description"><?php echo htmlspecialchars($description); ?></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="client_id"><?php echo t('assign_to_client'); ?></label>
-                    <select id="client_id" name="client_id">
-                        <option value=""><?php echo t('select_client'); ?></option>
-                        <?php foreach ($clients_list as $client): ?>
-                            <option value="<?php echo $client['ClientID']; ?>"
-                                <?php echo ($client_id == $client['ClientID']) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($client['FullName']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
                 </div>
             </div>
 

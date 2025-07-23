@@ -152,7 +152,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     EmployeeID, 
                     sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, 
                     DateAdded
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
         if ($stmt = $conn->prepare($sql)) {
             // Adjusted bind_param types - removed bedrooms parameter, added sales fields
@@ -190,8 +190,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             );
 
             if ($stmt->execute()) {
-                $success_message = t('success_property_added');
-            } else {
+                $_SESSION["success_message"] = t('success_property_added');
+                header('Location: coastal_properties.php');
+                exit();           } else {
                 $errors[] = t('error_adding_property') . " " . $stmt->error;
                 error_log("Error executing property insert: " . $stmt->error);
             }

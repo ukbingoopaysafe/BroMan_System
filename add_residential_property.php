@@ -192,9 +192,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             );
 
             if ($stmt->execute()) {
-                $success_message = t('success_property_added');
-                // Optionally clear the form or redirect
-                // header("Location: index_properties.php"); exit;
+                $_SESSION["success_message"] = t('success_property_added');
+                header("Location: residential_properties.php");
+                exit();
             } else {
                 $errors[] = t('error_adding_property') . " " . $stmt->error;
                 error_log("Error executing property insert: " . $stmt->error);

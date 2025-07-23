@@ -70,7 +70,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $max_area = filter_input(INPUT_POST, 'max_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $avg_area = filter_input(INPUT_POST, 'avg_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $area = filter_input(INPUT_POST, 'area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $finishing_type_id = filter_input(INPUT_POST, 'finishing_type_id', FILTER_VALIDATE_INT);
+    $finishing_type_id_raw = $_POST['finishing_type_id'] ?? '';
+    $finishing_type_id = is_numeric($finishing_type_id_raw) && $finishing_type_id_raw !== '' ? (int)$finishing_type_id_raw : null;
     $min_price = filter_input(INPUT_POST, 'min_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $max_price = filter_input(INPUT_POST, 'max_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
@@ -102,81 +103,88 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
-    // --- Database Insertion ---
-    if (empty($errors)) {
-        $sql = "INSERT INTO Properties (
-            PropertyTypeID, Title, Description, Location, 
-            governorate, district, company_name, FloorsCount, 
-            min_area, max_area, avg_area, Area, 
-            finishing_type_id, min_price, max_price, 
-            Price, down_payment_percentage, payment_years, delivery_date, Status, 
-            EmployeeID, 
-            sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone,
-            ProjectName, DateAdded
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+// --- Database Insertion
+$sql = "INSERT INTO Properties (
+    PropertyTypeID, Title, Description, Location,
+    governorate, district, company_name, FloorsCount,
+    min_area, max_area, avg_area, Area,
+    finishing_type_id, min_price, max_price,
+    Price, down_payment_percentage, payment_years, delivery_date, Status,
+    EmployeeID,
+    sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone,
+    ProjectName
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        $types = "issssssiddiddiddississsss";
-        $params = array(
-            $property_type_id,
-            $title,
-            $description,
-            $location,
-            $governorate,
-            $district,
-            $company_name,
-            $floors_count,
-            $min_area,
-            $max_area,
-            $avg_area,
-            $area,
-            $finishing_type_id,
-            $min_price,
-            $max_price,
-            $price,
-            $down_payment_percentage,
-            $payment_years,
-            $delivery_date,
-            $status,
-            $employee_id,
-            $sales_manager_name,
-            $sales_manager_phone,
-            $salesperson_name,
-            $salesperson_phone,
-            $project_name
+$date_added = date("Y-m-d H:i:s");
+
+$params = array(
+    $property_type_id,
+    $title,
+    $description,
+    $location,
+    $governorate,
+    $district,
+    $company_name,
+    $floors_count,
+    $min_area,
+    $max_area,
+    $avg_area,
+    $area,
+    $finishing_type_id,
+    $min_price,
+    $max_price,
+    $price,
+    $down_payment_percentage,
+    $payment_years,
+    $delivery_date,
+    $status,
+    $employee_id,
+    $sales_manager_name,
+    $sales_manager_phone,
+    $salesperson_name,
+    $salesperson_phone,
+    $project_name,
+    
+);
+
+
+$types = "issssssiddiddiddississssss"; // ✔️ طوله = 26
+
+
+error_log("DEBUG: \$types string: " . $types);
+error_log("DEBUG: Length of \$types: " . strlen($types));
+error_log("DEBUG: \$params array count: " . count($params));
+error_log("DEBUG: \$params array content: " . var_export($params, true));
+
+if ($stmt = $conn->prepare($sql)) {
+    if (count($params) !== strlen($types)) {
+        error_log("Mismatch: Expected " . strlen($types) . " params, got " . count($params));
+        $errors[] = t('database_error');
+    } else {
+        $stmt->bind_param(
+            $types,
+            ...$params
         );
-    
-        error_log("DEBUG: \$types string: " . $types);
-        error_log("DEBUG: Length of \$types: " . strlen($types));
-        error_log("DEBUG: \$params array count: " . count($params));
-        error_log("DEBUG: \$params array content: " . var_export($params, true));
-    
-        if ($stmt = $conn->prepare($sql)) {
-            if (count($params) !== strlen($types)) {
-                error_log("Mismatch: Expected " . strlen($types) . " params, got " . count($params));
-                $errors[] = t('database_error');
-            } else {
-                $stmt->bind_param($types, ...$params);
 
-                if ($stmt->execute()) {
-                    $_SESSION["success_message"] = t('success_property_added');
-                    header("Location: index_properties.php");
-                    exit();
-                } else {
-                    $errors[] = t('error_adding_property') . " " . $stmt->error;
-                    error_log("Error executing property insert: " . $stmt->error);
-                }
-            }
-            $stmt->close();
+        if ($stmt->execute()) {
+            $_SESSION["success_message"] = t('success_property_added');
+            header("Location: commercial_properties.php");
+            exit();
         } else {
-            $errors[] = t('database_error') . " " . $conn->error;
-            error_log("Error preparing property insert: " . $conn->error);
+            $errors[] = t('error_adding_property') . " " . $stmt->error;
+            error_log("Error executing property insert: " . $stmt->error);
         }
     }
+    $stmt->close();
+} else {
+    $errors[] = t('database_error') . " " . $conn->error;
+    error_log("Error preparing property insert: " . $conn->error);
+}
+
 
     $conn->close();
 }
 ?>
-<!DOCTYPE html>
 <html lang="<?php echo get_lang_code(); ?>" dir="<?php echo get_direction(); ?>">
 <head>
     <meta charset="UTF-8">
@@ -339,13 +347,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
 
         <div class="form-section">
-            <h3><?php echo t('additional_info'); ?></h3>
-            <div class="form-grid">
-                <div class="form-group" style="grid-column: 1 / -1;">
-                    <label for="description"><?php echo t('description'); ?>:</label>
-                    <textarea id="description" name="description" class="form-input" rows="4"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
-                </div>
+    <h3><?php echo t('additional_info'); ?></h3>
+    <div class="form-grid">
+        <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="description"><?php echo t('description'); ?>:</label>
+            <textarea id="description" name="description" class="form-input" rows="4"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
         </div>
+    </div> <!-- Close form-grid -->
+</div> <!-- Close form-section -->
 
         <!-- Sales Information Section -->
         <div class="form-section">

@@ -208,7 +208,7 @@ return [
     'assign_client' => 'تعيين لعميل:',
     'mark_as_featured' => 'تحديد كعقار مميز',
     'area_and_specs' => 'المساحة والمواصفات',
-    'unit_title_optional' => 'عنوان الوحدة (اختياري)',
+    'unit_title_optional' => 'عنوان الوحدة',
     'select_unit_design' => 'اختر نموذج الوحدة...', // Existing
     'select_finishing_type' => 'اختر نوع التشطيب...', // Existing
     'error_fetching_property_details' => 'خطأ في جلب تفاصيل العقار',
@@ -331,7 +331,7 @@ return [
     'specific_price_note' => 'ملاحظة: يمكنك إدخال سعر محدد أو نطاق أسعار',
     'description' => 'الوصف',
     'assign_to_client' => 'تعيين للعميل',
-    'unit_address_optional' => 'عنوان الوحدة (اختياري)',
+    'unit_address_optional' => 'عنوان الوحدة',
     'unit_price_egp' => 'سعر الوحدة (EGP)',
     'unit_area_sqm' => 'مساحة الوحدة (م²)',
     'payment_period' => 'فترة السداد',
