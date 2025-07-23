@@ -1,8 +1,9 @@
 <?php
-// navbar.php (v3 - Updated for separate add property pages)
+// navbar.php (v4 - Updated for new role system)
 require_once __DIR__ .
 '/lang/translate.php'; // Include translation handler
 require_once 'session_check.php'; // Include session timeout check
+require_once 'permissions.php'; // Include permissions system
 
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
@@ -61,7 +62,8 @@ $property_pages = [
                 </div>
             </li>
 
-            <!-- Add Property Dropdown -->
+            <!-- Add Property Dropdown - Only for Manager and Admin -->
+            <?php if (can_manage_properties()): ?>
             <li class="dropdown <?php echo (in_array($active_page, ["add_residential_property.php", "add_coastal_property.php", "add_other_property.php"])) ? "active" : ""; ?>">
                  <a href="javascript:void(0)" class="dropbtn"><?php echo t('add_new_property'); ?> <span class="arrow">&#9662;</span></a>
                  <div class="dropdown-content">
@@ -70,9 +72,11 @@ $property_pages = [
                     <a href="add_other_property.php" class="<?php echo ($active_page == "add_other_property.php") ? "active-sub" : ""; ?>"><?php echo t('add_other_property_title'); ?></a>
                  </div>
             </li>
+            <?php endif; ?>
 
 
-            <?php if ($user_role === "admin"): ?>
+            <!-- Employees - Only for Manager -->
+            <?php if (can_manage_employees()): ?>
                 <li><a href="employees_list.php" class="<?php echo ($active_page == "employees_list.php" || $active_page == "add_employee.php" || $active_page == "edit_employee.php") ? "active" : ""; ?>"><?php echo t('employees'); ?></a></li>
             <?php endif; ?>
             <li>

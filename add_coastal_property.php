@@ -1,5 +1,7 @@
 <?php
-require_once __DIR__ . '/lang/translate.php'; // Translation handler
+require_once __DIR__ . 
+'/lang/translate.php'; // Translation handler
+require_once 'permissions.php'; // Include permissions system
 require_once 'session_check.php'; // Include session timeout check
 require_once __DIR__ . '/db.php'; // Database connection
 
@@ -7,18 +9,13 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// Check if the user is logged in, redirect if not
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("Location: login.php");
-    exit;
-}
+// Check permissions - only manager and admin can add properties
 
 // --- Fetch Lookups (Similar to add_residential) ---
 $property_types = [];
 $unit_designs = [];
 $finishing_types = [];
 $employees = [];
-$clients = [];
 
 // Fetch Property Types (Filter for Coastal Type = 2 - Assuming 2 is Coastal)
 $sql_types = "SELECT PropertyTypeID, TypeName FROM PropertyTypes WHERE PropertyTypeID = 2";
@@ -64,17 +61,6 @@ if ($result = $conn->query($sql_employees)) {
     error_log("Error fetching employees: " . $conn->error);
 }
 
-// Fetch Clients
-$sql_clients = "SELECT ClientID, FullName FROM clients ORDER BY FullName";
-if ($result = $conn->query($sql_clients)) {
-    while ($row = $result->fetch_assoc()) {
-        $clients[] = $row;
-    }
-    $result->free();
-} else {
-    error_log("Error fetching clients: " . $conn->error);
-}
-
 $errors = [];
 $success_message = '';
 
@@ -107,7 +93,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $status = trim($_POST['status'] ?? 'available');
     // Auto-assign to current employee instead of selection
     $employee_id = $_SESSION['employee_id'] ?? null;
-    $client_id = filter_input(INPUT_POST, 'client_id', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     // $is_featured = isset($_POST['is_featured']) ? 1 : 0; // Removed is_featured
     $sales_manager_name = trim($_POST['sales_manager_name'] ?? '');
     $sales_manager_phone = trim($_POST['sales_manager_phone'] ?? '');
@@ -164,15 +149,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     unit_design_id, min_area, max_area, avg_area, Area, 
                     Bathrooms, finishing_type_id, min_price, max_price, 
                     Price, down_payment_percentage, payment_years, delivery_date, Status, 
-                    EmployeeID, ClientID, 
+                    EmployeeID, 
                     sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, 
                     DateAdded
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
         if ($stmt = $conn->prepare($sql)) {
             // Adjusted bind_param types - removed bedrooms parameter, added sales fields
             $stmt->bind_param(
-                "isssssssdiiddddiddddisssiissss",
+                "isssssssdiiddddiddddisssissss",
                 $property_type_id,
                 $project_name,
                 $title,
@@ -198,7 +183,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $delivery_date,
                 $status,
                 $employee_id,
-                $client_id,
                 $sales_manager_name,
                 $sales_manager_phone,
                 $salesperson_name,
@@ -409,16 +393,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <label for="description"><?php echo t('description'); ?>:</label>
                     <textarea id="description" name="description" class="form-input" rows="4"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
                 </div>
-                <!-- Removed employee assignment section as requested - auto-assigned to current employee -->
-                <div class="form-group">
-                    <label for="client_id"><?php echo t('assign_to_client'); ?>:</label>
-                    <select id="client_id" name="client_id" class="form-input">
-                        <option value=""><?php echo t('select_client'); ?></option>
-                        <?php foreach ($clients as $client): ?>
-                            <option value="<?php echo $client['ClientID']; ?>" <?php echo (($_POST['client_id'] ?? '') == $client['ClientID']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($client['FullName']); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-               </div>
         </div>
 
         <!-- Sales Information Section -->
@@ -455,3 +429,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 </body>
 </html>
+
+

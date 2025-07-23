@@ -4,13 +4,10 @@ require_once __DIR__ . '/lang/translate.php'; // Include translation handler
 require_once 'session_check.php'; // Include session timeout check
 require_once __DIR__ . '/db.php'; // Database connection
 require_once __DIR__ . '/sorting_helpers.php'; // Include sorting helper functions
+require_once 'permissions.php'; // Include permissions system
 require_once __DIR__ . '/property_image_helper.php'; // Include image helper functions
 
-// Ensure user is logged in
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("Location: login.php");
-    exit;
-}
+// Check permissions - all logged in users can view properties
 
 // Define the Property Type IDs for this page (Commercial/Administrative/Medical/Hotel - VERIFY IN DB)
 const CURRENT_PROPERTY_TYPE_IDS = [3, 4, 5, 6]; // Adjust based on your database
@@ -532,7 +529,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
                         </div>
                         
                         <div class="property-actions">
-                            <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+                            <?php if (can_manage_properties()): ?>
                             <a href="edit_property.php?id=<?php echo $property['PropertyID']; ?>" class="btn btn-sm btn-warning">
                                 <i class="fas fa-edit"></i> <?php echo t('edit'); ?>
                             </a>
@@ -584,7 +581,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
                             <i class="fas fa-info-circle"></i> <?php echo t('status'); ?>
                             <?php echo getSortIcon('Status', $sort_column, $sort_direction); ?>
                         </th>
-                        <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+                        <?php if (can_manage_properties()): ?>
                         <th class="cell-actions">
                             <i class="fas fa-cogs"></i> <?php echo t('table_header_actions'); ?>
                         </th>
@@ -633,7 +630,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
                             <td class="cell-status">
                                 <?php echo getStatusBadge($property['Status']); ?>
                             </td>
-                            <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+                            <?php if (can_manage_properties()): ?>
                             <td class="cell-actions">
                                 <div class="table-actions">
                                     <a href="edit_property.php?id=<?php echo $property['PropertyID']; ?>" class="btn-edit" title="<?php echo t('edit'); ?>">

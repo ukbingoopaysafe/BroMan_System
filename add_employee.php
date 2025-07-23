@@ -1,20 +1,16 @@
 <?php
 require_once __DIR__ . '/lang/translate.php'; // Include translation handler
+require_once 'permissions.php'; // Include permissions system
 require_once 'session_check.php'; // Include session timeout check
 
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// Ensure user is logged in and is an admin
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !isset($_SESSION["role"]) || $_SESSION["role"] !== "admin") {
-    // If not logged in or not an admin, set an error message and redirect to login or a generic error page
-    $_SESSION["error_message"] = t('permission_denied');
-    header("Location: login.php"); // Or an access denied page
-    exit;
-}
-
-require_once 'db.php'; // Database connection
+// Check permissions - only manager can manage employees
+check_permission("manage_employees");
+require_once __DIR__ . 
+'/db.php'; // Database connection
 
 $full_name = $username = $password = $role = "";
 $full_name_err = $username_err = $password_err = $role_err = $general_err = "";
@@ -67,7 +63,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Validate Role
     if (empty($_POST["role"])) {
         $role_err = "Please select a role.";
-    } elseif (!in_array($_POST["role"], ["admin", "user"])) {
+    } elseif (!in_array($_POST["role"], ["admin", "user", "manager"])) {
         $role_err = "Invalid role selected.";
     } else {
         $role = $_POST["role"];
@@ -154,6 +150,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <option value=""><?php echo t('select_role'); ?></option>
                         <option value="user" <?php echo ($role == "user") ? "selected" : ""; ?>><?php echo t('user_role'); ?></option>
                         <option value="admin" <?php echo ($role == "admin") ? "selected" : ""; ?>><?php echo t('admin_role'); ?></option>
+                        <option value="manager" <?php echo ($role == "manager") ? "selected" : ""; ?>><?php echo t('manager_role'); ?></option>
                     </select>
                     <?php if (!empty($role_err)): ?><span class="error-message"><?php echo htmlspecialchars($role_err); ?></span><?php endif; ?>
                 </div>

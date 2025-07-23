@@ -1,18 +1,9 @@
 <?php
 session_start();
+require_once 'permissions.php'; // Include permissions system
 
-// Ensure user is logged in
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("Location: login.php");
-    exit;
-}
-
-// Ensure user is an admin to delete property details
-if (!isset($_SESSION["role"]) || $_SESSION["role"] !== "admin") {
-    $_SESSION["error_message"] = "You do not have permission to perform this action.";
-    header("Location: index_properties.php"); // Redirect to property list or dashboard
-    exit;
-}
+// Check permissions - only manager and admin can delete properties
+check_permission('manage_properties');
 
 require_once 'db.php'; // Database connection
 

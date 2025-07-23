@@ -2,6 +2,7 @@
 require_once __DIR__ . 
 '/lang/translate.php'; // Include translation handler
 require_once 'session_check.php'; // Include session timeout check
+require_once 'permissions.php'; // Include permissions system
 
 require_once 'db.php'; // Include database connection
 
@@ -32,8 +33,8 @@ if ($result = $conn->query($sql_properties)) {
     error_log("Error fetching property counts: " . $conn->error);
 }
 
-// Get total employees (if admin)
-if (isset($_SESSION["role"]) && $_SESSION["role"] === 'admin') {
+// Get total employees (if manager)
+if (can_manage_employees()) {
     $sql_employees = "SELECT COUNT(EmployeeID) AS count FROM employees";
     if ($result = $conn->query($sql_employees)) {
         $row = $result->fetch_assoc();
@@ -125,7 +126,7 @@ if (isset($_SESSION["role"]) && $_SESSION["role"] === 'admin') {
                     <p><?php echo $stats['total_properties']; ?></p>
                  </a>
             </div>
-            <?php if (isset($_SESSION["role"]) && $_SESSION["role"] === 'admin'): ?>
+            <?php if (can_manage_employees()): ?>
             <div class="stat-card">
                  <a href="employees_list.php"> <!-- Link to employees list -->
                     <h3><?php echo t('total_employees'); ?></h3>

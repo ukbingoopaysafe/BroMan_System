@@ -1,8 +1,9 @@
 <?php
 require_once 'session_check.php'; // Include session timeout check
+require_once 'permissions.php'; // Include permissions system
 
-// Ensure user is logged in and is an admin
-if (!isset($_SESSION["role"]) || $_SESSION["role"] !== "admin") {
+// Check permissions - only manager can manage employees
+if (!isset($_SESSION["role"]) || ($_SESSION["role"] !== "admin" && $_SESSION["role"] !== "manager")) {
     $_SESSION["error_message"] = "You do not have permission to access this page.";
     header("Location: login.php");
     exit;

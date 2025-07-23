@@ -1,23 +1,14 @@
 <?php
 // Corrected include path for translation handler
 require_once __DIR__ . '/lang/translate.php';
+require_once 'permissions.php'; // Include permissions system
 
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// Ensure user is logged in
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("Location: login.php");
-    exit;
-}
-
-// Ensure user is an admin to edit property details
-if (!isset($_SESSION["role"]) || $_SESSION["role"] !== "admin") {
-    $_SESSION["error_message"] = t("permission_denied");
-    header("Location: index_properties.php"); // Redirect to property list or dashboard
-    exit;
-}
+// Check permissions - only manager and admin can edit properties
+check_permission('manage_properties');
 
 require_once 'db.php'; // Database connection
 require_once 'media_functions.php'; // Media helper functions

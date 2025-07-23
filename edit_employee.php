@@ -1,12 +1,9 @@
 <?php
 require_once 'session_check.php'; // Include session timeout check
+require_once 'permissions.php'; // Include permissions system
 
-// Ensure user is logged in and is an admin
-if (!isset($_SESSION["role"]) || $_SESSION["role"] !== "admin") {
-    $_SESSION["error_message"] = "You do not have permission to access this page.";
-    header("Location: login.php");
-    exit;
-}
+// Check permissions - only manager can manage employees
+check_permission('manage_employees');
 
 require_once 'db.php'; // Database connection
 require_once 'navbar.php'; // Navigation bar
@@ -109,7 +106,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($role_err)) { // proceed if no error from self-demotion check
         if (empty($_POST["role"])) {
             $role_err = "Please select a role.";
-        } elseif (!in_array($_POST["role"], ["admin", "user"])) {
+        } elseif (!in_array($_POST["role"], ["admin", "user", "manager"])) {
             $role_err = "Invalid role selected.";
         } else {
             $role_posted = $_POST["role"];
@@ -179,112 +176,79 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo get_lang_code(); ?>" dir="<?php echo get_direction(); ?>">
 <head>
     <meta charset="UTF-8">
-    <title>Edit Employee - Broman Real Estate</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="theme.css">
-     <style>
-        .form-card {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            max-width: 500px;
-            margin: 20px auto;
-        }
-        .form-card label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .form-card .form-input, .form-card select {
-            width: calc(100% - 22px);
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .form-card .btn-success {
-            background-color: #28a745;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .form-card .btn-success:hover {
-            background-color: #218838;
-        }
-        .error-message {
-            color: red;
-            font-size: 0.9em;
-            margin-bottom: 10px;
-        }
-        .page-title {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .password-note {
-            font-size: 0.9em;
-            color: #555;
-            margin-bottom: 15px;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo t("edit_employee"); ?></title>
+    <link rel="stylesheet" href="modern_styles.css">
+    <?php if (get_direction() === 'rtl'): ?>
+        <link rel="stylesheet" href="rtl_styles.css"> 
+    <?php endif; ?>
     <script src="session_timeout.js"></script>
 </head>
 <body>
 
-<h2 class="page-title">Edit Employee Details</h2>
+<?php require_once 'navbar.php'; // Include the navigation bar?>
 
-<form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]) . "?id=" . htmlspecialchars($employee_id); ?>" method="POST" class="form-card">
-    <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee_id); ?>">
+<div class="container">
+    <div class="page-header">
+        <h1><?php echo t("edit_employee"); ?></h1>
+    </div>
 
-    <?php if (!empty($general_err)): ?>
-        <div class="error-message" style="background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px;"><?php echo htmlspecialchars($general_err); ?></div>
-    <?php endif; ?>
+    <div class="form-container">
+        <div class="form-card">
+            <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]) . "?id=" . htmlspecialchars($employee_id); ?>" method="POST">
+                <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee_id); ?>">
+                <?php if (!empty($general_err)): ?>
+                    <div class="message message-error"><?php echo htmlspecialchars($general_err); ?></div>
+                <?php endif; ?>
 
     <div>
-        <label for="fullName">Full Name:</label>
+        <label for="fullName"><?php echo t("full_name"); ?>:</label>
         <input type="text" id="fullName" name="fullName" class="form-input <?php echo (!empty($full_name_err)) ? 'is-invalid' : ''; ?>" value="<?php echo htmlspecialchars($full_name); ?>" required>
         <?php if (!empty($full_name_err)): ?><span class="error-message"><?php echo htmlspecialchars($full_name_err); ?></span><?php endif; ?>
     </div>
 
     <div>
-        <label for="username">Username:</label>
+        <label for="username"><?php echo t("username"); ?>:</label>
         <input type="text" id="username" name="username" class="form-input <?php echo (!empty($username_err)) ? 'is-invalid' : ''; ?>" value="<?php echo htmlspecialchars($username); ?>" required>
         <?php if (!empty($username_err)): ?><span class="error-message"><?php echo htmlspecialchars($username_err); ?></span><?php endif; ?>
     </div>
 
     <div>
-        <label for="role">Role:</label>
+        <label for="role"><?php echo t("role"); ?>:</label>
         <select id="role" name="role" class="form-input <?php echo (!empty($role_err)) ? 'is-invalid' : ''; ?>" required>
-            <option value="user" <?php echo ($role == "user") ? "selected" : ""; ?>>User</option>
-            <option value="admin" <?php echo ($role == "admin") ? "selected" : ""; ?>>Admin</option>
+            <option value=""><?php echo t("select_role"); ?></option>
+            <option value="user" <?php echo ($role == "user") ? "selected" : ""; ?>><?php echo t("user_role"); ?></option>
+            <option value="admin" <?php echo ($role == "admin") ? "selected" : ""; ?>><?php echo t("admin_role"); ?></option>
+            <option value="manager" <?php echo ($role == "manager") ? "selected" : ""; ?>><?php echo t("manager_role"); ?></option>
         </select>
         <?php if (!empty($role_err)): ?><span class="error-message"><?php echo htmlspecialchars($role_err); ?></span><?php endif; ?>
     </div>
 
     <hr>
-    <p class="password-note">Only fill in the password fields below if you want to change the current password.</p>
+    <p class="password-note"><?php echo t("password_strength_hint"); ?></p>
 
     <div>
-        <label for="new_password">New Password:</label>
+        <label for="new_password"><?php echo t("new_password"); ?>:</label>
         <input type="password" id="new_password" name="new_password" class="form-input <?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>">
     </div>
 
     <div>
-        <label for="confirm_password">Confirm New Password:</label>
+        <label for="confirm_password"><?php echo t("confirm_password"); ?>:</label>
         <input type="password" id="confirm_password" name="confirm_password" class="form-input <?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>">
         <?php if (!empty($password_err)): ?><span class="error-message"><?php echo htmlspecialchars($password_err); ?></span><?php endif; ?>
     </div>
 
-    <div>
-        <input type="submit" value="Save Changes" class="btn btn-success">
-        <a href="employees_list.php" style="margin-left: 10px;">Cancel</a>
+                <div class="form-actions">
+                    <input type="submit" value="<?php echo t("save_changes"); ?>" class="btn btn-success">
+                    <a href="employees_list.php" class="btn btn-secondary"><?php echo t("cancel"); ?></a>
+                </div>
+            </form>
+        </div>
     </div>
-</form>
+</div>
 
 </body>
 </html>

@@ -1,18 +1,14 @@
 <?php
 require_once __DIR__ .
 '/lang/translate.php'; // Include translation handler
+require_once 'permissions.php'; // Include permissions system
 
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// Ensure user is logged in and is an admin
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !isset($_SESSION["role"]) || $_SESSION["role"] !== "admin") {
-    // Use translation key for error message
-    $_SESSION["error_message"] = t('permission_denied');
-    header("Location: login.php");
-    exit;
-}
+// Check permissions - only manager can manage employees
+check_permission('manage_employees');
 
 require_once __DIR__ . '/db.php'; // Include database connection using absolute path
 

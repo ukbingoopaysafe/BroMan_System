@@ -55,7 +55,7 @@ CREATE TABLE `employees` (
   `FullName` varchar(255) NOT NULL,
   `Username` varchar(50) NOT NULL,
   `Password` varchar(255) NOT NULL COMMENT 'Stored using PHP password_hash (bcrypt)',
-  `Role` enum('admin','user') NOT NULL DEFAULT 'user',
+  `Role` enum('manager','admin','user') NOT NULL DEFAULT 'user',
   `DateJoined` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -65,7 +65,8 @@ CREATE TABLE `employees` (
 
 INSERT INTO `employees` (`EmployeeID`, `FullName`, `Username`, `Password`, `Role`, `DateJoined`) VALUES
 (1, 'Admin User', 'admin', '$2y$10$pTYzJYft28wnBtXezheMjOrdvz/I2Sa7sR0Xo.oNmBJ/5JPGCd3Au', 'admin', '2025-06-02 11:21:40'),
-(2, 'Regular User', 'user', '$2y$10$SjOm7do.ylFNxc5VRFLl3.YwsrilOXLgT5QvOaYAdI9yffaxIrz3S', 'user', '2025-06-02 11:21:40');
+(2, 'Regular User', 'user', '$2y$10$SjOm7do.ylFNxc5VRFLl3.YwsrilOXLgT5QvOaYAdI9yffaxIrz3S', 'user', '2025-06-02 11:21:40'),
+(3, 'مدير النظام', 'manager', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'manager', '2025-06-02 11:21:40');
 
 -- --------------------------------------------------------
 
@@ -317,7 +318,7 @@ ALTER TABLE `clients`
 -- AUTO_INCREMENT for table `employees`
 --
 ALTER TABLE `employees`
-  MODIFY `EmployeeID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `EmployeeID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `properties`

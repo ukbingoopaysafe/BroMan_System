@@ -1,6 +1,7 @@
 <?php
 session_start();
-require_once __DIR__ . '/lang/translate.php'; // Include translation handler
+require_once __DIR__ . 
+'/lang/translate.php'; // Include translation handler
 require_once 'session_check.php'; // Include session timeout check
 
 // Check if the user is logged in, if not then redirect to login page
@@ -23,11 +24,10 @@ $property_id = intval($_GET['id']);
 // Fetch property details with proper joins for unit design and finishing type
 $property = null;
 $sql = "SELECT p.*, pt.TypeName, 
-               c.FullName AS ClientName, e.FullName AS EmployeeName,
+               e.FullName AS EmployeeName,
                pud.DesignName AS UnitDesignName, pft.FinishingName AS FinishingTypeName
         FROM Properties p
         LEFT JOIN PropertyTypes pt ON p.PropertyTypeID = pt.PropertyTypeID
-        LEFT JOIN Clients c ON p.ClientID = c.ClientID
         LEFT JOIN Employees e ON p.EmployeeID = e.EmployeeID
         LEFT JOIN PropertyUnitDesigns pud ON p.unit_design_id = pud.DesignID
         LEFT JOIN PropertyFinishingTypes pft ON p.finishing_type_id = pft.FinishingID
@@ -487,12 +487,8 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                 <h2><?php echo t('additional_information'); ?></h2>
                 <div class="detail-grid">
                     <div class="detail-item">
-                        <span class="detail-label"><?php echo t('assigned_client'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['ClientName'] ?? t('undefined')); ?></span>
-                    </div>
-                    <div class="detail-item">
                         <span class="detail-label"><?php echo t('added_by_employee'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['EmployeeName'] ?? t('undefined')); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['EmployeeName'] ?: t('undefined')); ?></span>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('date_added'); ?>:</span>
@@ -515,4 +511,5 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
     <script src="lightbox.js"></script>
 </body>
 </html>
+
 
