@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 23, 2025 at 11:07 AM
+-- Generation Time: Jul 23, 2025 at 05:14 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,29 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `broman_db`
 --
-
--- --------------------------------------------------------
-
---
--- Table structure for table `clients`
---
-
-CREATE TABLE `clients` (
-  `ClientID` int(11) NOT NULL,
-  `FullName` varchar(255) NOT NULL,
-  `Email` varchar(255) DEFAULT NULL,
-  `Phone` varchar(50) DEFAULT NULL,
-  `DateRegistered` timestamp NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `clients`
---
-
-INSERT INTO `clients` (`ClientID`, `FullName`, `Email`, `Phone`, `DateRegistered`) VALUES
-(1, 'Ahmed Ali', 'ahmed.ali@example.com', '01012345678', '2025-06-02 11:21:40'),
-(2, 'Fatima Hassan', 'fatima.hassan@example.com', '01198765432', '2025-06-02 11:21:40'),
-(3, 'Mohamed Saad', 'mohamed.saad@example.com', '01211223344', '2025-06-02 11:21:40');
 
 -- --------------------------------------------------------
 
@@ -87,7 +64,6 @@ CREATE TABLE `properties` (
   `Status` enum('available','sold','rented','unavailable') DEFAULT 'available',
   `DateAdded` timestamp NULL DEFAULT current_timestamp(),
   `EmployeeID` int(11) DEFAULT NULL COMMENT 'FK to Employees who added it',
-  `ClientID` int(11) DEFAULT NULL,
   `unit_design_id` int(11) DEFAULT NULL COMMENT 'FK to PropertyUnitDesigns',
   `finishing_type_id` int(11) DEFAULT NULL COMMENT 'FK to PropertyFinishingTypes',
   `compound_area` decimal(12,2) DEFAULT NULL,
@@ -114,17 +90,24 @@ CREATE TABLE `properties` (
 -- Dumping data for table `properties`
 --
 
-INSERT INTO `properties` (`PropertyID`, `PropertyTypeID`, `Title`, `Description`, `Location`, `Price`, `Area`, `Bedrooms`, `Bathrooms`, `Status`, `DateAdded`, `EmployeeID`, `ClientID`, `unit_design_id`, `finishing_type_id`, `compound_area`, `down_payment_percentage`, `payment_years`, `delivery_date`, `ProjectName`, `min_price`, `max_price`, `min_area`, `max_area`, `avg_area`, `district`, `governorate`, `company_name`, `FloorsCount`, `sales_manager_name`, `sales_manager_phone`, `salesperson_name`, `salesperson_phone`) VALUES
-(1, 1, 'شقة فاخرة بالتجمع الخامس', 'شقة 3 غرف نوم بإطلالة مميزة في كمبوند XYZ', 'التجمع الخامس, القاهرة الجديدة', 2500000.00, 180.00, 3, 2, 'available', '2025-06-02 11:21:41', 1, 2, 1, 3, 50000.00, 10.00, 7, '2025-12-31', 'كمبوند XY', NULL, NULL, NULL, NULL, NULL, 'التجمع الخامس', 'القاهرة', 'شركة التطوير الحديث', 5, 'احمد', '01111132239', 'حسن', '01211132239'),
-(2, 1, 'فيلا مستقلة بالشيخ زايد', 'فيلا بحديقة خاصة وحمام سباحة', 'الشيخ زايد, الجيزة', 7000000.00, 450.00, 5, 4, 'available', '2025-06-02 11:21:41', 1, NULL, 2, NULL, 100000.00, 15.00, 10, '2026-06-30', 'زايد ديونز', NULL, NULL, 400.00, 500.00, 450.00, 'الشيخ زايد', 'الجيزة', 'شركة إعمار', 2, NULL, NULL, NULL, NULL),
-(3, 2, 'شاليه بالساحل الشمالي', 'شاليه يرى البحر مباشرة في قرية ABC', 'الكيلو 120, الساحل الشمالي', 1800000.00, 120.00, 2, 1, 'available', '2025-06-02 11:21:41', 2, NULL, 4, 3, NULL, 20.00, 5, '2024-08-01', 'قرية ABC', 1700000.00, 1900000.00, 110.00, 130.00, 120.00, 'سيدي عبد الرحمن', 'مطروح', 'مجموعة طلعت مصطفى', 3, '', '', '', ''),
-(4, 4, 'محل تجاري بمول العرب', 'محل بموقع متميز في مول العرب', 'مول العرب, 6 أكتوبر', 4000000.00, 80.00, NULL, NULL, 'available', '2025-06-02 11:21:41', 1, NULL, NULL, 1, NULL, 25.00, 5, NULL, 'مول العرب', NULL, NULL, NULL, NULL, 80.00, 'الحي المتميز', 'الجيزة', 'مجموعة الفطيم', 1, NULL, NULL, NULL, NULL),
-(5, 3, 'مكتب إداري بالعاصمة الإدارية', 'مكتب إداري متشطب بالتكييفات في برج DEF', 'الحي المالي, العاصمة الإدارية الجديدة', 1500000.00, 95.00, NULL, NULL, 'available', '2025-06-02 11:21:41', 1, NULL, 1, 3, NULL, 10.00, 8, '2025-01-15', 'برج DEF', 1400000.00, 1600000.00, 90.00, 100.00, 95.00, 'الحي المالي', 'القاهرة', 'شركة العاصمة', 15, '', '', '', ''),
-(6, 6, 'عيادة طبية بمدينة نصر', 'عيادة مجهزة بالكامل في مركز طبي شهير', 'شارع الطيران, مدينة نصر', 1200000.00, 70.00, NULL, NULL, 'rented', '2025-06-02 11:21:41', 2, NULL, 3, 3, NULL, NULL, NULL, NULL, 'المركز الطبي الدولي', NULL, NULL, NULL, NULL, NULL, 'مدينة نصر شرق', 'القاهرة', '', 8, '', '', '', ''),
-(10, 5, 'hfhfhf', '', 'grggrrgr', 3333333.00, 333.00, NULL, NULL, 'available', '2025-06-16 09:07:27', NULL, NULL, NULL, 3, NULL, NULL, 3, NULL, 'جراند اوتيل 2', NULL, NULL, NULL, NULL, NULL, 'rgrgrgr', 'hrrgrg', 'fhfhfhfg', 22, '', '', '', ''),
-(11, 1, 'سبسببس', '', 'يبييبيب', 33333333.00, 333.00, NULL, 4, 'available', '2025-06-16 09:13:15', 1, NULL, 5, 2, 4444.00, NULL, 3, NULL, 'يبسبسيب', NULL, NULL, NULL, NULL, NULL, 'سبسببسي', 'بسبسب', 'سبببب', 2, '', '', '', ''),
-(12, 1, 'سبسببس', '', 'يبييبيب', 33333333.00, 333.00, NULL, 4, 'available', '2025-06-16 09:19:01', 1, NULL, 5, 2, 4444.00, NULL, 3, NULL, 'يبسبسيب', NULL, NULL, NULL, NULL, NULL, 'سبسببسي', 'بسبسب', 'سبببب', 2, '', '', '', ''),
-(14, 1, 'sass', '', '', 1.00, 1.00, NULL, NULL, 'available', '2025-07-23 09:02:17', 3, NULL, 1, 1, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, 'sa', 'sa', '', NULL, '', '', '', '');
+INSERT INTO `properties` (`PropertyID`, `PropertyTypeID`, `Title`, `Description`, `Location`, `Price`, `Area`, `Bedrooms`, `Bathrooms`, `Status`, `DateAdded`, `EmployeeID`, `unit_design_id`, `finishing_type_id`, `compound_area`, `down_payment_percentage`, `payment_years`, `delivery_date`, `ProjectName`, `min_price`, `max_price`, `min_area`, `max_area`, `avg_area`, `district`, `governorate`, `company_name`, `FloorsCount`, `sales_manager_name`, `sales_manager_phone`, `salesperson_name`, `salesperson_phone`) VALUES
+(1, 1, 'شقة فاخرة بالتجمع الخامس', 'شقة 3 غرف نوم بإطلالة مميزة في كمبوند XYZ', 'التجمع الخامس, القاهرة الجديدة', 2500000.00, 180.00, 3, 2, 'available', '2025-06-02 11:21:41', 1, 1, 3, 50000.00, 10.00, 7, '2025-12-31', 'كمبوند XY', NULL, NULL, NULL, NULL, NULL, 'التجمع الخامس', 'القاهرة', 'شركة التطوير الحديث', 5, 'احمد', '01111132239', 'حسن', '01211132239'),
+(2, 1, 'فيلا مستقلة بالشيخ زايد', 'فيلا بحديقة خاصة وحمام سباحة', 'الشيخ زايد, الجيزة', 7000000.00, 450.00, 5, 4, 'available', '2025-06-02 11:21:41', 1, 2, NULL, 100000.00, 15.00, 10, '2026-06-30', 'زايد ديونز', NULL, NULL, 400.00, 500.00, 450.00, 'الشيخ زايد', 'الجيزة', 'شركة إعمار', 2, NULL, NULL, NULL, NULL),
+(3, 2, 'شاليه بالساحل الشمالي', 'شاليه يرى البحر مباشرة في قرية ABC', 'الكيلو 120, الساحل الشمالي', 1800000.00, 120.00, 2, 1, 'available', '2025-06-02 11:21:41', 2, 4, 3, NULL, 20.00, 5, '2024-08-01', 'قرية ABC', 1700000.00, 1900000.00, 110.00, 130.00, 120.00, 'سيدي عبد الرحمن', 'مطروح', 'مجموعة طلعت مصطفى', 3, '', '', '', ''),
+(4, 4, 'محل تجاري بمول العرب', 'محل بموقع متميز في مول العرب', 'مول العرب, 6 أكتوبر', 4000000.00, 80.00, NULL, NULL, 'available', '2025-06-02 11:21:41', 1, NULL, 1, NULL, 25.00, 5, NULL, 'مول العرب', NULL, NULL, NULL, NULL, 80.00, 'الحي المتميز', 'الجيزة', 'مجموعة الفطيم', 1, NULL, NULL, NULL, NULL),
+(5, 3, 'مكتب إداري بالعاصمة الإدارية', 'مكتب إداري متشطب بالتكييفات في برج DEF', 'الحي المالي, العاصمة الإدارية الجديدة', 1500000.00, 95.00, NULL, NULL, 'available', '2025-06-02 11:21:41', 1, 1, 3, NULL, 10.00, 8, '2025-01-15', 'برج DEF', 1400000.00, 1600000.00, 90.00, 100.00, 95.00, 'الحي المالي', 'القاهرة', 'شركة العاصمة', 15, '', '', '', ''),
+(6, 6, 'عيادة طبية بمدينة نصر', 'عيادة مجهزة بالكامل في مركز طبي شهير', 'شارع الطيران, مدينة نصر', 1200000.00, 70.00, NULL, NULL, 'rented', '2025-06-02 11:21:41', 2, 3, 3, NULL, NULL, NULL, NULL, 'المركز الطبي الدولي', NULL, NULL, NULL, NULL, NULL, 'مدينة نصر شرق', 'القاهرة', '', 8, '', '', '', ''),
+(10, 5, 'hfhfhf', '', 'grggrrgr', 3333333.00, 333.00, NULL, NULL, 'available', '2025-06-16 09:07:27', NULL, NULL, 3, NULL, NULL, 3, NULL, 'جراند اوتيل 2', NULL, NULL, NULL, NULL, NULL, 'rgrgrgr', 'hrrgrg', 'fhfhfhfg', 22, '', '', '', ''),
+(11, 1, 'سبسببس', '', 'يبييبيب', 33333333.00, 333.00, NULL, 4, 'available', '2025-06-16 09:13:15', 1, 5, 2, 4444.00, NULL, 3, NULL, 'يبسبسيب', NULL, NULL, NULL, NULL, NULL, 'سبسببسي', 'بسبسب', 'سبببب', 2, '', '', '', ''),
+(12, 1, 'سبسببس', '', 'يبييبيب', 33333333.00, 333.00, NULL, 4, 'available', '2025-06-16 09:19:01', 1, 5, 2, 4444.00, NULL, 3, NULL, 'يبسبسيب', NULL, NULL, NULL, NULL, NULL, 'سبسببسي', 'بسبسب', 'سبببب', 2, '', '', '', ''),
+(22, 1, '', '', '', 3.00, 3.00, NULL, NULL, 'available', '2025-07-23 14:22:24', 1, 1, 1, NULL, NULL, NULL, NULL, 'ا', NULL, NULL, NULL, NULL, NULL, 'لا', 'لا', '', NULL, '', '', '', ''),
+(23, 2, '', '', '', 4.00, 4.00, NULL, NULL, 'available', '2025-07-23 14:22:53', 1, 2, 2, NULL, NULL, NULL, NULL, 'ؤ', NULL, NULL, NULL, NULL, NULL, 'ؤ', 'ؤ', '', NULL, '', '', '', ''),
+(24, 5, 'ww', '', '', 2.00, 2.00, NULL, NULL, 'available', '2025-07-23 14:23:18', NULL, NULL, 3, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, 'ث', 'ث', '', NULL, '', '', '', ''),
+(25, 4, 'jjj', '', '', 2.00, 2.00, NULL, NULL, 'available', '2025-07-23 14:25:26', NULL, NULL, 1, NULL, NULL, NULL, NULL, 'ءء', NULL, NULL, NULL, NULL, NULL, 'ء', 'ء', '', NULL, '', '', '', ''),
+(26, 1, '', '', '', 2.00, 2.00, NULL, NULL, 'available', '2025-07-23 14:27:28', 1, 7, 1, NULL, NULL, NULL, NULL, 'q', NULL, NULL, NULL, NULL, NULL, 'q', 'q', '', NULL, '', '', '', ''),
+(27, 2, 'h', '', '', 2.00, 22.00, NULL, NULL, 'available', '2025-07-23 14:28:44', 1, 2, 2, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, 'c', 'c', '', NULL, '', '', '', ''),
+(28, 1, 'b', '', '', 1.00, 1.00, NULL, NULL, 'available', '2025-07-23 14:29:51', 3, 3, 2, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, 'asa', 'ass', 'b', NULL, '', '', '', ''),
+(29, 3, 'z', '', '', 1.00, 1.00, NULL, NULL, 'sold', '2025-07-23 15:07:18', NULL, NULL, 2, NULL, NULL, NULL, NULL, 'z', NULL, NULL, NULL, NULL, NULL, 'z', 'z', '', NULL, '', '', '', '');
 
 -- --------------------------------------------------------
 
@@ -233,13 +216,6 @@ INSERT INTO `property_images` (`image_id`, `property_id`, `file_path`, `upload_d
 --
 
 --
--- Indexes for table `clients`
---
-ALTER TABLE `clients`
-  ADD PRIMARY KEY (`ClientID`),
-  ADD UNIQUE KEY `Email` (`Email`);
-
---
 -- Indexes for table `employees`
 --
 ALTER TABLE `employees`
@@ -253,7 +229,6 @@ ALTER TABLE `properties`
   ADD PRIMARY KEY (`PropertyID`),
   ADD KEY `FK_PropertyType` (`PropertyTypeID`),
   ADD KEY `FK_EmployeeAdded` (`EmployeeID`),
-  ADD KEY `FK_ClientOwner` (`ClientID`),
   ADD KEY `FK_UnitDesign` (`unit_design_id`),
   ADD KEY `FK_FinishingType` (`finishing_type_id`);
 
@@ -297,12 +272,6 @@ ALTER TABLE `property_images`
 --
 
 --
--- AUTO_INCREMENT for table `clients`
---
-ALTER TABLE `clients`
-  MODIFY `ClientID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
 -- AUTO_INCREMENT for table `employees`
 --
 ALTER TABLE `employees`
@@ -312,7 +281,7 @@ ALTER TABLE `employees`
 -- AUTO_INCREMENT for table `properties`
 --
 ALTER TABLE `properties`
-  MODIFY `PropertyID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `PropertyID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT for table `propertyfinishingtypes`
@@ -352,7 +321,6 @@ ALTER TABLE `property_images`
 -- Constraints for table `properties`
 --
 ALTER TABLE `properties`
-  ADD CONSTRAINT `FK_ClientOwner` FOREIGN KEY (`ClientID`) REFERENCES `clients` (`ClientID`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `FK_EmployeeAdded` FOREIGN KEY (`EmployeeID`) REFERENCES `employees` (`EmployeeID`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `FK_FinishingType` FOREIGN KEY (`finishing_type_id`) REFERENCES `propertyfinishingtypes` (`FinishingID`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `FK_PropertyType` FOREIGN KEY (`PropertyTypeID`) REFERENCES `propertytypes` (`PropertyTypeID`) ON UPDATE CASCADE,
