@@ -52,6 +52,10 @@ return [
     'property_type' => 'نوع العقار',
     'all_types' => 'جميع الأنواع',
     'status' => 'الحالة',
+    'listing_type' => 'نوع الإدراج',
+    'primary' => 'أساسي (Primary)',
+    'resale' => 'إعادة بيع (Resale)',
+    'all' => 'الكل',
     'all_statuses' => 'جميع الحالات',
     'available' => 'متاح',
     'sold' => 'مباع',
@@ -190,6 +194,7 @@ return [
     'table_header_finishing_type' => 'نوع التشطيب',
     'table_header_delivery_date' => 'تاريخ الاستلام',
     'table_header_status' => 'الحالة',
+    'table_header_listing' => 'الإدراج',
     'table_header_assigned_employee' => 'الموظف المسؤول',
     'table_header_actions' => 'الإجراءات',
     

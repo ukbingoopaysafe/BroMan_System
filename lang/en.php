@@ -52,6 +52,10 @@ return [
     'property_type' => 'Property Type',
     'all_types' => 'All Types',
     'status' => 'Status',
+    'listing_type' => 'Listing Type',
+    'primary' => 'Primary',
+    'resale' => 'Resale',
+    'all' => 'All',
     'all_statuses' => 'All Statuses',
     'available' => 'Available',
     'sold' => 'Sold',
@@ -191,6 +195,7 @@ return [
     'table_header_finishing_type' => 'Finishing Type',
     'table_header_delivery_date' => 'Delivery Date',
     'table_header_status' => 'Status',
+    'table_header_listing' => 'Listing',
     'table_header_assigned_employee' => 'Assigned Employee',
     'table_header_actions' => 'Actions',
     
