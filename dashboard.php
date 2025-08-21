@@ -166,7 +166,7 @@ if (can_manage_employees()) {
                 <a href="add_residential_property.php" class="btn btn-primary"><?php echo t('add_new_residential_property'); ?></a>
                 <a href="add_coastal_property.php" class="btn btn-primary"><?php echo t('add_new_coastal_property'); ?></a>
                 <a href="add_other_property.php" class="btn btn-primary"><?php echo t('add_new_commercial_property'); ?></a>
-                <?php if (isset($_SESSION["role"]) && $_SESSION["role"] === 'admin'): ?>
+                <?php if (isset($_SESSION["role"]) && $_SESSION["role"] === 'manager'): ?>
                     <a href="add_employee.php" class="btn btn-primary"><?php echo t('add_new_employee'); ?></a>
                 <?php endif; ?>
             </div>
