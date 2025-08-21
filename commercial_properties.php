@@ -168,13 +168,7 @@ if (!empty($status_filter)) {
     $types .= "s";
 }
 
-// Add listing type filter via tabs
-$listing_type_tab = isset($_GET['listing_type_tab']) ? trim($_GET['listing_type_tab']) : '';
-if (in_array($listing_type_tab, ['Primary', 'Resale'], true)) {
-    $sql_where[] = "p.listing_type = ?";
-    $params[] = $listing_type_tab;
-    $types .= "s";
-}
+
 
 // Add advanced filters
 if (!empty($min_price_filter)) {
@@ -358,7 +352,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
 <div class="container">
     <!-- Page Header and Property Type Tabs -->
     <?php require_once __DIR__ . '/property_header_tabs.php'; ?>
-    <?php require_once __DIR__ . '/property_listing_tabs.php'; ?>
+
 
     <!-- Enhanced Filter Section -->
     <div class="filter-section">

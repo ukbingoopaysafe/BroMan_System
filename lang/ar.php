@@ -15,6 +15,8 @@ return [
     'all_properties' => 'جميع العقارات',
     'residential_properties' => 'عقارات سكنية',
     'coastal_properties' => 'عقارات ساحلية',
+    'primary_properties' => 'العقارات الأساسية',
+    'resale_properties' => 'عقارات إعادة البيع',
     'commercial_properties' => 'عقارات تجارية وإدارية وطبية وفندقية',
     'commercial_administrative_medical_hotel' => 'تجاري وإداري وطبي وفندقي',
 

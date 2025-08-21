@@ -15,6 +15,8 @@ return [
     'all_properties' => 'All Properties',
     'residential_properties' => 'Residential Properties',
     'coastal_properties' => 'Coastal Properties',
+    'primary_properties' => 'Primary Properties',
+    'resale_properties' => 'Resale Properties',
     'commercial_properties' => 'Commercial, Administrative, Medical & Hotel Properties',
     'commercial_administrative_medical_hotel' => 'Commercial, Administrative, Medical & Hotel',
 
