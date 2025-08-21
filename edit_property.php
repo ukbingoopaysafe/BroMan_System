@@ -29,6 +29,7 @@ $property_id = $title = $property_type_id = $price = $location = $description = 
 $unit_design_id = $finishing_type_id = $compound_area = $down_payment_percentage = $payment_years = $delivery_date = "";
 $project_name = $min_price = $max_price = $min_area = $max_area = $avg_area = $district = $governorate = $company_name = $floors_count = $bathrooms = "";
 $sales_manager_name = $sales_manager_phone = $salesperson_name = $salesperson_phone = "";
+$listing_type = 'Primary';
 
 $errors = []; // Array to hold errors
 
@@ -95,6 +96,7 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $area = $row["Area"];
                 $bathrooms = $row["Bathrooms"];
                 $status = $row["Status"];
+                $listing_type = $row["listing_type"] ?? 'Primary';
                 $unit_design_id = $row["unit_design_id"];
                 $finishing_type_id = $row["finishing_type_id"];
                 $compound_area = $row["compound_area"];
@@ -156,6 +158,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $area_posted = isset($_POST["area"]) && trim($_POST["area"]) !== "" ? trim($_POST["area"]) : null;
     $bathrooms_posted = isset($_POST["bathrooms"]) && trim($_POST["bathrooms"]) !== "" ? trim($_POST["bathrooms"]) : null;
     $status_posted = isset($_POST["status"]) ? trim($_POST["status"]) : "available";
+    $listing_type_posted = isset($_POST['listing_type']) ? trim($_POST['listing_type']) : 'Primary';
+    $listing_type_posted = ($listing_type_posted === 'Resale') ? 'Resale' : 'Primary';
     $unit_design_id_posted = isset($_POST['unit_design_id']) && trim($_POST['unit_design_id']) !== '' ? trim($_POST['unit_design_id']) : null;
     $finishing_type_id_posted = isset($_POST['finishing_type_id']) && trim($_POST['finishing_type_id']) !== '' ? trim($_POST['finishing_type_id']) : null;
     $compound_area_posted = isset($_POST['compound_area']) && trim($_POST['compound_area']) !== '' ? trim($_POST['compound_area']) : null;
@@ -229,12 +233,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             compound_area = ?, down_payment_percentage = ?, payment_years = ?, delivery_date = ?, 
             ProjectName = ?, min_price = ?, max_price = ?, min_area = ?, max_area = ?, avg_area = ?, 
             district = ?, governorate = ?, company_name = ?, FloorsCount = ?,
-            sales_manager_name = ?, sales_manager_phone = ?, salesperson_name = ?, salesperson_phone = ?
+            sales_manager_name = ?, sales_manager_phone = ?, salesperson_name = ?, salesperson_phone = ?,
+            listing_type = ?
             WHERE PropertyID = ?";
 
         if ($stmt_update = $conn->prepare($sql_update)) {
             $stmt_update->bind_param(
-                "isssddisiiddissdddddsssissssi",
+                "isssddisiiddissdddddsssissssis",
                 $property_type_id_posted,
                 $title_posted,
                 $description_posted,
@@ -263,6 +268,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $sales_manager_phone_posted,
                 $salesperson_name_posted,
                 $salesperson_phone_posted,
+                $listing_type_posted,
                 $property_id
             );
 
@@ -566,6 +572,13 @@ $conn->close();
                         <?php if (isset($errors['status'])) {
                             echo "<span class='error-message'>" . $errors['status'] . "</span>";
                         } ?>
+                    </div>
+                    <div class="form-group">
+                        <label for="listing_type"><?php echo t('listing_type'); ?></label>
+                        <select id="listing_type" name="listing_type">
+                            <option value="Primary" <?php echo ($listing_type == 'Primary') ? 'selected' : ''; ?>><?php echo t('primary'); ?></option>
+                            <option value="Resale" <?php echo ($listing_type == 'Resale') ? 'selected' : ''; ?>><?php echo t('resale'); ?></option>
+                        </select>
                     </div>
                 </div>
             </div>

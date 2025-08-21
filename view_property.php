@@ -25,7 +25,7 @@ $property_id = intval($_GET['id']);
 $property = null;
 $sql = "SELECT p.*, pt.TypeName, 
                e.FullName AS EmployeeName,
-               pud.DesignName AS UnitDesignName, pft.FinishingName AS FinishingTypeName
+               pud.DesignName AS UnitDesignName, pft.FinishingName AS FinishingTypeName, p.listing_type
         FROM Properties p
         LEFT JOIN PropertyTypes pt ON p.PropertyTypeID = pt.PropertyTypeID
         LEFT JOIN Employees e ON p.EmployeeID = e.EmployeeID
@@ -333,6 +333,10 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('status'); ?>:</span>
                         <span class="detail-value"><?php echo t($property['Status'] ?: 'undefined'); ?></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('listing_type'); ?>:</span>
+                        <span class="detail-value"><?php echo t(strtolower($property['listing_type'] ?? 'Primary')); ?></span>
                     </div>
                 </div>
             </div>

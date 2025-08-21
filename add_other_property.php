@@ -79,6 +79,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $payment_years = filter_input(INPUT_POST, 'payment_years', FILTER_VALIDATE_INT);
     $delivery_date_str = trim($_POST['delivery_date'] ?? '');
     $status = trim($_POST['status'] ?? 'available');
+    $listing_type = isset($_POST['listing_type']) ? trim($_POST['listing_type']) : 'Primary';
+    $listing_type = ($listing_type === 'Resale') ? 'Resale' : 'Primary';
     $employee_id = $_SESSION['id'] ?? null; // Use 'id' from your session if that's the key
     $sales_manager_name = trim($_POST['sales_manager_name'] ?? '');
     $sales_manager_phone = trim($_POST['sales_manager_phone'] ?? '');
@@ -112,7 +114,8 @@ $sql = "INSERT INTO Properties (
     Price, down_payment_percentage, payment_years, delivery_date, Status,
     EmployeeID,
     sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone,
-    ProjectName
+    ProjectName,
+    listing_type
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 $date_added = date("Y-m-d H:i:s");
@@ -144,11 +147,12 @@ $params = array(
     $salesperson_name,
     $salesperson_phone,
     $project_name,
+    $listing_type,
     
 );
 
 
-$types = "issssssiddiddiddississssss"; // ✔️ طوله = 26
+$types = "issssssiddiddiddississsssss"; // increased by 1 for listing_type
 
 
 error_log("DEBUG: \$types string: " . $types);
@@ -249,6 +253,13 @@ if ($stmt = $conn->prepare($sql)) {
                         <option value="sold" <?php echo (($_POST['status'] ?? '') == 'sold') ? 'selected' : ''; ?>><?php echo t('sold'); ?></option>
                         <option value="rented" <?php echo (($_POST['status'] ?? '') == 'rented') ? 'selected' : ''; ?>><?php echo t('rented'); ?></option>
                         <option value="unavailable" <?php echo (($_POST['status'] ?? '') == 'unavailable') ? 'selected' : ''; ?>><?php echo t('unavailable'); ?></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="listing_type"><?php echo t('listing_type'); ?>:</label>
+                    <select id="listing_type" name="listing_type" class="form-input">
+                        <option value="Primary" <?php echo (($_POST['listing_type'] ?? 'Primary') == 'Primary') ? 'selected' : ''; ?>><?php echo t('primary'); ?></option>
+                        <option value="Resale" <?php echo (($_POST['listing_type'] ?? '') == 'Resale') ? 'selected' : ''; ?>><?php echo t('resale'); ?></option>
                     </select>
                 </div>
             </div>

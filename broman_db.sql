@@ -62,6 +62,7 @@ CREATE TABLE `properties` (
   `Bedrooms` int(11) DEFAULT NULL,
   `Bathrooms` int(11) DEFAULT NULL,
   `Status` enum('available','sold','rented','unavailable') DEFAULT 'available',
+  `listing_type` enum('Primary','Resale') NOT NULL DEFAULT 'Primary',
   `DateAdded` timestamp NULL DEFAULT current_timestamp(),
   `EmployeeID` int(11) DEFAULT NULL COMMENT 'FK to Employees who added it',
   `unit_design_id` int(11) DEFAULT NULL COMMENT 'FK to PropertyUnitDesigns',

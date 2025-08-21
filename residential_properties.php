@@ -14,6 +14,7 @@ const CURRENT_PROPERTY_TYPE_ID = 1;
 
 // Initialize search and filter variables
 $search_term = $governorate_filter = $company_filter = $status_filter = $property_type_filter = "";
+$listing_type_filter = "";
 $min_price_filter = $max_price_filter = $min_area_filter = $max_area_filter = $down_payment_filter = $payment_period_filter = "";
 $unit_design_filter = "";
 $view_mode = isset($_GET['view']) && $_GET['view'] === 'card' ? 'card' : 'table';
@@ -45,6 +46,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     $company_filter = isset($_GET['company']) ? trim($_GET['company']) : '';
     $unit_design_filter = isset($_GET['unit_design']) ? trim($_GET['unit_design']) : '';
     $status_filter = isset($_GET['status']) ? trim($_GET['status']) : '';
+    $listing_type_filter = isset($_GET['listing_type']) ? trim($_GET['listing_type']) : '';
     $property_type_filter = isset($_GET['property_type']) ? trim($_GET['property_type']) : '';
 
     // Advanced filters
@@ -113,7 +115,7 @@ if ($stmt_types = $conn->prepare($sql_property_types)) {
 
 // Build the main SQL query with proper joins for unit design and finishing type
 $sql_select = "SELECT p.*, pt.TypeName AS PropertyTypeName, e.FullName AS EmployeeName,
-               pud.DesignName AS UnitDesignName, pft.FinishingName AS FinishingTypeName
+               pud.DesignName AS UnitDesignName, pft.FinishingName AS FinishingTypeName, p.listing_type
                FROM Properties p
                LEFT JOIN PropertyTypes pt ON p.PropertyTypeID = pt.PropertyTypeID
                LEFT JOIN Employees e ON p.EmployeeID = e.EmployeeID
@@ -163,6 +165,13 @@ if (!empty($unit_design_filter)) {
 if (!empty($status_filter)) {
     $sql_where[] = "p.Status = ?";
     $params[] = $status_filter;
+    $types .= "s";
+}
+
+// Add listing type filter
+if (!empty($listing_type_filter) && in_array($listing_type_filter, ['Primary', 'Resale'], true)) {
+    $sql_where[] = "p.listing_type = ?";
+    $params[] = $listing_type_filter;
     $types .= "s";
 }
 
@@ -404,6 +413,14 @@ function getPropertyTypeBadge($typeId, $typeName) {
                     </select>
                 </div>
                 <div class="filter-item">
+                    <label for="listing_type_filter"><?php echo t('listing_type'); ?>:</label>
+                    <select id="listing_type_filter" name="listing_type" class="form-control">
+                        <option value=""><?php echo t('all'); ?></option>
+                        <option value="Primary" <?php echo $listing_type_filter==='Primary'?'selected':''; ?>><?php echo t('primary'); ?></option>
+                        <option value="Resale" <?php echo $listing_type_filter==='Resale'?'selected':''; ?>><?php echo t('resale'); ?></option>
+                    </select>
+                </div>
+                <div class="filter-item">
                     <label for="unit_design"><?php echo t('unit_design'); ?>:</label>
                     <select id="unit_design" name="unit_design" class="form-control">
                         <option value=""><?php echo t('all_designs'); ?></option>
@@ -492,6 +509,9 @@ function getPropertyTypeBadge($typeId, $typeName) {
                         <div class="property-status-badge status-<?php echo $property['Status']; ?>">
                             <?php echo t('status_' . $property['Status']); ?>
                         </div>
+                        <div class="property-listing-badge listing-<?php echo strtolower($property['listing_type'] ?? 'Primary'); ?>">
+                            <?php echo t(strtolower($property['listing_type'] ?? 'Primary')); ?>
+                        </div>
                     </div>
                     <div class="property-content">
                         <div class="property-title">
@@ -578,6 +598,9 @@ function getPropertyTypeBadge($typeId, $typeName) {
                             <i class="fas fa-info-circle"></i> <?php echo t('status'); ?>
                             <?php echo getSortIcon('Status', $sort_column, $sort_direction); ?>
                         </th>
+                        <th class="cell-listing">
+                            <i class="fas fa-tags"></i> <?php echo t('table_header_listing'); ?>
+                        </th>
                         <?php if (can_manage_properties()): ?>
                         <th class="cell-actions">
                             <i class="fas fa-cogs"></i> <?php echo t('table_header_actions'); ?>
@@ -626,6 +649,11 @@ function getPropertyTypeBadge($typeId, $typeName) {
                             </td>
                             <td class="cell-status">
                                 <?php echo getStatusBadge($property['Status']); ?>
+                            </td>
+                            <td class="cell-listing">
+                                <span class="listing-badge listing-<?= strtolower($property['listing_type'] ?? 'Primary'); ?>">
+                                    <?php echo t(strtolower($property['listing_type'] ?? 'Primary')); ?>
+                                </span>
                             </td>
                             <?php if (can_manage_properties()): ?>
                             <td class="cell-actions">

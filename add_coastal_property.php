@@ -91,6 +91,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $payment_years = filter_input(INPUT_POST, 'payment_years', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $delivery_date_str = trim($_POST['delivery_date'] ?? '');
     $status = trim($_POST['status'] ?? 'available');
+    $listing_type = isset($_POST['listing_type']) ? trim($_POST['listing_type']) : 'Primary';
+    $listing_type = ($listing_type === 'Resale') ? 'Resale' : 'Primary';
     // Auto-assign to current employee instead of selection
     $employee_id = $_SESSION['employee_id'] ?? null;
     // $is_featured = isset($_POST['is_featured']) ? 1 : 0; // Removed is_featured
@@ -151,13 +153,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     Price, down_payment_percentage, payment_years, delivery_date, Status, 
                     EmployeeID, 
                     sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, 
-                    DateAdded
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                    listing_type, DateAdded
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
         if ($stmt = $conn->prepare($sql)) {
             // Adjusted bind_param types - removed bedrooms parameter, added sales fields
             $stmt->bind_param(
-                "isssssssdiiddddiddddisssissss",
+                "isssssssdiiddddiddddisssisssss",
                 $property_type_id,
                 $project_name,
                 $title,
@@ -186,7 +188,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $sales_manager_name,
                 $sales_manager_phone,
                 $salesperson_name,
-                $salesperson_phone
+                $salesperson_phone,
+                $listing_type
             );
 
             if ($stmt->execute()) {
@@ -273,6 +276,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <option value="sold" <?php echo (($_POST['status'] ?? '') == 'sold') ? 'selected' : ''; ?>><?php echo t('sold'); ?></option>
                         <option value="rented" <?php echo (($_POST['status'] ?? '') == 'rented') ? 'selected' : ''; ?>><?php echo t('rented'); ?></option>
                         <option value="unavailable" <?php echo (($_POST['status'] ?? '') == 'unavailable') ? 'selected' : ''; ?>><?php echo t('unavailable'); ?></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="listing_type"><?php echo t('listing_type'); ?>:</label>
+                    <select id="listing_type" name="listing_type" class="form-input">
+                        <option value="Primary" <?php echo (($_POST['listing_type'] ?? 'Primary') == 'Primary') ? 'selected' : ''; ?>><?php echo t('primary'); ?></option>
+                        <option value="Resale" <?php echo (($_POST['listing_type'] ?? '') == 'Resale') ? 'selected' : ''; ?>><?php echo t('resale'); ?></option>
                     </select>
                 </div>
             </div>
