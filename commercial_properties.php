@@ -168,10 +168,11 @@ if (!empty($status_filter)) {
     $types .= "s";
 }
 
-// Add listing type filter
-if (!empty($listing_type_filter) && in_array($listing_type_filter, ['Primary', 'Resale'], true)) {
+// Add listing type filter via tabs
+$listing_type_tab = isset($_GET['listing_type_tab']) ? trim($_GET['listing_type_tab']) : '';
+if (in_array($listing_type_tab, ['Primary', 'Resale'], true)) {
     $sql_where[] = "p.listing_type = ?";
-    $params[] = $listing_type_filter;
+    $params[] = $listing_type_tab;
     $types .= "s";
 }
 
@@ -357,6 +358,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
 <div class="container">
     <!-- Page Header and Property Type Tabs -->
     <?php require_once __DIR__ . '/property_header_tabs.php'; ?>
+    <?php require_once __DIR__ . '/property_listing_tabs.php'; ?>
 
     <!-- Enhanced Filter Section -->
     <div class="filter-section">
@@ -413,14 +415,6 @@ function getPropertyTypeBadge($typeId, $typeName) {
                                 <?php echo htmlspecialchars($company); ?>
                             </option>
                         <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="filter-item">
-                    <label for="listing_type_filter"><?php echo t('listing_type'); ?>:</label>
-                    <select id="listing_type_filter" name="listing_type" class="form-control">
-                        <option value=""><?php echo t('all'); ?></option>
-                        <option value="Primary" <?php echo $listing_type_filter==='Primary'?'selected':''; ?>><?php echo t('primary'); ?></option>
-                        <option value="Resale" <?php echo $listing_type_filter==='Resale'?'selected':''; ?>><?php echo t('resale'); ?></option>
                     </select>
                 </div>
                 <div class="filter-item">

@@ -116,7 +116,7 @@ $sql = "INSERT INTO Properties (
     sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone,
     ProjectName,
     listing_type
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 $date_added = date("Y-m-d H:i:s");
 
@@ -152,7 +152,7 @@ $params = array(
 );
 
 
-$types = "issssssiddiddiddississsssss"; // increased by 1 for listing_type
+$types = "issssssiddddiddddississssss"; // 27 params incl. listing_type as string
 
 
 error_log("DEBUG: \$types string: " . $types);
