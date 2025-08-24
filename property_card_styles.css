@@ -1,3 +1,31 @@
+/* Property card image styling */
+.property-card .property-image {
+    position: relative;
+    overflow: hidden;
+}
+
+.property-card .property-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.property-card .property-image .property-icon-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background-color: #f8f9fa;
+}
+
+.property-card .property-image .property-icon-fallback i {
+    font-size: 3.5rem;
+    color: var(--primary-color);
+    opacity: 0.5;
+}
+
 /* Listing type badge */
 .property-listing-badge {
     position: absolute;

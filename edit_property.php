@@ -188,6 +188,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($title_posted)) {
         $errors['title'] = t('enter_property_title');
     }
+    if (empty($listing_type_posted) || !in_array($listing_type_posted, ['Primary', 'Resale'])) {
+        $errors['listing_type'] = t('select_valid_listing_type');
+    }
     if ($price_posted !== null && (!is_numeric($price_posted) || $price_posted < 0)) {
         $errors["price"] = t("enter_valid_price");
     }
@@ -579,6 +582,9 @@ $conn->close();
                             <option value="Primary" <?php echo ($listing_type == 'Primary') ? 'selected' : ''; ?>><?php echo t('primary'); ?></option>
                             <option value="Resale" <?php echo ($listing_type == 'Resale') ? 'selected' : ''; ?>><?php echo t('resale'); ?></option>
                         </select>
+                        <?php if (isset($errors['listing_type'])) {
+                            echo "<span class='error-message'>" . $errors['listing_type'] . "</span>";
+                        } ?>
                     </div>
                 </div>
             </div>

@@ -59,6 +59,7 @@ return [
     'resale' => 'إعادة بيع (Resale)',
     'all' => 'الكل',
     'all_statuses' => 'جميع الحالات',
+    'all_listing_types' => 'جميع أنواع القوائم',
     'available' => 'متاح',
     'sold' => 'مباع',
     'rented' => 'مؤجر',
@@ -325,6 +326,7 @@ return [
     'error_preparing_statement' => 'خطأ في تحضير استعلام قاعدة البيانات.',
     'invalid_project_url' => 'يرجى إدخال رابط مشروع صحيح (URL).',
     'invalid_property_type_for_page' => 'نوع العقار المحدد غير صالح لهذه الصفحة.',
+    'select_valid_listing_type' => 'يرجى تحديد نوع القائمة الصحيح.',
     'fix_errors_proceed' => 'يرجى إصلاح الأخطاء التالية للمتابعة:',
 
     // New Missing Keys

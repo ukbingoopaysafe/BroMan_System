@@ -59,6 +59,7 @@ return [
     'resale' => 'Resale',
     'all' => 'All',
     'all_statuses' => 'All Statuses',
+    'all_listing_types' => 'All Listing Types',
     'available' => 'Available',
     'sold' => 'Sold',
     'rented' => 'Rented',
@@ -326,6 +327,7 @@ return [
     'error_preparing_statement' => 'Error preparing database statement.',
     'invalid_project_url' => 'Please enter a valid project URL.',
     'invalid_property_type_for_page' => 'The selected property type is not valid for this page.',
+    'select_valid_listing_type' => 'Please select a valid listing type.',
     'fix_errors_proceed' => 'Please fix the following errors to proceed:',
 
     // New Missing Keys
