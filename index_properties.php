@@ -9,6 +9,14 @@ require_once 'permissions.php'; // Include permissions system
 // Check permissions - all logged in users can view properties
 check_permission('view_properties');
 
+// Enforce mode selection - redirect to dashboard if no mode is set
+if (!isset($_SESSION['listing_context']) || ($_SESSION['listing_context'] !== 'Primary' && $_SESSION['listing_context'] !== 'Resale')) {
+    header('Location: dashboard.php');
+    exit();
+}
+
+$current_mode = $_SESSION['listing_context'];
+
 // Initialize search and filter variables
 $search_term = $governorate_filter = $company_filter = $status_filter = $property_type_filter = "";
 $min_price_filter = $max_price_filter = $min_area_filter = $max_area_filter = $down_payment_filter = $payment_period_filter = "";
@@ -119,6 +127,11 @@ $sql_select = "SELECT p.*, pt.TypeName AS PropertyTypeName, e.FullName AS Employ
 $sql_where = [];
 $params = [];
 $types = "";
+
+// Add listing_type filter (mandatory based on session mode)
+$sql_where[] = "p.listing_type = ?";
+$params[] = $current_mode;
+$types .= "s";
 
 // Add search term filter
 if (!empty($search_term)) {

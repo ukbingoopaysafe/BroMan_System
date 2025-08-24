@@ -8,26 +8,20 @@ require_once 'db.php'; // Include database connection
 
 // Fetch statistics for the dashboard
 $stats = [
-    'total_properties' => 0,
+    'primary_count' => 0,
+    'resale_count' => 0,
     'total_employees' => 0,
-    'residential_count' => 0,
-    'coastal_count' => 0,
-    'commercial_admin_medical_hotel_count' => 0,
 ];
 
-// Get total properties and counts by type
-$sql_properties = "SELECT 
-                    COUNT(PropertyID) AS total_count,
-                    SUM(CASE WHEN PropertyTypeID = 1 THEN 1 ELSE 0 END) AS residential_count,
-                    SUM(CASE WHEN PropertyTypeID = 2 THEN 1 ELSE 0 END) AS coastal_count,
-                    SUM(CASE WHEN PropertyTypeID IN (3, 4, 5, 6) THEN 1 ELSE 0 END) AS commercial_admin_medical_hotel_count
-                  FROM properties";
+// Get Primary and Resale property counts
+$sql_properties = "SELECT
+    SUM(CASE WHEN listing_type = 'Primary' THEN 1 ELSE 0 END) AS primary_count,
+    SUM(CASE WHEN listing_type = 'Resale' THEN 1 ELSE 0 END) AS resale_count
+FROM properties";
 if ($result = $conn->query($sql_properties)) {
     $row = $result->fetch_assoc();
-    $stats['total_properties'] = $row['total_count'] ?? 0;
-    $stats['residential_count'] = $row['residential_count'] ?? 0;
-    $stats['coastal_count'] = $row['coastal_count'] ?? 0;
-    $stats['commercial_admin_medical_hotel_count'] = $row['commercial_admin_medical_hotel_count'] ?? 0;
+    $stats['primary_count'] = $row['primary_count'] ?? 0;
+    $stats['resale_count'] = $row['resale_count'] ?? 0;
     $result->free();
 } else {
     error_log("Error fetching property counts: " . $conn->error);
@@ -118,45 +112,29 @@ if (can_manage_employees()) {
             <!-- Removed the text "هذا هو مركزك الرئيسي لإدارة عمليات برومان العقارية" as requested -->
         </div>
 
-        <!-- General Stats -->
+        <!-- Operating Mode Selection -->
+        <h2 style="text-align:center; margin-top: 40px; margin-bottom: 20px;"><?php echo t('choose_operating_mode'); ?></h2>
         <div class="stats-grid">
             <div class="stat-card">
-                 <a href="index_properties.php"> <!-- Fixed link to properties page -->
-                    <h3><?php echo t('total_properties'); ?></h3>
-                    <p><?php echo $stats['total_properties']; ?></p>
-                 </a>
+                <a href="set_mode.php?mode=Primary">
+                    <h3><?php echo t('primary_properties'); ?></h3>
+                    <p><?php echo $stats['primary_count']; ?></p>
+                </a>
+            </div>
+            <div class="stat-card">
+                <a href="set_mode.php?mode=Resale">
+                    <h3><?php echo t('resale_properties'); ?></h3>
+                    <p><?php echo $stats['resale_count']; ?></p>
+                </a>
             </div>
             <?php if (can_manage_employees()): ?>
             <div class="stat-card">
-                 <a href="employees_list.php"> <!-- Link to employees list -->
+                 <a href="employees_list.php">
                     <h3><?php echo t('total_employees'); ?></h3>
                     <p><?php echo $stats['total_employees']; ?></p>
                  </a>
             </div>
             <?php endif; ?>
-        </div>
-
-        <!-- Property Stats by Type -->
-        <h2 style="text-align:center; margin-top: 40px; margin-bottom: 20px;"><?php echo t('property_stats_by_type'); ?></h2>
-        <div class="stats-grid">
-            <div class="stat-card">
-                <a href="residential_properties.php">
-                    <h3><?php echo t('residential_properties'); ?></h3>
-                    <p><?php echo $stats['residential_count']; ?></p>
-                </a>
-            </div>
-            <div class="stat-card">
-                <a href="coastal_properties.php">
-                    <h3><?php echo t('coastal_properties'); ?></h3>
-                    <p><?php echo $stats['coastal_count']; ?></p>
-                </a>
-            </div>
-            <div class="stat-card">
-                <a href="commercial_properties.php">
-                    <h3><?php echo t('commercial_properties'); ?></h3>
-                    <p><?php echo $stats['commercial_admin_medical_hotel_count']; ?></p>
-                </a>
-            </div>
         </div>
 
         <!-- Quick Actions - Removed "add_property.php" link as requested -->

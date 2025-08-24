@@ -12,6 +12,14 @@ if (session_status() == PHP_SESSION_NONE) {
 // Check permissions - only manager and admin can add properties
 check_permission('manage_properties');
 
+// Enforce mode selection - redirect to dashboard if no mode is set
+if (!isset($_SESSION['listing_context']) || ($_SESSION['listing_context'] !== 'Primary' && $_SESSION['listing_context'] !== 'Resale')) {
+    header('Location: dashboard.php');
+    exit();
+}
+
+$current_mode = $_SESSION['listing_context'];
+
 $property_types = [];
 $unit_designs = [];
 $finishing_types = [];
@@ -151,10 +159,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     unit_design_id, min_area, max_area, avg_area, Area, 
                     Bathrooms, finishing_type_id, min_price, max_price, 
                     Price, down_payment_percentage, payment_years, delivery_date, Status, 
-                    EmployeeID, 
+                    listing_type, EmployeeID, 
                     sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, 
                     DateAdded
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
         if ($stmt = $conn->prepare($sql)) {
             // EmployeeID (i), sales_manager_name (s), sales_manager_phone (s), salesperson_name (s), salesperson_phone (s)
@@ -184,6 +192,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $payment_years,
                 $delivery_date,
                 $status,
+                $current_mode,
                 $employee_id,
                 $sales_manager_name,
                 $sales_manager_phone,
@@ -250,11 +259,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" class="form-container">
 
         <!-- Property Type (Hidden/Fixed for this page) -->
-        <input type="hidden" name="property_type_id" value="1"> 
+        <input type="hidden" name="property_type_id" value="1">
+        
+        <!-- Listing Type (Hidden - determined by session mode) -->
+        <input type="hidden" name="listing_type" value="<?php echo htmlspecialchars($current_mode); ?>"> 
 
         <div class="form-section">
             <h3><?php echo t('basic_info'); ?></h3>
             <div class="form-grid">
+                <div class="form-group">
+                    <label><?php echo t('listing_type'); ?>:</label>
+                    <div class="form-display"><?php echo ($current_mode === 'Primary') ? t('primary_properties') : t('resale_properties'); ?></div>
+                </div>
                 <div class="form-group">
                     <label for="project_name"><?php echo t('project_name'); ?>:</label>
                     <input type="text" id="project_name" name="project_name" class="form-input" value="<?php echo htmlspecialchars($_POST['project_name'] ?? ''); ?>">

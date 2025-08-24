@@ -31,6 +31,12 @@ return [
     'add_new_employee' => 'Add New Employee',
     'property_stats_by_type' => 'Property Statistics by Type',
     'view_properties' => 'View Properties',
+    'manage_primary_properties' => 'Manage Primary Properties',
+    'manage_resale_properties' => 'Manage Resale Properties',
+    'primary_properties' => 'Primary Properties',
+    'resale_properties' => 'Resale Properties',
+    'choose_operating_mode' => 'Choose Your Operating Mode',
+    'listing_type' => 'Listing Type',
 
     // Login Page
     'login_page_title' => 'Login',

@@ -10,6 +10,14 @@ if (session_status() == PHP_SESSION_NONE) {
 // Check permissions - only manager and admin can edit properties
 check_permission('manage_properties');
 
+// Enforce mode selection - redirect to dashboard if no mode is set
+if (!isset($_SESSION['listing_context']) || ($_SESSION['listing_context'] !== 'Primary' && $_SESSION['listing_context'] !== 'Resale')) {
+    header('Location: dashboard.php');
+    exit();
+}
+
+$current_mode = $_SESSION['listing_context'];
+
 require_once 'db.php'; // Database connection
 require_once 'media_functions.php'; // Media helper functions
 
@@ -115,6 +123,7 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $sales_manager_phone = $row["sales_manager_phone"] ?? '';
                 $salesperson_name = $row["salesperson_name"] ?? '';
                 $salesperson_phone = $row["salesperson_phone"] ?? '';
+                $listing_type = $row["listing_type"] ?? 'Primary';
             } else {
                 $_SESSION["error_message"] = t('property_not_found');
                 header("Location: index_properties.php");
@@ -393,6 +402,14 @@ $conn->close();
             flex-wrap: wrap;
             gap: 20px;
         }
+        .form-display { 
+            padding: 8px 12px; 
+            background-color: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            border-radius: 4px; 
+            color: #495057; 
+            font-weight: 500;
+        }
         .form-row .form-group {
             flex: 1;
             min-width: 280px; /* Adjust as needed */
@@ -521,6 +538,10 @@ $conn->close();
             <div class="form-section">
                 <h3><?php echo t('basic_info'); ?></h3>
                 <div class="form-row">
+                    <div class="form-group">
+                        <label><?php echo t('listing_type'); ?>:</label>
+                        <div class="form-display"><?php echo ($listing_type === 'Primary') ? t('primary_properties') : t('resale_properties'); ?></div>
+                    </div>
                     <div class="form-group">
                         <label for="property_type_id"><?php echo t('property_type_label'); ?> *</label>
                         <select id="property_type_id" name="property_type_id" required>
