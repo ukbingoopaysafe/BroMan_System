@@ -187,11 +187,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $salesperson_phone_posted = isset($_POST['salesperson_phone']) ? trim($_POST['salesperson_phone']) : null;
    
     // --- Validation ---
-    if (empty($property_type_id_posted)) {
-        $errors['property_type_id'] = t('select_property_type');
+    // Note: Validation matches the "Add Property" forms exactly
+    // Only governorate, district, unit_design_id, and finishing_type_id are required
+    if (empty($governorate_posted)) {
+        $errors['governorate'] = t('governorate_required');
     }
-    if (empty($title_posted)) {
-        $errors['title'] = t('enter_property_title');
+    if (empty($district_posted)) {
+        $errors['district'] = t('district_required');
+    }
+    if (empty($unit_design_id_posted)) {
+        $errors['unit_design_id'] = t('unit_design_required');
+    }
+    if (empty($finishing_type_id_posted)) {
+        $errors['finishing_type_id'] = t('finishing_type_required');
     }
     if ($price_posted !== null && (!is_numeric($price_posted) || $price_posted < 0)) {
         $errors["price"] = t("enter_valid_price");
@@ -543,8 +551,8 @@ $conn->close();
                         <div class="form-display"><?php echo ($listing_type === 'Primary') ? t('primary_properties') : t('resale_properties'); ?></div>
                     </div>
                     <div class="form-group">
-                        <label for="property_type_id"><?php echo t('property_type_label'); ?> *</label>
-                        <select id="property_type_id" name="property_type_id" required>
+                        <label for="property_type_id"><?php echo t('property_type_label'); ?></label>
+                        <select id="property_type_id" name="property_type_id">
                             <option value=""><?php echo t('select_type'); ?></option>
                             <?php foreach ($property_types_list as $type): ?>
                                 <option value="<?php echo $type['PropertyTypeID']; ?>"
@@ -553,9 +561,7 @@ $conn->close();
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <?php if (isset($errors['property_type_id'])) {
-                            echo "<span class='error-message'>" . $errors['property_type_id'] . "</span>";
-                        } ?>
+
                     </div>
                     <div class="form-group">
                         <label for="project_name"><?php echo t('project_name'); ?></label>
@@ -566,9 +572,7 @@ $conn->close();
                     <div class="form-group">
                         <label for="title"><?php echo t('unit_address_optional'); ?></label>
                         <input type="text" id="title" name="title" value="<?php echo htmlspecialchars($title); ?>">
-                        <?php if (isset($errors['title'])) {
-                            echo "<span class='error-message'>" . $errors['title'] . "</span>";
-                        } ?>
+
                     </div>
                     <div class="form-group">
                         <label for="company_name"><?php echo t('company'); ?></label>
@@ -577,16 +581,14 @@ $conn->close();
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="status"><?php echo t('status'); ?> *</label>
-                        <select id="status" name="status" required>
+                        <label for="status"><?php echo t('status'); ?></label>
+                        <select id="status" name="status">
                             <option value="available" <?php echo ($status == 'available') ? 'selected' : ''; ?>><?php echo t('available'); ?></option>
                             <option value="sold" <?php echo ($status == 'sold') ? 'selected' : ''; ?>><?php echo t('sold'); ?></option>
                             <option value="rented" <?php echo ($status == 'rented') ? 'selected' : ''; ?>><?php echo t('rented'); ?></option>
                             <option value="unavailable" <?php echo ($status == 'unavailable') ? 'selected' : ''; ?>><?php echo t('unavailable'); ?></option>
                         </select>
-                        <?php if (isset($errors['status'])) {
-                            echo "<span class='error-message'>" . $errors['status'] . "</span>";
-                        } ?>
+
                     </div>
                 </div>
             </div>
@@ -638,7 +640,7 @@ $conn->close();
                     <div class="form-row">
                         <div class="form-group">
                             <label for="unit_design_id"><?php echo t('unit_design'); ?> *</label>
-                            <select id="unit_design_id" name="unit_design_id">
+                            <select id="unit_design_id" name="unit_design_id" required>
                                 <option value=""><?php echo t('select_unit_design'); ?></option>
                                 <?php foreach ($unit_designs_list as $design): ?>
                                     <option value="<?php echo $design['DesignID']; ?>"
@@ -653,7 +655,7 @@ $conn->close();
                         </div>
                         <div class="form-group">
                             <label for="finishing_type_id"><?php echo t('finishing_type'); ?> *</label>
-                            <select id="finishing_type_id" name="finishing_type_id">
+                            <select id="finishing_type_id" name="finishing_type_id" required>
                                 <option value=""><?php echo t('select_finishing_type'); ?></option>
                                 <?php foreach ($finishing_types_list as $finish): ?>
                                     <option value="<?php echo $finish['FinishingID']; ?>"
@@ -691,7 +693,7 @@ $conn->close();
                         </div>
                         <div class="form-group">
                             <label for="finishing_type_id_commercial"><?php echo t('finishing_type'); ?> *</label>
-                            <select id="finishing_type_id_commercial" name="finishing_type_id">
+                            <select id="finishing_type_id_commercial" name="finishing_type_id" required>
                                 <option value=""><?php echo t('select_finishing_type'); ?></option>
                                 <?php foreach ($finishing_types_list as $finish): ?>
                                     <option value="<?php echo $finish['FinishingID']; ?>"
