@@ -74,141 +74,63 @@ $errors = [];
 $success_message = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // --- Data Validation and Sanitization ---
-    $property_type_id = 1; // Hardcoded for Residential page
+    // --- Data Sanitization ---
+    $property_type_id = 1; // Hardcoded for Residential
+    $listing_type = $_SESSION['listing_context'] ?? 'Primary';
     $project_name = trim($_POST['project_name'] ?? '');
-    $title = trim($_POST['title'] ?? ''); // Optional Title
-    $description = trim($_POST['description'] ?? '');
+    $title = trim($_POST['title'] ?? '');
+    $description = trim($_POST['description'] ?? null);
     $governorate = trim($_POST['governorate'] ?? '');
     $district = trim($_POST['district'] ?? '');
-    $location = trim($_POST['location'] ?? ''); // Detailed Address
-    $company_name = trim($_POST['company_name'] ?? '');
+    $location = trim($_POST['location'] ?? null);
+    $company_name = trim($_POST['company_name'] ?? null);
     $compound_area = filter_input(INPUT_POST, 'compound_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $floors_count = filter_input(INPUT_POST, 'floors_count', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $unit_design_id = filter_input(INPUT_POST, 'unit_design_id', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $min_area = filter_input(INPUT_POST, 'min_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $max_area = filter_input(INPUT_POST, 'max_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $avg_area = filter_input(INPUT_POST, 'avg_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $area = filter_input(INPUT_POST, 'area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE); // Specific area if no range
-    $bedrooms = null; // Not used in form but required by schema
+    $area = filter_input(INPUT_POST, 'area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $bedrooms = null; // Bedrooms field removed from this form
     $bathrooms = filter_input(INPUT_POST, 'bathrooms', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $finishing_type_id = filter_input(INPUT_POST, 'finishing_type_id', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $min_price = filter_input(INPUT_POST, 'min_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $max_price = filter_input(INPUT_POST, 'max_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE); // Specific price if no range
+    $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $down_payment_percentage = filter_input(INPUT_POST, 'down_payment_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $payment_years = filter_input(INPUT_POST, 'payment_years', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $delivery_date_str = trim($_POST['delivery_date'] ?? '');
     $status = trim($_POST['status'] ?? 'available');
-    // Auto-assign to current employee instead of selection
     $employee_id = $_SESSION['employee_id'] ?? null;
-    // $is_featured = isset($_POST['is_featured']) ? 1 : 0; // Removed is_featured
-    $sales_manager_name = trim($_POST['sales_manager_name'] ?? '');
-    $sales_manager_phone = trim($_POST['sales_manager_phone'] ?? '');
-    $salesperson_name = trim($_POST['salesperson_name'] ?? '');
-    $salesperson_phone = trim($_POST['salesperson_phone'] ?? '');
-
-    // --- Basic Validation ---
-    if (empty($project_name) && empty($title)) {
-        $errors[] = t('error_project_or_title_required');
-    }
-    if (empty($governorate)) {
-        $errors[] = t('error_governorate_required');
-    }
-    if (empty($district)) {
-        $errors[] = t('error_district_required');
-    }
-    if ($unit_design_id === null) {
-        $errors[] = t('error_unit_design_required');
-    }
-    if ($finishing_type_id === null) {
-        $errors[] = t('error_finishing_type_required');
-    }
-    if ($area === null && $min_area === null && $max_area === null && $avg_area === null) {
-        $errors[] = t('error_area_required');
-    }
-    if ($price === null && $min_price === null && $max_price === null) {
-        $errors[] = t("error_price_required");
-    }
-
-    // Basic validation for phone numbers (optional, can be enhanced)
-    if (!empty($sales_manager_phone) && !preg_match("/^[0-9\+\-\s\(\)]+$/", $sales_manager_phone)) {
-        $errors[] = t("invalid_phone_format");
-    }
-    if (!empty($salesperson_phone) && !preg_match("/^[0-9\+\-\s\(\)]+$/", $salesperson_phone)) {
-        $errors[] = t("invalid_phone_format");
-    }
-
-    // Validate delivery date format if provided
-    $delivery_date = null;
-    if (!empty($delivery_date_str)) {
-        $date_obj = DateTime::createFromFormat('Y-m-d', $delivery_date_str);
-        if ($date_obj && $date_obj->format('Y-m-d') === $delivery_date_str) {
-            $delivery_date = $delivery_date_str;
-        } else {
-            $errors[] = t('error_invalid_delivery_date');
-        }
-    }
+    $sales_manager_name = trim($_POST['sales_manager_name'] ?? null);
+    $sales_manager_phone = trim($_POST['sales_manager_phone'] ?? null);
+    $salesperson_name = trim($_POST['salesperson_name'] ?? null);
+    $salesperson_phone = trim($_POST['salesperson_phone'] ?? null);
+    $delivery_date = !empty($delivery_date_str) ? $delivery_date_str : null;
 
     // --- Database Insertion ---
-    if (empty($errors)) {
-        // Use actual column names from broman_db.sql
-        $sql = "INSERT INTO Properties (
-                    PropertyTypeID, Title, Description, Location, Price, Area, Bedrooms, Bathrooms, Status, listing_type, DateAdded, EmployeeID, unit_design_id, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_price, max_price, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Price, Area, Bedrooms, Bathrooms, Status, listing_type, EmployeeID, unit_design_id, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_price, max_price, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, DateAdded) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
-        if ($stmt = $conn->prepare($sql)) {
-            // EmployeeID (i), sales_manager_name (s), sales_manager_phone (s), salesperson_name (s), salesperson_phone (s)
-            $stmt->bind_param(
-                "issddiiissiiddddisssddddssssssss",
-                $property_type_id,
-                $title,
-                $description,
-                $location,
-                $price,
-                $area,
-                $bedrooms,
-                $bathrooms,
-                $status,
-                $current_mode,
-                $employee_id,
-                $unit_design_id,
-                $finishing_type_id,
-                $compound_area,
-                $down_payment_percentage,
-                $payment_years,
-                $delivery_date,
-                $project_name,
-                $min_price,
-                $max_price,
-                $min_area,
-                $max_area,
-                $avg_area,
-                $district,
-                $governorate,
-                $company_name,
-                $floors_count,
-                $sales_manager_name,
-                $sales_manager_phone,
-                $salesperson_name,
-                $salesperson_phone
-            );
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param(
+            "isssddiissiiiddssssdddddsssisss",
+            $property_type_id, $title, $description, $location, $price, $area, $bedrooms, $bathrooms, $status, $listing_type, $employee_id, $unit_design_id, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_price, $max_price, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone
+        );
 
-            if ($stmt->execute()) {
-                $_SESSION["success_message"] = t('success_property_added');
-                header("Location: residential_properties.php");
-                exit();
-            } else {
-                $errors[] = t('error_adding_property') . " " . $stmt->error;
-                error_log("Error executing property insert: " . $stmt->error);
-            }
-            $stmt->close();
+        if ($stmt->execute()) {
+            $_SESSION["success_message"] = t('property_added_success');
+            header("Location: residential_properties.php");
+            exit();
         } else {
-            $errors[] = t('database_error') . " " . $conn->error;
-            error_log("Error preparing property insert: " . $conn->error);
+            error_log("DB Error (add_residential_property): " . $stmt->error);
+            $errors[] = t('database_error') . ': ' . $stmt->error;
         }
+        $stmt->close();
+    } else {
+        error_log("DB Prepare Error (add_residential_property): " . $conn->error);
+        $errors[] = t('database_error');
     }
-    $conn->close();
 }
 
 ?>
