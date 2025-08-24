@@ -461,27 +461,48 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                 </div>
             </div>
 
+            <?php 
+            // Check if there is any sales information to display before showing the section
+            if (
+                !empty($property['sales_manager_name']) || 
+                !empty($property['sales_manager_phone']) || 
+                !empty($property['salesperson_name']) || 
+                !empty($property['salesperson_phone'])
+            ): 
+            ?>
             <div class="property-section">
                 <h2><?php echo t('sales_information'); ?></h2>
                 <div class="detail-grid">
+                    <?php if (!empty($property['sales_manager_name'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('sales_manager_name_label'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['sales_manager_name'] ?? t('undefined')); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['sales_manager_name']); ?></span>
                     </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($property['sales_manager_phone'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('sales_manager_phone_label'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['sales_manager_phone'] ?? t('undefined')); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['sales_manager_phone']); ?></span>
                     </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($property['salesperson_name'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('salesperson_name_label'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['salesperson_name'] ?? t('undefined')); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['salesperson_name']); ?></span>
                     </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($property['salesperson_phone'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('salesperson_phone_label'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['salesperson_phone'] ?? t('undefined')); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['salesperson_phone']); ?></span>
                     </div>
+                    <?php endif; ?>
                 </div>
             </div>
+            <?php endif; // End of the main check for sales information ?>
 
             <?php if (!empty($property['owner_name']) || !empty($property['owner_phone'])): ?>
             <div class="property-section">
