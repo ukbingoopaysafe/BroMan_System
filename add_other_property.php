@@ -79,6 +79,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $max_area = filter_input(INPUT_POST, 'max_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $avg_area = filter_input(INPUT_POST, 'avg_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $area = filter_input(INPUT_POST, 'area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $bedrooms = null; // Not used in form but required by schema
+    $bathrooms = null; // Not used in form but required by schema
     $finishing_type_id_raw = $_POST['finishing_type_id'] ?? '';
     $finishing_type_id = is_numeric($finishing_type_id_raw) && $finishing_type_id_raw !== '' ? (int)$finishing_type_id_raw : null;
     $min_price = filter_input(INPUT_POST, 'min_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
@@ -114,15 +116,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 // --- Database Insertion
 $sql = "INSERT INTO Properties (
-    PropertyTypeID, Title, Description, Location,
-    governorate, district, company_name, FloorsCount,
-    min_area, max_area, avg_area, Area,
-    finishing_type_id, min_price, max_price,
-    Price, down_payment_percentage, payment_years, delivery_date, Status,
-    listing_type, EmployeeID,
-    sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone,
-    ProjectName, DateAdded
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+    PropertyTypeID, Title, Description, Location, Price, Area, Bedrooms, Bathrooms, Status, listing_type, DateAdded, EmployeeID, unit_design_id, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_price, max_price, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 $date_added = date("Y-m-d H:i:s");
 
@@ -131,34 +126,37 @@ $params = array(
     $title,
     $description,
     $location,
-    $governorate,
-    $district,
-    $company_name,
-    $floors_count,
-    $min_area,
-    $max_area,
-    $avg_area,
-    $area,
-    $finishing_type_id,
-    $min_price,
-    $max_price,
     $price,
-    $down_payment_percentage,
-    $payment_years,
-    $delivery_date,
+    $area,
+    $bedrooms,
+    $bathrooms,
     $status,
     $current_mode,
     $employee_id,
+    null, // unit_design_id - not used in commercial properties
+    $finishing_type_id,
+    null, // compound_area - not used in commercial properties
+    $down_payment_percentage,
+    $payment_years,
+    $delivery_date,
+    $project_name,
+    $min_price,
+    $max_price,
+    $min_area,
+    $max_area,
+    $avg_area,
+    $district,
+    $governorate,
+    $company_name,
+    $floors_count,
     $sales_manager_name,
     $sales_manager_phone,
     $salesperson_name,
-    $salesperson_phone,
-    $project_name,
-    
+    $salesperson_phone
 );
 
 
-$types = "issssssiddiddiddississssss"; // ✔️ طوله = 28
+$types = "issddiiissiiddddisssddddssssssss"; // ✔️ طوله = 33
 
 
 error_log("DEBUG: \$types string: " . $types);

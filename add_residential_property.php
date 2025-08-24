@@ -90,7 +90,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $max_area = filter_input(INPUT_POST, 'max_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $avg_area = filter_input(INPUT_POST, 'avg_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $area = filter_input(INPUT_POST, 'area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE); // Specific area if no range
-    // Removed bedrooms field as requested
+    $bedrooms = null; // Not used in form but required by schema
     $bathrooms = filter_input(INPUT_POST, 'bathrooms', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $finishing_type_id = filter_input(INPUT_POST, 'finishing_type_id', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $min_price = filter_input(INPUT_POST, 'min_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
@@ -154,46 +154,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($errors)) {
         // Use actual column names from broman_db.sql
         $sql = "INSERT INTO Properties (
-                    PropertyTypeID, ProjectName, Title, Description, Location, 
-                    governorate, district, company_name, compound_area, FloorsCount, 
-                    unit_design_id, min_area, max_area, avg_area, Area, 
-                    Bathrooms, finishing_type_id, min_price, max_price, 
-                    Price, down_payment_percentage, payment_years, delivery_date, Status, 
-                    listing_type, EmployeeID, 
-                    sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, 
-                    DateAdded
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                    PropertyTypeID, Title, Description, Location, Price, Area, Bedrooms, Bathrooms, Status, listing_type, DateAdded, EmployeeID, unit_design_id, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_price, max_price, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         if ($stmt = $conn->prepare($sql)) {
             // EmployeeID (i), sales_manager_name (s), sales_manager_phone (s), salesperson_name (s), salesperson_phone (s)
             $stmt->bind_param(
-                "isssssssdiiddddiddddisssisssss",
+                "issddiiissiiddddisssddddssssssss",
                 $property_type_id,
-                $project_name,
                 $title,
                 $description,
                 $location,
-                $governorate,
-                $district,
-                $company_name,
-                $compound_area,
-                $floors_count,
-                $unit_design_id,
-                $min_area,
-                $max_area,
-                $avg_area,
-                $area,
-                $bathrooms,
-                $finishing_type_id,
-                $min_price,
-                $max_price,
                 $price,
-                $down_payment_percentage,
-                $payment_years,
-                $delivery_date,
+                $area,
+                $bedrooms,
+                $bathrooms,
                 $status,
                 $current_mode,
                 $employee_id,
+                $unit_design_id,
+                $finishing_type_id,
+                $compound_area,
+                $down_payment_percentage,
+                $payment_years,
+                $delivery_date,
+                $project_name,
+                $min_price,
+                $max_price,
+                $min_area,
+                $max_area,
+                $avg_area,
+                $district,
+                $governorate,
+                $company_name,
+                $floors_count,
                 $sales_manager_name,
                 $sales_manager_phone,
                 $salesperson_name,
