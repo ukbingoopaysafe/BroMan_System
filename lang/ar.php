@@ -289,6 +289,7 @@ return [
     'update_property_button' => 'تحديث العقار',
     'save_changes' => 'حفظ التغييرات',
     'property_added_success' => 'تمت إضافة العقار بنجاح!',
+    'property_added_success_now_add_media' => 'تم إنشاء العقار بنجاح. يمكنك الآن إضافة الصور والملاحظات الصوتية.',
     'property_updated_success' => 'تم تحديث بيانات العقار بنجاح!',
     'error_adding_property' => 'حدث خطأ ما أثناء إضافة العقار. يرجى المحاولة مرة أخرى لاحقاً.',
     'error_updating_property' => 'حدث خطأ ما أثناء تحديث العقار. يرجى المحاولة مرة أخرى لاحقاً.',
@@ -342,6 +343,7 @@ return [
     'unit_area_sqm' => 'مساحة الوحدة (م²)',
     'payment_period' => 'فترة السداد',
     'area_and_specifications' => 'المساحة والمواصفات',
+    'add_property_media_note' => 'ملاحظة: بعد إضافة العقار، سيتم توجيهك مباشرةً لرفع الصور والملاحظات الصوتية.',
 
     // Client List
     'manage_clients_title' => 'إدارة العملاء',

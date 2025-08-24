@@ -290,6 +290,7 @@ return [
     'update_property_button' => 'Update Property',
     'save_changes' => 'Save Changes',
     'property_added_success' => 'Property added successfully!',
+    'property_added_success_now_add_media' => 'Property created successfully. You can now add images and voice notes.',
     'property_updated_success' => 'Property updated successfully!',
     'error_adding_property' => 'An error occurred while adding the property. Please try again later.',
     'error_updating_property' => 'An error occurred while updating the property. Please try again later.',
@@ -343,6 +344,7 @@ return [
     'unit_area_sqm' => 'Unit Area (sqm)',
     'payment_period' => 'Payment Period',
     'area_and_specifications' => 'Area and Specifications',
+    'add_property_media_note' => 'Note: After adding the property, you will be redirected to upload images and voice notes.',
 
     // Client List (index.php)
     'manage_clients_title' => 'Manage Clients',

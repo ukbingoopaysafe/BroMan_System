@@ -107,8 +107,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         );
 
         if ($stmt->execute()) {
-            $_SESSION["success_message"] = t('property_added_success');
-            header("Location: commercial_properties.php");
+            $new_property_id = $conn->insert_id;
+            $_SESSION["success_message"] = t('property_added_success_now_add_media');
+            header("Location: edit_property.php?id=" . $new_property_id);
             exit();
         } else {
             error_log("DB Error (add_other_property): " . $stmt->error);
@@ -320,6 +321,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input type="tel" id="salesperson_phone" name="salesperson_phone" class="form-input <?php echo isset($errors["salesperson_phone"]) ? "is-invalid" : ""; ?>" value="<?php echo htmlspecialchars($_POST["salesperson_phone"] ?? ""); ?>">
                 </div>
             </div>
+        </div>
+
+        <div class="form-note">
+            <p><?php echo t('add_property_media_note'); ?></p>
         </div>
 
         <div class="form-actions">
