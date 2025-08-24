@@ -13,6 +13,8 @@ $stats = [
     'residential_count' => 0,
     'coastal_count' => 0,
     'commercial_admin_medical_hotel_count' => 0,
+    'primary_count' => 0,
+    'resale_count' => 0,
 ];
 
 // Get total properties and counts by type
@@ -20,7 +22,9 @@ $sql_properties = "SELECT
                     COUNT(PropertyID) AS total_count,
                     SUM(CASE WHEN PropertyTypeID = 1 THEN 1 ELSE 0 END) AS residential_count,
                     SUM(CASE WHEN PropertyTypeID = 2 THEN 1 ELSE 0 END) AS coastal_count,
-                    SUM(CASE WHEN PropertyTypeID IN (3, 4, 5, 6) THEN 1 ELSE 0 END) AS commercial_admin_medical_hotel_count
+                    SUM(CASE WHEN PropertyTypeID IN (3, 4, 5, 6) THEN 1 ELSE 0 END) AS commercial_admin_medical_hotel_count,
+                    SUM(CASE WHEN listing_type = 'Primary' THEN 1 ELSE 0 END) AS primary_count,
+                    SUM(CASE WHEN listing_type = 'Resale' THEN 1 ELSE 0 END) AS resale_count
                   FROM properties";
 if ($result = $conn->query($sql_properties)) {
     $row = $result->fetch_assoc();
@@ -28,6 +32,8 @@ if ($result = $conn->query($sql_properties)) {
     $stats['residential_count'] = $row['residential_count'] ?? 0;
     $stats['coastal_count'] = $row['coastal_count'] ?? 0;
     $stats['commercial_admin_medical_hotel_count'] = $row['commercial_admin_medical_hotel_count'] ?? 0;
+    $stats['primary_count'] = $row['primary_count'] ?? 0;
+    $stats['resale_count'] = $row['resale_count'] ?? 0;
     $result->free();
 } else {
     error_log("Error fetching property counts: " . $conn->error);
@@ -155,6 +161,18 @@ if (can_manage_employees()) {
                 <a href="commercial_properties.php">
                     <h3><?php echo t('commercial_properties'); ?></h3>
                     <p><?php echo $stats['commercial_admin_medical_hotel_count']; ?></p>
+                </a>
+            </div>
+            <div class="stat-card">
+                <a href="index_properties.php?listing_type=Primary">
+                    <h3><?php echo t('primary_properties'); ?></h3>
+                    <p><?php echo $stats['primary_count']; ?></p>
+                </a>
+            </div>
+            <div class="stat-card">
+                <a href="index_properties.php?listing_type=Resale">
+                    <h3><?php echo t('resale_properties'); ?></h3>
+                    <p><?php echo $stats['resale_count']; ?></p>
                 </a>
             </div>
         </div>
