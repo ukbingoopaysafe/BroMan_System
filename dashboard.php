@@ -138,6 +138,7 @@ if (can_manage_employees()) {
         </div>
 
         <!-- Quick Actions - Removed "add_property.php" link as requested -->
+        <?php if (can_manage_properties()): ?>
         <div class="quick-links">
             <h2><?php echo t('quick_actions'); ?></h2>
             <div>
@@ -149,7 +150,8 @@ if (can_manage_employees()) {
                 <?php endif; ?>
             </div>
         </div>
-
+        <?php endif; ?>
+        
     </div>
 
 <?php

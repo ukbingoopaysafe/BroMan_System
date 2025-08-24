@@ -9,11 +9,6 @@
 -- Part 1: Clean Slate - Clear Transactional Data
 -- =====================================================
 
--- Clear property-related transactional data and reset auto-increment counters
-TRUNCATE TABLE property_audio_notes;
-TRUNCATE TABLE property_images;
-TRUNCATE TABLE properties;
-
 -- Part 2: Population of Properties Table
 -- =====================================================
 
