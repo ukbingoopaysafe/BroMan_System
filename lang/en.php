@@ -182,7 +182,7 @@ return [
     'unit_area' => 'Unit Area',
     
     // Table Headers
-    'table_header_id' => 'ID',
+    'table_header_id' => '#',
     'table_header_title' => 'Title/Name',
     'table_header_project_name' => 'Project Name',
     'table_header_company' => 'Company',

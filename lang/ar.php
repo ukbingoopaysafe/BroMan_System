@@ -181,7 +181,7 @@ return [
     'unit_area' => 'مساحة الوحدة',
     
     // Table Headers
-    'table_header_id' => 'الرقم',
+    'table_header_id' => '#',
     'table_header_title' => 'العنوان/الاسم',
     'table_header_project_name' => 'اسم المشروع',
     'table_header_company' => 'الشركة',

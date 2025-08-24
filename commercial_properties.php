@@ -603,10 +603,11 @@ function getPropertyTypeBadge($typeId, $typeName) {
                     </tr>
                 </thead>
                 <tbody>
+                    <?php $row_number = 1; ?>
                     <?php foreach ($properties as $property): ?>
                         <tr class="property-row" data-property-id="<?php echo $property['PropertyID']; ?>">
                             <td class="cell-id">
-                                <strong><?php echo $property['PropertyID']; ?></strong>
+                                <strong><?php echo $row_number; ?></strong>
                             </td>
                             <td class="cell-project">
                                 <div class="project-title">
@@ -657,6 +658,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
                             </td>
                             <?php endif; ?>
                         </tr>
+                        <?php $row_number++; ?>
                     <?php endforeach; ?>
                 </tbody>
             </table>
