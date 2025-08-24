@@ -37,6 +37,7 @@ $property_id = $title = $property_type_id = $price = $location = $description = 
 $unit_design_id = $finishing_type_id = $compound_area = $down_payment_percentage = $payment_years = $delivery_date = "";
 $project_name = $min_price = $max_price = $min_area = $max_area = $avg_area = $district = $governorate = $company_name = $floors_count = $bathrooms = "";
 $sales_manager_name = $sales_manager_phone = $salesperson_name = $salesperson_phone = "";
+$owner_name = $owner_phone = "";
 
 $errors = []; // Array to hold errors
 
@@ -123,6 +124,8 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $sales_manager_phone = $row["sales_manager_phone"] ?? '';
                 $salesperson_name = $row["salesperson_name"] ?? '';
                 $salesperson_phone = $row["salesperson_phone"] ?? '';
+                $owner_name = $row["owner_name"] ?? '';
+                $owner_phone = $row["owner_phone"] ?? '';
                 $listing_type = $row["listing_type"] ?? 'Primary';
             } else {
                 $_SESSION["error_message"] = t('property_not_found');
@@ -185,6 +188,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $sales_manager_phone_posted = isset($_POST['sales_manager_phone']) ? trim($_POST['sales_manager_phone']) : null;
     $salesperson_name_posted = isset($_POST['salesperson_name']) ? trim($_POST['salesperson_name']) : null;
     $salesperson_phone_posted = isset($_POST['salesperson_phone']) ? trim($_POST['salesperson_phone']) : null;
+    $owner_name_posted = isset($_POST['owner_name']) ? trim($_POST['owner_name']) : null;
+    $owner_phone_posted = isset($_POST['owner_phone']) ? trim($_POST['owner_phone']) : null;
    
     // --- Validation ---
     // Note: Validation matches the "Add Property" forms exactly
@@ -246,12 +251,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             compound_area = ?, down_payment_percentage = ?, payment_years = ?, delivery_date = ?, 
             ProjectName = ?, min_price = ?, max_price = ?, min_area = ?, max_area = ?, avg_area = ?, 
             district = ?, governorate = ?, company_name = ?, FloorsCount = ?,
-            sales_manager_name = ?, sales_manager_phone = ?, salesperson_name = ?, salesperson_phone = ?
+            sales_manager_name = ?, sales_manager_phone = ?, salesperson_name = ?, salesperson_phone = ?,
+            owner_name = ?, owner_phone = ?
             WHERE PropertyID = ?";
 
         if ($stmt_update = $conn->prepare($sql_update)) {
             $stmt_update->bind_param(
-                "isssddisiiddissdddddsssissssi",
+                "isssddisiiddissdddddsssissssssi",
                 $property_type_id_posted,
                 $title_posted,
                 $description_posted,
@@ -280,6 +286,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $sales_manager_phone_posted,
                 $salesperson_name_posted,
                 $salesperson_phone_posted,
+                $owner_name_posted,
+                $owner_phone_posted,
                 $property_id
             );
 
@@ -828,6 +836,21 @@ $conn->close();
                     <div class="form-group">
                         <label for="salesperson_phone"><?php echo t('salesperson_phone_label'); ?></label>
                         <input type="text" id="salesperson_phone" name="salesperson_phone" value="<?php echo htmlspecialchars($salesperson_phone); ?>">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Owner Information Section -->
+            <div class="form-section">
+                <h3><?php echo t('owner_information'); ?></h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="owner_name"><?php echo t('owner_name'); ?></label>
+                        <input type="text" id="owner_name" name="owner_name" value="<?php echo htmlspecialchars($owner_name); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="owner_phone"><?php echo t('owner_phone'); ?></label>
+                        <input type="tel" id="owner_phone" name="owner_phone" value="<?php echo htmlspecialchars($owner_phone); ?>">
                     </div>
                 </div>
             </div>

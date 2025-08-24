@@ -483,6 +483,26 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                 </div>
             </div>
 
+            <?php if (!empty($property['owner_name']) || !empty($property['owner_phone'])): ?>
+            <div class="property-section">
+                <h2><?php echo t('owner_information'); ?></h2>
+                <div class="detail-grid">
+                    <?php if (!empty($property['owner_name'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('owner_name'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['owner_name']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['owner_phone'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('owner_phone'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['owner_phone']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'manager'): ?>
 <div class="property-section">
     <h2><?php echo t('additional_information'); ?></h2>

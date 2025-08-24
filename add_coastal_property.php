@@ -106,16 +106,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $sales_manager_phone = trim($_POST['sales_manager_phone'] ?? null);
     $salesperson_name = trim($_POST['salesperson_name'] ?? null);
     $salesperson_phone = trim($_POST['salesperson_phone'] ?? null);
+    $owner_name = trim($_POST['owner_name'] ?? null);
+    $owner_phone = trim($_POST['owner_phone'] ?? null);
     $delivery_date = !empty($delivery_date_str) ? $delivery_date_str : null;
 
     // --- Database Insertion ---
-    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Price, Area, Bedrooms, Bathrooms, Status, listing_type, EmployeeID, unit_design_id, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_price, max_price, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, DateAdded) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Price, Area, Bedrooms, Bathrooms, Status, listing_type, EmployeeID, unit_design_id, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_price, max_price, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, DateAdded) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
     if ($stmt = $conn->prepare($sql)) {
         $stmt->bind_param(
-            "isssddiissiiiddssssdddddsssisss",
-            $property_type_id, $title, $description, $location, $price, $area, $bedrooms, $bathrooms, $status, $listing_type, $employee_id, $unit_design_id, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_price, $max_price, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone
+            "isssddiissiiiddssssdddddsssisssss",
+            $property_type_id, $title, $description, $location, $price, $area, $bedrooms, $bathrooms, $status, $listing_type, $employee_id, $unit_design_id, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_price, $max_price, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone
         );
 
         if ($stmt->execute()) {
@@ -351,6 +353,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div>
                     <label for="salesperson_phone"><?php echo t("salesperson_phone_label"); ?></label>
                     <input type="tel" id="salesperson_phone" name="salesperson_phone" class="form-input <?php echo isset($errors["salesperson_phone"]) ? "is-invalid" : ""; ?>" value="<?php echo htmlspecialchars($_POST["salesperson_phone"] ?? ""); ?>">
+                </div>
+            </div>
+        </div>
+
+        <!-- Owner Information Section -->
+        <div class="form-section">
+            <h3><?php echo t("owner_information"); ?></h3>
+            <div class="form-grid">
+                <div>
+                    <label for="owner_name"><?php echo t("owner_name"); ?></label>
+                    <input type="text" id="owner_name" name="owner_name" class="form-input" value="<?php echo htmlspecialchars($_POST["owner_name"] ?? ""); ?>">
+                </div>
+                <div>
+                    <label for="owner_phone"><?php echo t("owner_phone"); ?></label>
+                    <input type="tel" id="owner_phone" name="owner_phone" class="form-input" value="<?php echo htmlspecialchars($_POST["owner_phone"] ?? ""); ?>">
                 </div>
             </div>
         </div>
