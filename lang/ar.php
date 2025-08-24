@@ -31,11 +31,11 @@ return [
     'add_new_employee' => 'إضافة موظف جديد',
     'property_stats_by_type' => 'إحصائيات العقارات حسب النوع',
     'view_properties' => 'عرض العقارات',
-    'manage_primary_properties' => 'إدارة العقارات الأولية',
-    'manage_resale_properties' => 'إدارة عقارات إعادة البيع',
-    'primary_properties' => 'العقارات الأولية',
+    'manage_primary_properties' => 'مشاريع جديدة (Primary)',
+    'manage_resale_properties' => 'وحدات إعادة البيع (Resale)',
+    'primary_properties' => 'العقارات الأساسية',
     'resale_properties' => 'عقارات إعادة البيع',
-    'choose_operating_mode' => 'اختر وضع التشغيل الخاص بك',
+    'choose_operating_mode' => 'اختر وجهتك:',
     'listing_type' => 'نوع القائمة',
 
     // Login Page

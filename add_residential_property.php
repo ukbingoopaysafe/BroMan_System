@@ -167,7 +167,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($stmt = $conn->prepare($sql)) {
             // EmployeeID (i), sales_manager_name (s), sales_manager_phone (s), salesperson_name (s), salesperson_phone (s)
             $stmt->bind_param(
-                "isssssssdiiddddiddddisssissss",
+                "isssssssdiiddddiddddisssisssss",
                 $property_type_id,
                 $project_name,
                 $title,

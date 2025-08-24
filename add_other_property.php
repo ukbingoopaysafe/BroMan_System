@@ -121,8 +121,8 @@ $sql = "INSERT INTO Properties (
     Price, down_payment_percentage, payment_years, delivery_date, Status,
     listing_type, EmployeeID,
     sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone,
-    ProjectName
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    ProjectName, DateAdded
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
 $date_added = date("Y-m-d H:i:s");
 
@@ -158,7 +158,7 @@ $params = array(
 );
 
 
-$types = "issssssiddiddiddississssss"; // ✔️ طوله = 27
+$types = "issssssiddiddiddississssss"; // ✔️ طوله = 28
 
 
 error_log("DEBUG: \$types string: " . $types);

@@ -166,7 +166,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($stmt = $conn->prepare($sql)) {
             // Adjusted bind_param types - removed bedrooms parameter, added sales fields
             $stmt->bind_param(
-                "isssssssdiiddddiddddisssissss",
+                "isssssssdiiddddiddddisssisssss",
                 $property_type_id,
                 $project_name,
                 $title,

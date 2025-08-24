@@ -51,7 +51,8 @@ $property_pages = [
         <?php if ($is_logged_in): ?>
             <li><a href="dashboard.php" class="<?php echo ($active_page == "dashboard.php") ? "active" : ""; ?>"><?php echo t('dashboard'); ?></a></li>
             
-            <!-- Properties Dropdown -->
+            <!-- Properties Dropdown - Only show if mode is selected -->
+            <?php if (isset($_SESSION['listing_context'])): ?>
             <li class="dropdown <?php echo (in_array($active_page, ["index_properties.php", "residential_properties.php", "coastal_properties.php", "commercial_properties.php", "edit_property.php"])) ? "active" : ""; ?>">
                 <a href="javascript:void(0)" class="dropbtn"><?php echo t('properties'); ?> <span class="arrow">&#9662;</span></a>
                 <div class="dropdown-content">
@@ -62,7 +63,7 @@ $property_pages = [
                 </div>
             </li>
 
-            <!-- Add Property Dropdown - Only for Manager and Admin -->
+            <!-- Add Property Dropdown - Only for Manager and Admin, and only if mode is selected -->
             <?php if (can_manage_properties()): ?>
             <li class="dropdown <?php echo (in_array($active_page, ["add_residential_property.php", "add_coastal_property.php", "add_other_property.php"])) ? "active" : ""; ?>">
                  <a href="javascript:void(0)" class="dropbtn"><?php echo t('add_new_property'); ?> <span class="arrow">&#9662;</span></a>
@@ -72,6 +73,7 @@ $property_pages = [
                     <a href="add_other_property.php" class="<?php echo ($active_page == "add_other_property.php") ? "active-sub" : ""; ?>"><?php echo t('add_other_property_title'); ?></a>
                  </div>
             </li>
+            <?php endif; ?>
             <?php endif; ?>
 
 
