@@ -165,6 +165,13 @@ if (!empty($status_filter)) {
     $types .= "s";
 }
 
+// Add listing type filter
+if (!empty($listing_type_filter)) {
+    $sql_where[] = "p.listing_type = ?";
+    $params[] = $listing_type_filter;
+    $types .= "s";
+}
+
 
 
 // Add advanced filters
@@ -410,6 +417,14 @@ function getPropertyTypeBadge($typeId, $typeName) {
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <div class="filter-item">
+                    <label for="listing_type"><?php echo t('listing_type'); ?>:</label>
+                    <select id="listing_type" name="listing_type" class="form-control">
+                        <option value=""><?php echo t('all_listing_types'); ?></option>
+                        <option value="Primary" <?php echo $listing_type_filter === 'Primary' ? 'selected' : ''; ?>><?php echo t('primary'); ?></option>
+                        <option value="Resale" <?php echo $listing_type_filter === 'Resale' ? 'selected' : ''; ?>><?php echo t('resale'); ?></option>
+                    </select>
+                </div>
             </div>
 
             <!-- Advanced Filters Toggle -->
@@ -455,7 +470,15 @@ function getPropertyTypeBadge($typeId, $typeName) {
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-search"></i> <?php echo t('filter'); ?>
                 </button>
-                <a href="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>?view=<?php echo $view_mode; ?>" class="btn btn-secondary">
+                <?php
+                // Build reset URL preserving only view and listing_type
+                $reset_params = ['view' => $view_mode];
+                if (isset($_GET['listing_type'])) {
+                    $reset_params['listing_type'] = $_GET['listing_type'];
+                }
+                $reset_url = $_SERVER["PHP_SELF"] . '?' . http_build_query($reset_params);
+                ?>
+                <a href="<?php echo htmlspecialchars($reset_url); ?>" class="btn btn-secondary">
                     <i class="fas fa-undo"></i> <?php echo t('reset'); ?>
                 </a>
             </div>
@@ -464,10 +487,20 @@ function getPropertyTypeBadge($typeId, $typeName) {
 
     <!-- View Toggle -->
     <div class="view-toggle">
-        <a href="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>?view=table<?php echo !empty($_SERVER['QUERY_STRING']) && strpos($_SERVER['QUERY_STRING'], 'view=') === false ? '&' . $_SERVER['QUERY_STRING'] : ''; ?>" class="btn <?php echo $view_mode === 'table' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+        <?php
+        // Build query string preserving all parameters except view
+        $query_params = $_GET;
+        unset($query_params['view']);
+        $query_params['view'] = 'table';
+        $table_url = $_SERVER["PHP_SELF"] . '?' . http_build_query($query_params);
+        
+        $query_params['view'] = 'card';
+        $card_url = $_SERVER["PHP_SELF"] . '?' . http_build_query($query_params);
+        ?>
+        <a href="<?php echo htmlspecialchars($table_url); ?>" class="btn <?php echo $view_mode === 'table' ? 'btn-primary' : 'btn-outline-primary'; ?>">
             <i class="fas fa-list"></i> <?php echo t('table_view'); ?>
         </a>
-        <a href="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>?view=card<?php echo !empty($_SERVER['QUERY_STRING']) && strpos($_SERVER['QUERY_STRING'], 'view=') === false ? '&' . $_SERVER['QUERY_STRING'] : ''; ?>" class="btn <?php echo $view_mode === 'card' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+        <a href="<?php echo htmlspecialchars($card_url); ?>" class="btn <?php echo $view_mode === 'card' ? 'btn-primary' : 'btn-outline-primary'; ?>">
             <i class="fas fa-th"></i> <?php echo t('card_view'); ?>
         </a>
     </div>

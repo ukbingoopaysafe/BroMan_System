@@ -52,12 +52,12 @@ $property_pages = [
             <li><a href="dashboard.php" class="<?php echo ($active_page == "dashboard.php") ? "active" : ""; ?>"><?php echo t('dashboard'); ?></a></li>
             
             <!-- Properties Dropdown -->
-            <li class="dropdown <?php echo (in_array($active_page, ["index_properties.php", "primary_properties.php", "resale_properties.php", "residential_properties.php", "coastal_properties.php", "commercial_properties.php", "edit_property.php"])) ? "active" : ""; ?>">
+            <li class="dropdown <?php echo (in_array($active_page, ["index_properties.php", "residential_properties.php", "coastal_properties.php", "commercial_properties.php", "edit_property.php"])) ? "active" : ""; ?>">
                 <a href="javascript:void(0)" class="dropbtn"><?php echo t('properties'); ?> <span class="arrow">&#9662;</span></a>
                 <div class="dropdown-content">
-                    <a href="index_properties.php" class="<?php echo ($active_page == "index_properties.php") ? "active-sub" : ""; ?>"><?php echo t('all_properties'); ?></a>
-                    <a href="primary_properties.php" class="<?php echo ($active_page == "primary_properties.php") ? "active-sub" : ""; ?>"><?php echo t('primary_properties'); ?></a>
-                    <a href="resale_properties.php" class="<?php echo ($active_page == "resale_properties.php") ? "active-sub" : ""; ?>"><?php echo t('resale_properties'); ?></a>
+                    <a href="index_properties.php" class="<?php echo ($active_page == "index_properties.php" && !isset($_GET['listing_type'])) ? "active-sub" : ""; ?>"><?php echo t('all_properties'); ?></a>
+                    <a href="index_properties.php?listing_type=Primary" class="<?php echo (isset($_GET['listing_type']) && $_GET['listing_type'] == 'Primary') ? "active-sub" : ""; ?>"><?php echo t('primary_properties'); ?></a>
+                    <a href="index_properties.php?listing_type=Resale" class="<?php echo (isset($_GET['listing_type']) && $_GET['listing_type'] == 'Resale') ? "active-sub" : ""; ?>"><?php echo t('resale_properties'); ?></a>
                     <hr>
                     <a href="residential_properties.php" class="<?php echo ($active_page == "residential_properties.php") ? "active-sub" : ""; ?>"><?php echo t('residential_properties'); ?></a>
                     <a href="coastal_properties.php" class="<?php echo ($active_page == "coastal_properties.php") ? "active-sub" : ""; ?>"><?php echo t('coastal_properties'); ?></a>
