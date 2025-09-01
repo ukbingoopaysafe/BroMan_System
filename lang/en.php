@@ -31,6 +31,12 @@ return [
     'add_new_employee' => 'Add New Employee',
     'property_stats_by_type' => 'Property Statistics by Type',
     'view_properties' => 'View Properties',
+    'manage_primary_properties' => 'Manage Primary Properties',
+    'manage_resale_properties' => 'Manage Resale Properties',
+    'primary_properties' => 'Primary Properties',
+    'resale_properties' => 'Resale Properties',
+    'choose_operating_mode' => 'Choose Your Operating Mode',
+    'listing_type' => 'Listing Type',
 
     // Login Page
     'login_page_title' => 'Login',
@@ -176,7 +182,7 @@ return [
     'unit_area' => 'Unit Area',
     
     // Table Headers
-    'table_header_id' => 'ID',
+    'table_header_id' => '#',
     'table_header_title' => 'Title/Name',
     'table_header_project_name' => 'Project Name',
     'table_header_company' => 'Company',
@@ -284,6 +290,7 @@ return [
     'update_property_button' => 'Update Property',
     'save_changes' => 'Save Changes',
     'property_added_success' => 'Property added successfully!',
+    'property_added_success_now_add_media' => 'Property created successfully. You can now add images and voice notes.',
     'property_updated_success' => 'Property updated successfully!',
     'error_adding_property' => 'An error occurred while adding the property. Please try again later.',
     'error_updating_property' => 'An error occurred while updating the property. Please try again later.',
@@ -316,6 +323,10 @@ return [
     'enter_valid_min_area' => 'Please enter a valid minimum area.',
     'enter_valid_max_area' => 'Please enter a valid maximum area.',
     'enter_valid_avg_area' => 'Please enter a valid average area.',
+    'governorate_required' => 'Governorate is required.',
+    'district_required' => 'District is required.',
+    'unit_design_required' => 'Unit design is required.',
+    'finishing_type_required' => 'Finishing type is required.',
     'error_preparing_statement' => 'Error preparing database statement.',
     'invalid_project_url' => 'Please enter a valid project URL.',
     'invalid_property_type_for_page' => 'The selected property type is not valid for this page.',
@@ -337,6 +348,10 @@ return [
     'unit_area_sqm' => 'Unit Area (sqm)',
     'payment_period' => 'Payment Period',
     'area_and_specifications' => 'Area and Specifications',
+    'add_property_media_note' => 'Note: After adding the property, you will be redirected to upload images and voice notes.',
+    'owner_information' => 'Owner Information',
+    'owner_name' => 'Owner Name',
+    'owner_phone' => 'Owner Phone',
 
     // Client List (index.php)
     'manage_clients_title' => 'Manage Clients',

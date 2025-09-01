@@ -10,6 +10,15 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 
 // Check permissions - only manager and admin can add properties
+check_permission('manage_properties');
+
+// Enforce mode selection - redirect to dashboard if no mode is set
+if (!isset($_SESSION['listing_context']) || ($_SESSION['listing_context'] !== 'Primary' && $_SESSION['listing_context'] !== 'Resale')) {
+    header('Location: dashboard.php');
+    exit();
+}
+
+$current_mode = $_SESSION['listing_context'];
 
 // --- Fetch Lookups ---
 $property_types = [];
@@ -53,136 +62,66 @@ $errors = [];
 $success_message = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // --- Data Validation and Sanitization ---
+    // --- Data Sanitization ---
     $property_type_id = filter_input(INPUT_POST, 'property_type_id', FILTER_VALIDATE_INT);
+    $listing_type = $_SESSION['listing_context'] ?? 'Primary';
     $project_name = trim($_POST['project_name'] ?? '');
     $title = trim($_POST['title'] ?? '');
-    $description = trim($_POST['description'] ?? '');
+    $description = trim($_POST['description'] ?? null);
     $governorate = trim($_POST['governorate'] ?? '');
     $district = trim($_POST['district'] ?? '');
-    $location = trim($_POST['location'] ?? '');
-    $company_name = trim($_POST['company_name'] ?? '');
-    $floors_count = filter_input(INPUT_POST, 'floors_count', FILTER_VALIDATE_INT);
-    if ($floors_count === false) {
-        $floors_count = null;
-    }
+    $location = trim($_POST['location'] ?? null);
+    $company_name = trim($_POST['company_name'] ?? null);
+    $floors_count = filter_input(INPUT_POST, 'floors_count', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $min_area = filter_input(INPUT_POST, 'min_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $max_area = filter_input(INPUT_POST, 'max_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $avg_area = filter_input(INPUT_POST, 'avg_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $area = filter_input(INPUT_POST, 'area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $finishing_type_id_raw = $_POST['finishing_type_id'] ?? '';
-    $finishing_type_id = is_numeric($finishing_type_id_raw) && $finishing_type_id_raw !== '' ? (int)$finishing_type_id_raw : null;
+    $bedrooms = null; // Not applicable
+    $bathrooms = null; // Not applicable
+    $unit_design_id = null; // Not applicable
+    $compound_area = null; // Not applicable
+    $finishing_type_id = filter_input(INPUT_POST, 'finishing_type_id', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $min_price = filter_input(INPUT_POST, 'min_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $max_price = filter_input(INPUT_POST, 'max_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $down_payment_percentage = filter_input(INPUT_POST, 'down_payment_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $payment_years = filter_input(INPUT_POST, 'payment_years', FILTER_VALIDATE_INT);
+    $payment_years = filter_input(INPUT_POST, 'payment_years', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $delivery_date_str = trim($_POST['delivery_date'] ?? '');
     $status = trim($_POST['status'] ?? 'available');
-    $employee_id = $_SESSION['id'] ?? null; // Use 'id' from your session if that's the key
-    $sales_manager_name = trim($_POST['sales_manager_name'] ?? '');
-    $sales_manager_phone = trim($_POST['sales_manager_phone'] ?? '');
-    $salesperson_name = trim($_POST['salesperson_name'] ?? '');
-    $salesperson_phone = trim($_POST['salesperson_phone'] ?? '');
+    $employee_id = $_SESSION['employee_id'] ?? null;
+    $sales_manager_name = trim($_POST['sales_manager_name'] ?? null);
+    $sales_manager_phone = trim($_POST['sales_manager_phone'] ?? null);
+    $salesperson_name = trim($_POST['salesperson_name'] ?? null);
+    $salesperson_phone = trim($_POST['salesperson_phone'] ?? null);
+    $owner_name = trim($_POST['owner_name'] ?? null);
+    $owner_phone = trim($_POST['owner_phone'] ?? null);
+    $delivery_date = !empty($delivery_date_str) ? $delivery_date_str : null;
 
-    // --- Basic Validation ---
-    // (Your validation code here, unchanged)
-    if (empty($project_name) && empty($title)) {
-        $errors[] = t('error_project_or_title_required');
-    }
-    // ... etc.
+    // --- Database Insertion ---
+    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Price, Area, Bedrooms, Bathrooms, Status, listing_type, EmployeeID, unit_design_id, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_price, max_price, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, DateAdded) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
-    // Validate delivery date format if provided
-    $delivery_date = null;
-    if (!empty($delivery_date_str)) {
-        $date_obj = DateTime::createFromFormat('Y-m-d', $delivery_date_str);
-        if ($date_obj && $date_obj->format('Y-m-d') === $delivery_date_str) {
-            $delivery_date = $delivery_date_str;
-        } else {
-            $errors[] = t('error_invalid_delivery_date');
-        }
-    }
-
-// --- Database Insertion
-$sql = "INSERT INTO Properties (
-    PropertyTypeID, Title, Description, Location,
-    governorate, district, company_name, FloorsCount,
-    min_area, max_area, avg_area, Area,
-    finishing_type_id, min_price, max_price,
-    Price, down_payment_percentage, payment_years, delivery_date, Status,
-    EmployeeID,
-    sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone,
-    ProjectName
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-$date_added = date("Y-m-d H:i:s");
-
-$params = array(
-    $property_type_id,
-    $title,
-    $description,
-    $location,
-    $governorate,
-    $district,
-    $company_name,
-    $floors_count,
-    $min_area,
-    $max_area,
-    $avg_area,
-    $area,
-    $finishing_type_id,
-    $min_price,
-    $max_price,
-    $price,
-    $down_payment_percentage,
-    $payment_years,
-    $delivery_date,
-    $status,
-    $employee_id,
-    $sales_manager_name,
-    $sales_manager_phone,
-    $salesperson_name,
-    $salesperson_phone,
-    $project_name,
-    
-);
-
-
-$types = "issssssiddiddiddississssss"; // ✔️ طوله = 26
-
-
-error_log("DEBUG: \$types string: " . $types);
-error_log("DEBUG: Length of \$types: " . strlen($types));
-error_log("DEBUG: \$params array count: " . count($params));
-error_log("DEBUG: \$params array content: " . var_export($params, true));
-
-if ($stmt = $conn->prepare($sql)) {
-    if (count($params) !== strlen($types)) {
-        error_log("Mismatch: Expected " . strlen($types) . " params, got " . count($params));
-        $errors[] = t('database_error');
-    } else {
+    if ($stmt = $conn->prepare($sql)) {
         $stmt->bind_param(
-            $types,
-            ...$params
+            "isssddiissiiiddssssdddddsssisssss",
+            $property_type_id, $title, $description, $location, $price, $area, $bedrooms, $bathrooms, $status, $listing_type, $employee_id, $unit_design_id, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_price, $max_price, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone
         );
 
         if ($stmt->execute()) {
-            $_SESSION["success_message"] = t('success_property_added');
-            header("Location: commercial_properties.php");
+            $new_property_id = $conn->insert_id;
+            $_SESSION["success_message"] = t('property_added_success_now_add_media');
+            header("Location: edit_property.php?id=" . $new_property_id);
             exit();
         } else {
-            $errors[] = t('error_adding_property') . " " . $stmt->error;
-            error_log("Error executing property insert: " . $stmt->error);
+            error_log("DB Error (add_other_property): " . $stmt->error);
+            $errors[] = t('database_error') . ': ' . $stmt->error;
         }
+        $stmt->close();
+    } else {
+        error_log("DB Prepare Error (add_other_property): " . $conn->error);
+        $errors[] = t('database_error');
     }
-    $stmt->close();
-} else {
-    $errors[] = t('database_error') . " " . $conn->error;
-    error_log("Error preparing property insert: " . $conn->error);
-}
-
-
-    $conn->close();
 }
 ?>
 <html lang="<?php echo get_lang_code(); ?>" dir="<?php echo get_direction(); ?>">
@@ -218,9 +157,16 @@ if ($stmt = $conn->prepare($sql)) {
 
     <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" class="form-container">
 
+        <!-- Listing Type (Hidden - determined by session mode) -->
+        <input type="hidden" name="listing_type" value="<?php echo htmlspecialchars($current_mode); ?>">
+
         <div class="form-section">
             <h3><?php echo t('basic_info'); ?></h3>
             <div class="form-grid">
+                <div class="form-group">
+                    <label><?php echo t('listing_type'); ?>:</label>
+                    <div class="form-display"><?php echo ($current_mode === 'Primary') ? t('primary_properties') : t('resale_properties'); ?></div>
+                </div>
                  <div class="form-group">
                     <label for="property_type_id"><?php echo t('property_type'); ?>: *</label>
                     <select id="property_type_id" name="property_type_id" class="form-input" required>
@@ -377,6 +323,25 @@ if ($stmt = $conn->prepare($sql)) {
                     <input type="tel" id="salesperson_phone" name="salesperson_phone" class="form-input <?php echo isset($errors["salesperson_phone"]) ? "is-invalid" : ""; ?>" value="<?php echo htmlspecialchars($_POST["salesperson_phone"] ?? ""); ?>">
                 </div>
             </div>
+        </div>
+
+        <!-- Owner Information Section -->
+        <div class="form-section">
+            <h3><?php echo t("owner_information"); ?></h3>
+            <div class="form-grid">
+                <div>
+                    <label for="owner_name"><?php echo t("owner_name"); ?></label>
+                    <input type="text" id="owner_name" name="owner_name" class="form-input" value="<?php echo htmlspecialchars($_POST["owner_name"] ?? ""); ?>">
+                </div>
+                <div>
+                    <label for="owner_phone"><?php echo t("owner_phone"); ?></label>
+                    <input type="tel" id="owner_phone" name="owner_phone" class="form-input" value="<?php echo htmlspecialchars($_POST["owner_phone"] ?? ""); ?>">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-note">
+            <p><?php echo t('add_property_media_note'); ?></p>
         </div>
 
         <div class="form-actions">

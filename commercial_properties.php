@@ -8,6 +8,15 @@ require_once 'permissions.php'; // Include permissions system
 require_once __DIR__ . '/property_image_helper.php'; // Include image helper functions
 
 // Check permissions - all logged in users can view properties
+check_permission('view_properties');
+
+// Enforce mode selection - redirect to dashboard if no mode is set
+if (!isset($_SESSION['listing_context']) || ($_SESSION['listing_context'] !== 'Primary' && $_SESSION['listing_context'] !== 'Resale')) {
+    header('Location: dashboard.php');
+    exit();
+}
+
+$current_mode = $_SESSION['listing_context'];
 
 // Define the Property Type IDs for this page (Commercial/Administrative/Medical/Hotel - VERIFY IN DB)
 const CURRENT_PROPERTY_TYPE_IDS = [3, 4, 5, 6]; // Adjust based on your database
@@ -122,6 +131,11 @@ $sql_select = "SELECT p.*, pt.TypeName AS PropertyTypeName, e.FullName AS Employ
 $sql_where = [];
 $params = [];
 $types = "";
+
+// Add listing_type filter (mandatory based on session mode)
+$sql_where[] = "p.listing_type = ?";
+$params[] = $current_mode;
+$types .= "s";
 
 // Add search term filter
 if (!empty($search_term)) {
@@ -589,10 +603,11 @@ function getPropertyTypeBadge($typeId, $typeName) {
                     </tr>
                 </thead>
                 <tbody>
+                    <?php $row_number = 1; ?>
                     <?php foreach ($properties as $property): ?>
                         <tr class="property-row" data-property-id="<?php echo $property['PropertyID']; ?>">
                             <td class="cell-id">
-                                <strong><?php echo $property['PropertyID']; ?></strong>
+                                <strong><?php echo $row_number; ?></strong>
                             </td>
                             <td class="cell-project">
                                 <div class="project-title">
@@ -643,6 +658,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
                             </td>
                             <?php endif; ?>
                         </tr>
+                        <?php $row_number++; ?>
                     <?php endforeach; ?>
                 </tbody>
             </table>

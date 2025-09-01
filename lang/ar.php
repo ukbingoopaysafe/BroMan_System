@@ -31,6 +31,12 @@ return [
     'add_new_employee' => 'إضافة موظف جديد',
     'property_stats_by_type' => 'إحصائيات العقارات حسب النوع',
     'view_properties' => 'عرض العقارات',
+    'manage_primary_properties' => 'مشاريع جديدة (Primary)',
+    'manage_resale_properties' => 'وحدات إعادة البيع (Resale)',
+    'primary_properties' => 'العقارات الأساسية',
+    'resale_properties' => 'عقارات إعادة البيع',
+    'choose_operating_mode' => 'اختر وجهتك:',
+    'listing_type' => 'نوع القائمة',
 
     // Login Page
     'login_page_title' => 'تسجيل الدخول',
@@ -175,7 +181,7 @@ return [
     'unit_area' => 'مساحة الوحدة',
     
     // Table Headers
-    'table_header_id' => 'الرقم',
+    'table_header_id' => '#',
     'table_header_title' => 'العنوان/الاسم',
     'table_header_project_name' => 'اسم المشروع',
     'table_header_company' => 'الشركة',
@@ -283,6 +289,7 @@ return [
     'update_property_button' => 'تحديث العقار',
     'save_changes' => 'حفظ التغييرات',
     'property_added_success' => 'تمت إضافة العقار بنجاح!',
+    'property_added_success_now_add_media' => 'تم إنشاء العقار بنجاح. يمكنك الآن إضافة الصور والملاحظات الصوتية.',
     'property_updated_success' => 'تم تحديث بيانات العقار بنجاح!',
     'error_adding_property' => 'حدث خطأ ما أثناء إضافة العقار. يرجى المحاولة مرة أخرى لاحقاً.',
     'error_updating_property' => 'حدث خطأ ما أثناء تحديث العقار. يرجى المحاولة مرة أخرى لاحقاً.',
@@ -315,6 +322,10 @@ return [
     'enter_valid_min_area' => 'يرجى إدخال حد أدنى للمساحة صحيح.',
     'enter_valid_max_area' => 'يرجى إدخال حد أقصى للمساحة صحيح.',
     'enter_valid_avg_area' => 'يرجى إدخال متوسط مساحة صحيح.',
+    'governorate_required' => 'المحافظة مطلوبة.',
+    'district_required' => 'الحي مطلوب.',
+    'unit_design_required' => 'تصميم الوحدة مطلوب.',
+    'finishing_type_required' => 'نوع التشطيب مطلوب.',
     'error_preparing_statement' => 'خطأ في تحضير استعلام قاعدة البيانات.',
     'invalid_project_url' => 'يرجى إدخال رابط مشروع صحيح (URL).',
     'invalid_property_type_for_page' => 'نوع العقار المحدد غير صالح لهذه الصفحة.',
@@ -336,6 +347,10 @@ return [
     'unit_area_sqm' => 'مساحة الوحدة (م²)',
     'payment_period' => 'فترة السداد',
     'area_and_specifications' => 'المساحة والمواصفات',
+    'add_property_media_note' => 'ملاحظة: بعد إضافة العقار، سيتم توجيهك مباشرةً لرفع الصور والملاحظات الصوتية.',
+    'owner_information' => 'معلومات المالك',
+    'owner_name' => 'اسم المالك',
+    'owner_phone' => 'هاتف المالك',
 
     // Client List
     'manage_clients_title' => 'إدارة العملاء',

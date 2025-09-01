@@ -1,19 +1,21 @@
 <?php
-// Helper function to get page title based on current page
+// Helper function to get page title based on current page and mode
 function getPageTitle() {
     $current_page = basename($_SERVER['PHP_SELF']);
+    $current_mode = $_SESSION['listing_context'] ?? '';
+    $mode_text = ($current_mode === 'Primary') ? t('primary_properties') : t('resale_properties');
     
     switch ($current_page) {
         case 'index_properties.php':
-            return t('all_properties');
+            return t('all_properties') . ' - ' . $mode_text;
         case 'residential_properties.php':
-            return t('residential_properties');
+            return t('residential_properties') . ' - ' . $mode_text;
         case 'coastal_properties.php':
-            return t('coastal_properties');
+            return t('coastal_properties') . ' - ' . $mode_text;
         case 'commercial_properties.php':
-            return t('commercial_administrative_medical_hotel');
+            return t('commercial_administrative_medical_hotel') . ' - ' . $mode_text;
         default:
-            return t('all_properties');
+            return t('all_properties') . ' - ' . $mode_text;
     }
 }
 
