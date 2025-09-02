@@ -1,4 +1,9 @@
 <?php
+// Ensure the script only outputs valid JSON
+header('Content-Type: application/json');
+// Suppress warnings/notices from leaking into output (root cause should still be fixed below)
+error_reporting(0);
+
 session_start();
 require_once 'db.php';
 
@@ -10,7 +15,7 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
 }
 
 // CSRF protection
-if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'CSRF token mismatch']);
     exit;
@@ -39,13 +44,25 @@ $image_dir = $base_upload_dir . 'images/';
 $audio_dir = $base_upload_dir . 'audio/';
 
 if (!is_dir($base_upload_dir)) {
-    mkdir($base_upload_dir, 0755, true);
+    if (!mkdir($base_upload_dir, 0755, true) && !is_dir($base_upload_dir)) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to create base upload directory']);
+        exit;
+    }
 }
 if (!is_dir($image_dir)) {
-    mkdir($image_dir, 0755, true);
+    if (!mkdir($image_dir, 0755, true) && !is_dir($image_dir)) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to create images directory']);
+        exit;
+    }
 }
 if (!is_dir($audio_dir)) {
-    mkdir($audio_dir, 0755, true);
+    if (!mkdir($audio_dir, 0755, true) && !is_dir($audio_dir)) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to create audio directory']);
+        exit;
+    }
 }
 
 // Handle file upload
@@ -54,6 +71,8 @@ if ($upload_type === 'image') {
 } elseif ($upload_type === 'audio') {
     handleAudioUpload($property_id, $audio_dir, $conn);
 }
+// Ensure nothing else is output
+exit;
 
 function handleImageUpload($property_id, $upload_dir, $conn) {
     if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
@@ -209,5 +228,4 @@ function handleAudioUpload($property_id, $upload_dir, $conn) {
         echo json_encode(['success' => false, 'message' => 'Failed to move uploaded file']);
     }
 }
-?>
 
