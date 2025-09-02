@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'db.php';
+require_once 'permissions.php';
 
 // Check if user is logged in
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
@@ -9,8 +10,8 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit;
 }
 
-// Check if user is admin (only admins can delete media)
-if (!isset($_SESSION["role"]) || $_SESSION["role"] !== "admin") {
+// Check if user has permission to manage properties (admin or manager)
+if (!can_manage_properties()) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Permission denied']);
     exit;
