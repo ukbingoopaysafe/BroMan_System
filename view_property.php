@@ -318,40 +318,54 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                         <span class="detail-label"><?php echo t('property_id'); ?>:</span>
                         <span class="detail-value"><?php echo htmlspecialchars($property['PropertyID']); ?></span>
                     </div>
+                    <?php if (!empty($property['Title'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('title'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['Title'] ?: t('undefined')); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['Title']); ?></span>
                     </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['ProjectName'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('project_name'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['ProjectName'] ?: t('undefined')); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['ProjectName']); ?></span>
                     </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['TypeName'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('property_type'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['TypeName'] ?: t('undefined')); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['TypeName']); ?></span>
                     </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['Status'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('status'); ?>:</span>
-                        <span class="detail-value"><?php echo t($property['Status'] ?: 'undefined'); ?></span>
+                        <span class="detail-value"><?php echo t($property['Status']); ?></span>
                     </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
             <div class="property-section">
                 <h2><?php echo t('location_information'); ?></h2>
                 <div class="detail-grid">
+                    <?php if (!empty($property['governorate'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('governorate'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['governorate'] ?: t('undefined')); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['governorate']); ?></span>
                     </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['district'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('district'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['district'] ?: t('undefined')); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['district']); ?></span>
                     </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['Location'])): ?>
                     <div class="detail-item full-width">
                         <span class="detail-label"><?php echo t('detailed_address'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['Location'] ?: t('undefined')); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['Location']); ?></span>
                     </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -414,50 +428,66 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
             <div class="property-section">
                 <h2><?php echo t('unit_details'); ?></h2>
                 <div class="detail-grid">
+                    <?php if (!empty($property['UnitDesignName'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('unit_design'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['UnitDesignName'] ?: t('undefined')); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['UnitDesignName']); ?></span>
                     </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['FinishingTypeName'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('finishing_type'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['FinishingTypeName'] ?: t('undefined')); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['FinishingTypeName']); ?></span>
                     </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['FloorsCount'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('floors_count'); ?>:</span>
-                        <span class="detail-value"><?php echo !empty($property['FloorsCount']) ? htmlspecialchars($property['FloorsCount']) : t('undefined'); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['FloorsCount']); ?></span>
                     </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
             <div class="property-section">
                 <h2><?php echo t('payment_and_delivery'); ?></h2>
                 <div class="detail-grid">
+                    <?php if (!empty($property['delivery_date'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('delivery_date'); ?>:</span>
-                        <span class="detail-value"><?php echo !empty($property['delivery_date']) ? date("Y-m-d", strtotime($property['delivery_date'])) : t('undefined'); ?></span>
+                        <span class="detail-value"><?php echo date("Y-m-d", strtotime($property['delivery_date'])); ?></span>
                     </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['down_payment_percentage'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('down_payment_percentage'); ?>:</span>
-                        <span class="detail-value"><?php echo !empty($property['down_payment_percentage']) ? htmlspecialchars($property['down_payment_percentage']) . '%' : t('undefined'); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['down_payment_percentage']); ?>%</span>
                     </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['payment_years'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('payment_years'); ?>:</span>
-                        <span class="detail-value"><?php echo !empty($property['payment_years']) ? htmlspecialchars($property['payment_years']) : t('undefined'); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['payment_years']); ?></span>
                     </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['down_payment_percentage']) || !empty($property['payment_years'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('payment_terms'); ?>:</span>
                         <span class="detail-value"><?php echo formatPaymentTerms($property); ?></span>
                     </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
             <div class="property-section">
                 <h2><?php echo t('company_information'); ?></h2>
                 <div class="detail-grid">
+                    <?php if (!empty($property['company_name'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('company'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['company_name'] ?? t('undefined')); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['company_name']); ?></span>
                     </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -528,14 +558,18 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
 <div class="property-section">
     <h2><?php echo t('additional_information'); ?></h2>
     <div class="detail-grid">
+        <?php if (!empty($property['EmployeeName'])): ?>
         <div class="detail-item">
             <span class="detail-label"><?php echo t('added_by_employee'); ?>:</span>
-            <span class="detail-value"><?php echo htmlspecialchars($property['EmployeeName'] ?: t('undefined')); ?></span>
+            <span class="detail-value"><?php echo htmlspecialchars($property['EmployeeName']); ?></span>
         </div>
+        <?php endif; ?>
+        <?php if (!empty($property['DateAdded'])): ?>
         <div class="detail-item">
             <span class="detail-label"><?php echo t('date_added'); ?>:</span>
-            <span class="detail-value"><?php echo !empty($property['DateAdded']) ? date("Y-m-d", strtotime($property['DateAdded'])) : t('undefined'); ?></span>
+            <span class="detail-value"><?php echo date("Y-m-d", strtotime($property['DateAdded'])); ?></span>
         </div>
+        <?php endif; ?>
     </div>
 </div>
 <?php endif; ?>
