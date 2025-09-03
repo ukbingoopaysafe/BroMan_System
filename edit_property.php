@@ -1,11 +1,9 @@
 <?php
 // Corrected include path for translation handler
 require_once __DIR__ . '/lang/translate.php';
+require_once __DIR__ . '/security.php';
+ensure_secure_session_started();
 require_once 'permissions.php'; // Include permissions system
-
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
 
 // Check permissions - only manager and admin can edit properties
 check_permission('manage_properties');
@@ -328,6 +326,7 @@ $conn->close();
             padding-bottom: 20px;
             border-bottom: 1px solid #eee;
         }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
         .form-section:last-child {
             border-bottom: none;
             margin-bottom: 0;
@@ -413,11 +412,7 @@ $conn->close();
             background-color: #d4edda;
             border-color: #c3e6cb;
         }
-        .form-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
+        .form-row { display: none; }
         .form-display { 
             padding: 8px 12px; 
             background-color: #f8f9fa; 
@@ -426,10 +421,7 @@ $conn->close();
             color: #495057; 
             font-weight: 500;
         }
-        .form-row .form-group {
-            flex: 1;
-            min-width: 280px; /* Adjust as needed */
-        }
+        .form-row .form-group { }
         /* Specific styles for property type sections */
         .property-type-section {
             display: none; /* Hidden by default */
@@ -553,7 +545,7 @@ $conn->close();
 
             <div class="form-section">
                 <h3><?php echo t('basic_info'); ?></h3>
-                <div class="form-row">
+                <div class="form-grid">
                     <div class="form-group">
                         <label><?php echo t('listing_type'); ?>:</label>
                         <div class="form-display"><?php echo ($listing_type === 'Primary') ? t('primary_properties') : t('resale_properties'); ?></div>
@@ -576,7 +568,7 @@ $conn->close();
                         <input type="text" id="project_name" name="project_name" value="<?php echo htmlspecialchars($project_name); ?>">
                     </div>
                 </div>
-                <div class="form-row">
+                <div class="form-grid">
                     <div class="form-group">
                         <label for="title"><?php echo t('unit_address_optional'); ?></label>
                         <input type="text" id="title" name="title" value="<?php echo htmlspecialchars($title); ?>">
@@ -587,7 +579,7 @@ $conn->close();
                         <input type="text" id="company_name" name="company_name" value="<?php echo htmlspecialchars($company_name); ?>">
                     </div>
                 </div>
-                <div class="form-row">
+                <div class="form-grid">
                     <div class="form-group">
                         <label for="status"><?php echo t('status'); ?></label>
                         <select id="status" name="status">
@@ -603,7 +595,7 @@ $conn->close();
 
             <div class="form-section">
                 <h3><?php echo t('location_info'); ?></h3>
-                <div class="form-row">
+                <div class="form-grid">
                     <div class="form-group">
                         <label for="governorate"><?php echo t('governorate'); ?> *</label>
                         <input type="text" id="governorate" name="governorate" value="<?php echo htmlspecialchars($governorate); ?>" required>
@@ -629,7 +621,7 @@ $conn->close();
             <div id="residential_coastal_fields" class="property-type-section">
                 <div class="form-section">
                     <h3><?php echo t('area_and_design'); ?></h3>
-                    <div class="form-row">
+                    <div class="form-grid">
                         <div class="form-group">
                             <label for="compound_area"><?php echo t('compound_area_faddan'); ?></label>
                             <input type="number" step="0.01" id="compound_area" name="compound_area" value="<?php echo htmlspecialchars($compound_area); ?>">
@@ -645,7 +637,7 @@ $conn->close();
                             } ?>
                         </div>
                     </div>
-                    <div class="form-row">
+                    <div class="form-grid">
                         <div class="form-group">
                             <label for="unit_design_id"><?php echo t('unit_design'); ?> *</label>
                             <select id="unit_design_id" name="unit_design_id" required>
@@ -691,7 +683,7 @@ $conn->close();
             <div id="commercial_fields" class="property-type-section">
                 <div class="form-section">
                     <h3><?php echo t('area_and_specifications'); ?></h3>
-                    <div class="form-row">
+                    <div class="form-grid">
                         <div class="form-group">
                             <label for="floors_count_commercial"><?php echo t('floors_count'); ?></label>
                             <input type="number" id="floors_count_commercial" name="floors_count" value="<?php echo htmlspecialchars($floors_count); ?>">
@@ -721,7 +713,7 @@ $conn->close();
             <div class="form-section">
                 <h3><?php echo t('area_details'); ?></h3>
                 <p class="note"><?php echo t('specific_area_note'); ?></p>
-                <div class="form-row">
+                <div class="form-grid">
                     <div class="form-group">
                         <label for="area"><?php echo t('unit_area_sqm'); ?></label>
                         <input type="number" step="0.01" id="area" name="area" value="<?php echo htmlspecialchars($area); ?>">
@@ -737,7 +729,7 @@ $conn->close();
                         } ?>
                     </div>
                 </div>
-                <div class="form-row">
+                <div class="form-grid">
                     <div class="form-group">
                         <label for="max_area"><?php echo t('max_area'); ?></label>
                         <input type="number" step="0.01" id="max_area" name="max_area" value="<?php echo htmlspecialchars($max_area); ?>">
@@ -758,7 +750,7 @@ $conn->close();
             <div class="form-section">
                 <h3><?php echo t('pricing_and_payment'); ?></h3>
                 <p class="note"><?php echo t('specific_price_note'); ?></p>
-                <div class="form-row">
+                <div class="form-grid">
                     <div class="form-group">
                         <label for="price"><?php echo t('unit_price_egp'); ?></label>
                         <input type="number" step="0.01" id="price" name="price" value="<?php echo htmlspecialchars($price); ?>">
@@ -774,7 +766,7 @@ $conn->close();
                         } ?>
                     </div>
                 </div>
-                <div class="form-row">
+                <div class="form-grid">
                     <div class="form-group">
                         <label for="max_price"><?php echo t('max_price'); ?></label>
                         <input type="number" step="0.01" id="max_price" name="max_price" value="<?php echo htmlspecialchars($max_price); ?>">
