@@ -1,11 +1,11 @@
 <?php
 require_once __DIR__ . '/lang/translate.php'; // Include translation handler
 require_once 'permissions.php'; // Include permissions system
+require_once __DIR__ . '/security.php';
+ensure_secure_session_started();
 require_once 'session_check.php'; // Include session timeout check
 
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+// Session already ensured securely
 
 // Check permissions - only manager can manage employees
 check_permission("manage_employees");
@@ -16,6 +16,9 @@ $full_name = $username = $password = $role = "";
 $full_name_err = $username_err = $password_err = $role_err = $general_err = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? null)) {
+        $general_err = t('invalid_csrf_token');
+    }
     // Validate Full Name
     if (empty(trim($_POST["fullName"]))) {
         $full_name_err = "Please enter the employee's full name.";
@@ -122,6 +125,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <div class="form-container">
         <div class="form-card">
             <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+                <?php echo csrf_input(); ?>
                 <?php if (!empty($general_err)): ?>
                     <div class="message message-error"><?php echo htmlspecialchars($general_err); ?></div>
                 <?php endif; ?>

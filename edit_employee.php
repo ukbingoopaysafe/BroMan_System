@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/security.php';
+ensure_secure_session_started();
 require_once 'session_check.php'; // Include session timeout check
 require_once 'permissions.php'; // Include permissions system
 
@@ -53,6 +55,9 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
 
 // Processing form data when form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? null)) {
+        $general_err = t('invalid_csrf_token');
+    }
     $employee_id_post = trim($_POST["employee_id"]);
     if (empty($employee_id_post) || $employee_id_post != $employee_id) {
         $general_err = "Invalid employee ID submitted.";
@@ -200,6 +205,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="form-card">
             <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]) . "?id=" . htmlspecialchars($employee_id); ?>" method="POST">
                 <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee_id); ?>">
+                <?php echo csrf_input(); ?>
                 <?php if (!empty($general_err)): ?>
                     <div class="message message-error"><?php echo htmlspecialchars($general_err); ?></div>
                 <?php endif; ?>
