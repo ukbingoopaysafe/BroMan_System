@@ -230,6 +230,90 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .form-section { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
         .form-section h3 { margin-bottom: 15px; color: #0056b3; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        
+        /* Upload area styles */
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            background-color: #f9f9f9;
+            margin-bottom: 20px;
+            transition: border-color 0.3s ease;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #0056b3;
+            background-color: #f0f8ff;
+        }
+        .upload-btn {
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .upload-btn:hover {
+            background-color: #004494;
+        }
+        
+        /* Preview styles */
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .image-preview {
+            position: relative;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .image-preview img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+        }
+        .remove-file {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            line-height: 1;
+        }
+        
+        .audio-notes {
+            margin-top: 15px;
+        }
+        .audio-preview {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .audio-preview span {
+            flex: 1;
+        }
+        .audio-preview .remove-file {
+            position: static;
+            margin-left: auto;
+        }
     </style>
     <script src="session_timeout.js"></script>
 </head>
@@ -450,25 +534,46 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         </div>
 
-        <div class="form-note">
-            <p><?php echo t('add_property_media_note'); ?></p>
-        </div>
-
-        <!-- Media Upload (optional) -->
+        <!-- Media Upload Section -->
         <div class="form-section">
             <h3>📷 <?php echo t('property_images'); ?></h3>
-            <input type="file" name="images[]" accept="image/jpeg,image/jpg,image/png,image/webp" multiple>
-            <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                <?php echo t('supported_image_formats'); ?> JPG, JPEG, PNG, WEBP | <?php echo t('max_size'); ?> 10MB
-            </p>
+            
+            <!-- Image Upload Area -->
+            <div id="image-upload-area" class="upload-area">
+                <p>📁 Drag and drop images here or click to select</p>
+                <button type="button" id="image-upload-btn" class="upload-btn">Choose Images</button>
+                <input type="file" id="image-upload" name="images[]" accept="image/jpeg,image/jpg,image/png,image/webp" multiple style="display: none;">
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                    Supported formats: JPG, JPEG, PNG, WEBP | Max size: 10MB per image
+                </p>
+            </div>
+
+            <!-- Selected Images Preview -->
+            <div id="image-preview" class="images-grid" style="display: none;">
+                <p>Selected images:</p>
+                <div id="image-thumbnails"></div>
+            </div>
         </div>
 
+        <!-- Audio Notes Section -->
         <div class="form-section">
             <h3>🎤 <?php echo t('voice_notes'); ?></h3>
-            <input type="file" name="audio[]" accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/mp4,audio/m4a" multiple>
-            <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                <?php echo t('supported_audio_formats'); ?> MP3, WAV, OGG, M4A | <?php echo t('max_size'); ?> 10MB
-            </p>
+            
+            <!-- Audio Upload Area -->
+            <div id="audio-upload-area" class="upload-area">
+                <p>🎵 Drag and drop audio files here or click to select</p>
+                <button type="button" id="audio-upload-btn" class="upload-btn">Choose Audio Files</button>
+                <input type="file" id="audio-upload" name="audio[]" accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/mp4,audio/m4a" multiple style="display: none;">
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                    Supported formats: MP3, WAV, OGG, M4A | Max size: 10MB per file
+                </p>
+            </div>
+
+            <!-- Selected Audio Preview -->
+            <div id="audio-preview" class="audio-notes" style="display: none;">
+                <p>Selected audio files:</p>
+                <div id="audio-list"></div>
+            </div>
         </div>
 
         <div class="form-actions">
@@ -479,6 +584,194 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </div>
 
 <?php include 'footer.php'; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Image upload functionality
+    const imageUploadArea = document.getElementById('image-upload-area');
+    const imageUploadBtn = document.getElementById('image-upload-btn');
+    const imageUploadInput = document.getElementById('image-upload');
+    const imagePreview = document.getElementById('image-preview');
+    const imageThumbnails = document.getElementById('image-thumbnails');
+    
+    // Audio upload functionality
+    const audioUploadArea = document.getElementById('audio-upload-area');
+    const audioUploadBtn = document.getElementById('audio-upload-btn');
+    const audioUploadInput = document.getElementById('audio-upload');
+    const audioPreview = document.getElementById('audio-preview');
+    const audioList = document.getElementById('audio-list');
+    
+    let selectedImages = [];
+    let selectedAudio = [];
+    
+    // Image upload button click
+    imageUploadBtn.addEventListener('click', function() {
+        imageUploadInput.click();
+    });
+    
+    // Audio upload button click
+    audioUploadBtn.addEventListener('click', function() {
+        audioUploadInput.click();
+    });
+    
+    // Image file selection
+    imageUploadInput.addEventListener('change', function(e) {
+        handleImageFiles(e.target.files);
+    });
+    
+    // Audio file selection
+    audioUploadInput.addEventListener('change', function(e) {
+        handleAudioFiles(e.target.files);
+    });
+    
+    // Image drag and drop
+    imageUploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        imageUploadArea.classList.add('dragover');
+    });
+    
+    imageUploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        imageUploadArea.classList.remove('dragover');
+    });
+    
+    imageUploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        imageUploadArea.classList.remove('dragover');
+        handleImageFiles(e.dataTransfer.files);
+    });
+    
+    // Audio drag and drop
+    audioUploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        audioUploadArea.classList.add('dragover');
+    });
+    
+    audioUploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        audioUploadArea.classList.remove('dragover');
+    });
+    
+    audioUploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        audioUploadArea.classList.remove('dragover');
+        handleAudioFiles(e.dataTransfer.files);
+    });
+    
+    function handleImageFiles(files) {
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        
+        Array.from(files).forEach(file => {
+            if (!allowedTypes.includes(file.type)) {
+                alert('Invalid file type: ' + file.name + '. Please select JPG, JPEG, PNG, or WEBP files.');
+                return;
+            }
+            
+            if (file.size > maxSize) {
+                alert('File too large: ' + file.name + '. Maximum size is 10MB.');
+                return;
+            }
+            
+            selectedImages.push(file);
+        });
+        
+        updateImagePreview();
+        updateImageInput();
+    }
+    
+    function handleAudioFiles(files) {
+        const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/m4a'];
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        
+        Array.from(files).forEach(file => {
+            if (!allowedTypes.includes(file.type)) {
+                alert('Invalid file type: ' + file.name + '. Please select MP3, WAV, OGG, or M4A files.');
+                return;
+            }
+            
+            if (file.size > maxSize) {
+                alert('File too large: ' + file.name + '. Maximum size is 10MB.');
+                return;
+            }
+            
+            selectedAudio.push(file);
+        });
+        
+        updateAudioPreview();
+        updateAudioInput();
+    }
+    
+    function updateImagePreview() {
+        imageThumbnails.innerHTML = '';
+        
+        if (selectedImages.length > 0) {
+            imagePreview.style.display = 'block';
+            
+            selectedImages.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'image-preview';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="${file.name}">
+                        <button type="button" class="remove-file" onclick="removeImage(${index})">×</button>
+                    `;
+                    imageThumbnails.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        } else {
+            imagePreview.style.display = 'none';
+        }
+    }
+    
+    function updateAudioPreview() {
+        audioList.innerHTML = '';
+        
+        if (selectedAudio.length > 0) {
+            audioPreview.style.display = 'block';
+            
+            selectedAudio.forEach((file, index) => {
+                const div = document.createElement('div');
+                div.className = 'audio-preview';
+                div.innerHTML = `
+                    <span>🎵 ${file.name}</span>
+                    <button type="button" class="remove-file" onclick="removeAudio(${index})">×</button>
+                `;
+                audioList.appendChild(div);
+            });
+        } else {
+            audioPreview.style.display = 'none';
+        }
+    }
+    
+    function updateImageInput() {
+        const dt = new DataTransfer();
+        selectedImages.forEach(file => dt.items.add(file));
+        imageUploadInput.files = dt.files;
+    }
+    
+    function updateAudioInput() {
+        const dt = new DataTransfer();
+        selectedAudio.forEach(file => dt.items.add(file));
+        audioUploadInput.files = dt.files;
+    }
+    
+    // Global functions for remove buttons
+    window.removeImage = function(index) {
+        selectedImages.splice(index, 1);
+        updateImagePreview();
+        updateImageInput();
+    };
+    
+    window.removeAudio = function(index) {
+        selectedAudio.splice(index, 1);
+        updateAudioPreview();
+        updateAudioInput();
+    };
+});
+</script>
 
 </body>
 </html>

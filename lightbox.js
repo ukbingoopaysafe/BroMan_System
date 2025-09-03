@@ -339,9 +339,19 @@ class MediaUploader {
     }
 
     refreshMediaDisplay(type, data) {
-        // Fallback minimal refresh: reload section
-        // For now, reload the page to reflect new media while still giving instant visual feedback
-        setTimeout(() => location.reload(), 600);
+        // Enhanced refresh with better user feedback
+        // First show immediate visual feedback, then reload to ensure data consistency
+        if (type === 'image') {
+            this.highlightLastImage();
+        }
+        
+        // Provide user feedback about the save action
+        this.showMessage('success', `${type === 'image' ? 'Image' : 'Audio'} uploaded successfully!`);
+        
+        // Reload after a short delay to ensure the new media is displayed
+        setTimeout(() => {
+            location.reload();
+        }, 1500); // Increased delay to allow users to see the feedback
     }
 
     highlightLastImage() {

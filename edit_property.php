@@ -190,19 +190,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $owner_phone_posted = isset($_POST['owner_phone']) ? trim($_POST['owner_phone']) : null;
    
     // --- Validation ---
-    // Note: Validation matches the "Add Property" forms exactly
-    // Only governorate, district, unit_design_id, and finishing_type_id are required
+    // Context-aware validation based on property type
+    // $property_type_id is already fetched from the database above
+    
+    // Common required fields for all property types
     if (empty($governorate_posted)) {
         $errors['governorate'] = t('governorate_required');
     }
     if (empty($district_posted)) {
         $errors['district'] = t('district_required');
     }
-    if (empty($unit_design_id_posted)) {
-        $errors['unit_design_id'] = t('unit_design_required');
-    }
-    if (empty($finishing_type_id_posted)) {
-        $errors['finishing_type_id'] = t('finishing_type_required');
+    
+    // Property type specific validation
+    if ($property_type_id == 1 || $property_type_id == 2) { // If Residential or Coastal
+        if (empty($unit_design_id_posted)) {
+            $errors['unit_design_id'] = t('unit_design_required');
+        }
+        if (empty($finishing_type_id_posted)) {
+            $errors['finishing_type_id'] = t('finishing_type_required');
+        }
+    } else if ($property_type_id == 3 || $property_type_id == 4 || $property_type_id == 5 || $property_type_id == 6) { // Commercial, Administrative, Hotel, Medical
+        if (empty($finishing_type_id_posted)) {
+            $errors['finishing_type_id'] = t('finishing_type_required');
+        }
     }
     if ($price_posted !== null && (!is_numeric($price_posted) || $price_posted < 0)) {
         $errors["price"] = t("enter_valid_price");
@@ -327,6 +337,11 @@ $conn->close();
             border-bottom: 1px solid #eee;
         }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+
+
+        .form-display { padding: 8px 12px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; color: #495057; }
+        .property-type-section { display: none; }
+        .property-type-section.active { display: block; }
         .form-section:last-child {
             border-bottom: none;
             margin-bottom: 0;
@@ -348,6 +363,11 @@ $conn->close();
             margin-bottom: 5px;
             font-weight: bold;
         }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
         .form-group input[type="text"],
         .form-group input[type="number"],
         .form-group input[type="date"],
@@ -359,16 +379,32 @@ $conn->close();
             border-radius: 4px;
             box-sizing: border-box; /* Ensures padding doesn't increase overall width */
         }
+        
+        /* Override with form-input class for consistency */
+        .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #0056b3;
+            box-shadow: 0 0 0 2px rgba(0,86,179,0.2);
+        }
         .form-group textarea {
             resize: vertical;
             min-height: 80px;
         }
+        small { color: #666; font-size: 12px; margin-top: 5px; display: block; }
         .form-group input[type="checkbox"] {
             margin-right: 10px;
         }
         .error-message {
             color: #dc3545;
-            font-size: 0.9em;
+            font-size: 12px;
             margin-top: 5px;
         }
         .success-message {
@@ -395,6 +431,30 @@ $conn->close();
             background-color: #6c757d;
             color: white;
             margin-left: 10px;
+        }
+        
+        /* Override with form-actions class for consistency */
+        .form-actions {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .form-actions .btn {
+            margin: 0 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .form-actions .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .form-actions .btn-secondary {
+            background-color: #6c757d;
+            color: white;
         }
         .alert {
             padding: 15px;
@@ -541,27 +601,28 @@ $conn->close();
 
         <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]) . '?id=' . $property_id; ?>" method="post">
             <input type="hidden" name="property_id" value="<?php echo $property_id; ?>">
-            <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+            <?php echo csrf_input(); ?>
 
             <div class="form-section">
                 <h3><?php echo t('basic_info'); ?></h3>
                 <div class="form-grid">
                     <div class="form-group">
                         <label><?php echo t('listing_type'); ?>:</label>
-                        <div class="form-display"><?php echo ($listing_type === 'Primary') ? t('primary_properties') : t('resale_properties'); ?></div>
+                        <span class="form-display"><?php echo t($listing_type === 'Primary' ? 'primary_properties' : 'resale_properties'); ?></span>
                     </div>
                     <div class="form-group">
-                        <label for="property_type_id"><?php echo t('property_type_label'); ?></label>
-                        <select id="property_type_id" name="property_type_id">
-                            <option value=""><?php echo t('select_type'); ?></option>
+                        <label for="property_type_id"><?php echo t('property_type'); ?>:</label>
+                        <select id="property_type_id" name="property_type_id" required>
                             <?php foreach ($property_types_list as $type): ?>
                                 <option value="<?php echo $type['PropertyTypeID']; ?>"
                                     <?php echo ($property_type_id == $type['PropertyTypeID']) ? 'selected' : ''; ?>>
-                                    <?php echo t($type['TypeName']); // Assuming TypeName can be used as a translation key or is already translated?>
+                                    <?php echo htmlspecialchars($type['TypeName']); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
-
+                        <?php if (isset($errors['property_type_id'])) {
+                            echo "<span class='error-message'>" . $errors['property_type_id'] . "</span>";
+                        } ?>
                     </div>
                     <div class="form-group">
                         <label for="project_name"><?php echo t('project_name'); ?></label>
@@ -570,25 +631,32 @@ $conn->close();
                 </div>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="title"><?php echo t('unit_address_optional'); ?></label>
-                        <input type="text" id="title" name="title" value="<?php echo htmlspecialchars($title); ?>">
-
+                        <label for="title"><?php echo t('property_title'); ?></label>
+                        <input type="text" id="title" name="title" class="form-input" value="<?php echo htmlspecialchars($title); ?>">
+                        <?php if (isset($errors['title'])) {
+                            echo "<span class='error-message'>" . $errors['title'] . "</span>";
+                        } ?>
                     </div>
                     <div class="form-group">
                         <label for="company_name"><?php echo t('company'); ?></label>
-                        <input type="text" id="company_name" name="company_name" value="<?php echo htmlspecialchars($company_name); ?>">
+                        <input type="text" id="company_name" name="company_name" class="form-input" value="<?php echo htmlspecialchars($company_name); ?>">
+                        <?php if (isset($errors['company_name'])) {
+                            echo "<span class='error-message'>" . $errors['company_name'] . "</span>";
+                        } ?>
                     </div>
                 </div>
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="status"><?php echo t('status'); ?></label>
-                        <select id="status" name="status">
+                        <select id="status" name="status" class="form-input">
                             <option value="available" <?php echo ($status == 'available') ? 'selected' : ''; ?>><?php echo t('available'); ?></option>
                             <option value="sold" <?php echo ($status == 'sold') ? 'selected' : ''; ?>><?php echo t('sold'); ?></option>
                             <option value="rented" <?php echo ($status == 'rented') ? 'selected' : ''; ?>><?php echo t('rented'); ?></option>
                             <option value="unavailable" <?php echo ($status == 'unavailable') ? 'selected' : ''; ?>><?php echo t('unavailable'); ?></option>
                         </select>
-
+                        <?php if (isset($errors['status'])) {
+                            echo "<span class='error-message'>" . $errors['status'] . "</span>";
+                        } ?>
                     </div>
                 </div>
             </div>
@@ -597,23 +665,23 @@ $conn->close();
                 <h3><?php echo t('location_info'); ?></h3>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="governorate"><?php echo t('governorate'); ?> *</label>
-                        <input type="text" id="governorate" name="governorate" value="<?php echo htmlspecialchars($governorate); ?>" required>
+                        <label for="governorate"><?php echo t('governorate'); ?>: *</label>
+                        <input type="text" id="governorate" name="governorate" class="form-input" value="<?php echo htmlspecialchars($governorate); ?>" required>
                         <?php if (isset($errors['governorate'])) {
                             echo "<span class='error-message'>" . $errors['governorate'] . "</span>";
                         } ?>
                     </div>
                     <div class="form-group">
-                        <label for="district"><?php echo t('district'); ?> *</label>
-                        <input type="text" id="district" name="district" value="<?php echo htmlspecialchars($district); ?>" required>
+                        <label for="district"><?php echo t('district'); ?>: *</label>
+                        <input type="text" id="district" name="district" class="form-input" value="<?php echo htmlspecialchars($district); ?>" required>
                         <?php if (isset($errors['district'])) {
                             echo "<span class='error-message'>" . $errors['district'] . "</span>";
                         } ?>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="location"><?php echo t('detailed_address'); ?></label>
-                    <textarea id="location" name="location"><?php echo htmlspecialchars($location); ?></textarea>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="location"><?php echo t('detailed_address'); ?>:</label>
+                    <input type="text" id="location" name="location" class="form-input" value="<?php echo htmlspecialchars($location); ?>">
                 </div>
             </div>
 
@@ -623,15 +691,15 @@ $conn->close();
                     <h3><?php echo t('area_and_design'); ?></h3>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="compound_area"><?php echo t('compound_area_faddan'); ?></label>
-                            <input type="number" step="0.01" id="compound_area" name="compound_area" value="<?php echo htmlspecialchars($compound_area); ?>">
+                            <label for="compound_area"><?php echo t('compound_area'); ?> (<?php echo t('faddan'); ?>):</label>
+                            <input type="number" step="0.01" id="compound_area" name="compound_area" class="form-input" value="<?php echo htmlspecialchars($compound_area); ?>">
                             <?php if (isset($errors['compound_area'])) {
                                 echo "<span class='error-message'>" . $errors['compound_area'] . "</span>";
                             } ?>
                         </div>
                         <div class="form-group">
-                            <label for="floors_count"><?php echo t('floors_count'); ?></label>
-                            <input type="number" id="floors_count" name="floors_count" value="<?php echo htmlspecialchars($floors_count); ?>">
+                            <label for="floors_count"><?php echo t('floors_count'); ?>:</label>
+                            <input type="number" id="floors_count" name="floors_count" class="form-input" value="<?php echo htmlspecialchars($floors_count); ?>">
                             <?php if (isset($errors['floors_count'])) {
                                 echo "<span class='error-message'>" . $errors['floors_count'] . "</span>";
                             } ?>
@@ -639,8 +707,8 @@ $conn->close();
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="unit_design_id"><?php echo t('unit_design'); ?> *</label>
-                            <select id="unit_design_id" name="unit_design_id" required>
+                            <label for="unit_design_id"><?php echo t('unit_design'); ?>: *</label>
+                            <select id="unit_design_id" name="unit_design_id" class="form-input" required>
                                 <option value=""><?php echo t('select_unit_design'); ?></option>
                                 <?php foreach ($unit_designs_list as $design): ?>
                                     <option value="<?php echo $design['DesignID']; ?>"
@@ -654,8 +722,8 @@ $conn->close();
                             } ?>
                         </div>
                         <div class="form-group">
-                            <label for="finishing_type_id"><?php echo t('finishing_type'); ?> *</label>
-                            <select id="finishing_type_id" name="finishing_type_id" required>
+                            <label for="finishing_type_id"><?php echo t('finishing_type'); ?>: *</label>
+                            <select id="finishing_type_id" name="finishing_type_id" class="form-input" required>
                                 <option value=""><?php echo t('select_finishing_type'); ?></option>
                                 <?php foreach ($finishing_types_list as $finish): ?>
                                     <option value="<?php echo $finish['FinishingID']; ?>"
@@ -670,8 +738,8 @@ $conn->close();
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="bathrooms"><?php echo t('bathrooms'); ?></label>
-                        <input type="number" id="bathrooms" name="bathrooms" value="<?php echo htmlspecialchars($bathrooms); ?>">
+                        <label for="bathrooms"><?php echo t('bathrooms'); ?>:</label>
+                        <input type="number" id="bathrooms" name="bathrooms" class="form-input" value="<?php echo htmlspecialchars($bathrooms); ?>">
                         <?php if (isset($errors['bathrooms'])) {
                             echo "<span class='error-message'>" . $errors['bathrooms'] . "</span>";
                         } ?>
@@ -685,15 +753,15 @@ $conn->close();
                     <h3><?php echo t('area_and_specifications'); ?></h3>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="floors_count_commercial"><?php echo t('floors_count'); ?></label>
-                            <input type="number" id="floors_count_commercial" name="floors_count" value="<?php echo htmlspecialchars($floors_count); ?>">
+                            <label for="floors_count_commercial"><?php echo t('floors_count'); ?>:</label>
+                            <input type="number" id="floors_count_commercial" name="floors_count" class="form-input" value="<?php echo htmlspecialchars($floors_count); ?>">
                             <?php if (isset($errors['floors_count'])) {
                                 echo "<span class='error-message'>" . $errors['floors_count'] . "</span>";
                             } ?>
                         </div>
                         <div class="form-group">
-                            <label for="finishing_type_id_commercial"><?php echo t('finishing_type'); ?> *</label>
-                            <select id="finishing_type_id_commercial" name="finishing_type_id" required>
+                            <label for="finishing_type_id_commercial"><?php echo t('finishing_type'); ?>: *</label>
+                            <select id="finishing_type_id_commercial" name="finishing_type_id" class="form-input" required>
                                 <option value=""><?php echo t('select_finishing_type'); ?></option>
                                 <?php foreach ($finishing_types_list as $finish): ?>
                                     <option value="<?php echo $finish['FinishingID']; ?>"
@@ -712,34 +780,32 @@ $conn->close();
 
             <div class="form-section">
                 <h3><?php echo t('area_details'); ?></h3>
-                <p class="note"><?php echo t('specific_area_note'); ?></p>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="area"><?php echo t('unit_area_sqm'); ?></label>
-                        <input type="number" step="0.01" id="area" name="area" value="<?php echo htmlspecialchars($area); ?>">
+                        <label for="area"><?php echo t('unit_area'); ?> (<?php echo t('sqm'); ?>):</label>
+                        <input type="number" step="0.01" id="area" name="area" class="form-input" value="<?php echo htmlspecialchars($area); ?>">
+                        <small><?php echo t('specific_area_note'); ?></small>
                         <?php if (isset($errors['area'])) {
                             echo "<span class='error-message'>" . $errors['area'] . "</span>";
                         } ?>
                     </div>
                     <div class="form-group">
-                        <label for="min_area"><?php echo t('min_area'); ?></label>
-                        <input type="number" step="0.01" id="min_area" name="min_area" value="<?php echo htmlspecialchars($min_area); ?>">
+                        <label for="min_area"><?php echo t('min_area_sqm'); ?>:</label>
+                        <input type="number" step="0.01" id="min_area" name="min_area" class="form-input" value="<?php echo htmlspecialchars($min_area); ?>">
                         <?php if (isset($errors['min_area'])) {
                             echo "<span class='error-message'>" . $errors['min_area'] . "</span>";
                         } ?>
                     </div>
-                </div>
-                <div class="form-grid">
                     <div class="form-group">
-                        <label for="max_area"><?php echo t('max_area'); ?></label>
-                        <input type="number" step="0.01" id="max_area" name="max_area" value="<?php echo htmlspecialchars($max_area); ?>">
+                        <label for="max_area"><?php echo t('max_area_sqm'); ?>:</label>
+                        <input type="number" step="0.01" id="max_area" name="max_area" class="form-input" value="<?php echo htmlspecialchars($max_area); ?>">
                         <?php if (isset($errors['max_area'])) {
                             echo "<span class='error-message'>" . $errors['max_area'] . "</span>";
                         } ?>
                     </div>
                     <div class="form-group">
-                        <label for="avg_area"><?php echo t('avg_area_sqm'); ?></label>
-                        <input type="number" step="0.01" id="avg_area" name="avg_area" value="<?php echo htmlspecialchars($avg_area); ?>">
+                        <label for="avg_area"><?php echo t('avg_area_sqm'); ?>:</label>
+                        <input type="number" step="0.01" id="avg_area" name="avg_area" class="form-input" value="<?php echo htmlspecialchars($avg_area); ?>">
                         <?php if (isset($errors['avg_area'])) {
                             echo "<span class='error-message'>" . $errors['avg_area'] . "</span>";
                         } ?>
@@ -749,50 +815,46 @@ $conn->close();
 
             <div class="form-section">
                 <h3><?php echo t('pricing_and_payment'); ?></h3>
-                <p class="note"><?php echo t('specific_price_note'); ?></p>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="price"><?php echo t('unit_price_egp'); ?></label>
-                        <input type="number" step="0.01" id="price" name="price" value="<?php echo htmlspecialchars($price); ?>">
+                        <label for="price"><?php echo t('unit_price'); ?> (EGP):</label>
+                        <input type="number" step="0.01" id="price" name="price" class="form-input" value="<?php echo htmlspecialchars($price); ?>">
+                        <small><?php echo t('specific_price_note'); ?></small>
                         <?php if (isset($errors['price'])) {
                             echo "<span class='error-message'>" . $errors['price'] . "</span>";
                         } ?>
                     </div>
                     <div class="form-group">
-                        <label for="min_price"><?php echo t('min_price'); ?></label>
-                        <input type="number" step="0.01" id="min_price" name="min_price" value="<?php echo htmlspecialchars($min_price); ?>">
+                        <label for="min_price"><?php echo t('min_price'); ?> (EGP):</label>
+                        <input type="number" step="0.01" id="min_price" name="min_price" class="form-input" value="<?php echo htmlspecialchars($min_price); ?>">
                         <?php if (isset($errors['min_price'])) {
                             echo "<span class='error-message'>" . $errors['min_price'] . "</span>";
                         } ?>
                     </div>
-                </div>
-                <div class="form-grid">
                     <div class="form-group">
-                        <label for="max_price"><?php echo t('max_price'); ?></label>
-                        <input type="number" step="0.01" id="max_price" name="max_price" value="<?php echo htmlspecialchars($max_price); ?>">
+                        <label for="max_price"><?php echo t('max_price'); ?> (EGP):</label>
+                        <input type="number" step="0.01" id="max_price" name="max_price" class="form-input" value="<?php echo htmlspecialchars($max_price); ?>">
                         <?php if (isset($errors['max_price'])) {
                             echo "<span class='error-message'>" . $errors['max_price'] . "</span>";
                         } ?>
                     </div>
                     <div class="form-group">
-                        <label for="down_payment_percentage"><?php echo t('down_payment_percentage'); ?></label>
-                        <input type="number" step="0.01" id="down_payment_percentage" name="down_payment_percentage" value="<?php echo htmlspecialchars($down_payment_percentage); ?>">
+                        <label for="down_payment_percentage"><?php echo t('down_payment_percentage'); ?> (%):</label>
+                        <input type="number" step="0.01" id="down_payment_percentage" name="down_payment_percentage" class="form-input" value="<?php echo htmlspecialchars($down_payment_percentage); ?>">
                         <?php if (isset($errors['down_payment_percentage'])) {
                             echo "<span class='error-message'>" . $errors['down_payment_percentage'] . "</span>";
                         } ?>
                     </div>
-                </div>
-                <div class="form-row">
                     <div class="form-group">
-                        <label for="payment_years"><?php echo t('payment_period'); ?></label>
-                        <input type="number" id="payment_years" name="payment_years" value="<?php echo htmlspecialchars($payment_years); ?>">
+                        <label for="payment_years"><?php echo t('payment_years'); ?>:</label>
+                        <input type="number" id="payment_years" name="payment_years" class="form-input" value="<?php echo htmlspecialchars($payment_years); ?>">
                         <?php if (isset($errors['payment_years'])) {
                             echo "<span class='error-message'>" . $errors['payment_years'] . "</span>";
                         } ?>
                     </div>
                     <div class="form-group">
-                        <label for="delivery_date"><?php echo t('delivery_date'); ?></label>
-                        <input type="date" id="delivery_date" name="delivery_date" value="<?php echo htmlspecialchars($delivery_date); ?>">
+                        <label for="delivery_date"><?php echo t('delivery_date'); ?>:</label>
+                        <input type="date" id="delivery_date" name="delivery_date" class="form-input" value="<?php echo htmlspecialchars($delivery_date); ?>">
                         <?php if (isset($errors['delivery_date'])) {
                             echo "<span class='error-message'>" . $errors['delivery_date'] . "</span>";
                         } ?>
@@ -801,55 +863,56 @@ $conn->close();
             </div>
 
             <div class="form-section">
-                <h3><?php echo t('additional_information'); ?></h3>
-                <div class="form-group">
-                    <label for="description"><?php echo t('description'); ?></label>
-                    <textarea id="description" name="description"><?php echo htmlspecialchars($description); ?></textarea>
+                <h3><?php echo t('additional_info'); ?></h3>
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="description"><?php echo t('description'); ?>:</label>
+                        <textarea id="description" name="description" class="form-input" rows="4"><?php echo htmlspecialchars($description); ?></textarea>
+                    </div>
                 </div>
             </div>
 
+            <!-- Sales Information Section -->
             <div class="form-section">
-                <h3><?php echo t('sales_information'); ?></h3>
-                <div class="form-row">
+                <h3><?php echo t("sales_information"); ?></h3>
+                <div class="form-grid">
                     <div class="form-group">
-                        <label for="sales_manager_name"><?php echo t('sales_manager_name_label'); ?></label>
-                        <input type="text" id="sales_manager_name" name="sales_manager_name" value="<?php echo htmlspecialchars($sales_manager_name); ?>">
+                        <label for="sales_manager_name"><?php echo t("sales_manager_name_label"); ?></label>
+                        <input type="text" id="sales_manager_name" name="sales_manager_name" class="form-input" value="<?php echo htmlspecialchars($sales_manager_name); ?>">
                     </div>
                     <div class="form-group">
-                        <label for="sales_manager_phone"><?php echo t('sales_manager_phone_label'); ?></label>
-                        <input type="text" id="sales_manager_phone" name="sales_manager_phone" value="<?php echo htmlspecialchars($sales_manager_phone); ?>">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="salesperson_name"><?php echo t('salesperson_name_label'); ?></label>
-                        <input type="text" id="salesperson_name" name="salesperson_name" value="<?php echo htmlspecialchars($salesperson_name); ?>">
+                        <label for="sales_manager_phone"><?php echo t("sales_manager_phone_label"); ?></label>
+                        <input type="tel" id="sales_manager_phone" name="sales_manager_phone" class="form-input" value="<?php echo htmlspecialchars($sales_manager_phone); ?>">
                     </div>
                     <div class="form-group">
-                        <label for="salesperson_phone"><?php echo t('salesperson_phone_label'); ?></label>
-                        <input type="text" id="salesperson_phone" name="salesperson_phone" value="<?php echo htmlspecialchars($salesperson_phone); ?>">
+                        <label for="salesperson_name"><?php echo t("salesperson_name_label"); ?></label>
+                        <input type="text" id="salesperson_name" name="salesperson_name" class="form-input" value="<?php echo htmlspecialchars($salesperson_name); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="salesperson_phone"><?php echo t("salesperson_phone_label"); ?></label>
+                        <input type="tel" id="salesperson_phone" name="salesperson_phone" class="form-input" value="<?php echo htmlspecialchars($salesperson_phone); ?>">
                     </div>
                 </div>
             </div>
 
             <!-- Owner Information Section -->
             <div class="form-section">
-                <h3><?php echo t('owner_information'); ?></h3>
-                <div class="form-row">
+                <h3><?php echo t("owner_information"); ?></h3>
+                <div class="form-grid">
                     <div class="form-group">
-                        <label for="owner_name"><?php echo t('owner_name'); ?></label>
-                        <input type="text" id="owner_name" name="owner_name" value="<?php echo htmlspecialchars($owner_name); ?>">
+                        <label for="owner_name"><?php echo t("owner_name"); ?></label>
+                        <input type="text" id="owner_name" name="owner_name" class="form-input" value="<?php echo htmlspecialchars($owner_name); ?>">
                     </div>
                     <div class="form-group">
-                        <label for="owner_phone"><?php echo t('owner_phone'); ?></label>
-                        <input type="tel" id="owner_phone" name="owner_phone" value="<?php echo htmlspecialchars($owner_phone); ?>">
+                        <label for="owner_phone"><?php echo t("owner_phone"); ?></label>
+                        <input type="tel" id="owner_phone" name="owner_phone" class="form-input" value="<?php echo htmlspecialchars($owner_phone); ?>">
                     </div>
                 </div>
             </div>
 
-            <div class="button-group">
+            <div class="form-actions">
                 <button type="submit" class="btn btn-primary"><?php echo t('update_property_button'); ?></button>
-                <button type="button" class="btn btn-secondary" onclick="window.location.href='index_properties.php'"><?php echo t('cancel_button'); ?></button>
+                <a href="index_properties.php" class="btn btn-secondary"><?php echo t('cancel'); ?></a>
             </div>
         </form>
     </div>
@@ -876,27 +939,39 @@ $conn->close();
                     commercialFields.classList.remove('active');
 
                     // Enable/disable required attributes for residential/coastal
-                    document.getElementById('unit_design_id').setAttribute('required', 'required');
-                    document.getElementById('finishing_type_id').setAttribute('required', 'required');
-                    document.getElementById('finishing_type_id_commercial').removeAttribute('required');
+                    const unitDesignField = document.getElementById('unit_design_id');
+                    const finishingTypeField = document.getElementById('finishing_type_id');
+                    const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
+                    
+                    if (unitDesignField) unitDesignField.setAttribute('required', 'required');
+                    if (finishingTypeField) finishingTypeField.setAttribute('required', 'required');
+                    if (finishingTypeCommercialField) finishingTypeCommercialField.removeAttribute('required');
 
                 } else if (selectedTypeId === COMMERCIAL_ID || selectedTypeId === ADMINISTRATIVE_ID || selectedTypeId === HOTEL_ID || selectedTypeId === MEDICAL_ID) {
                     residentialCoastalFields.classList.remove('active');
                     commercialFields.classList.add('active');
 
                     // Enable/disable required attributes for commercial
-                    document.getElementById('unit_design_id').removeAttribute('required');
-                    document.getElementById('finishing_type_id').removeAttribute('required');
-                    document.getElementById('finishing_type_id_commercial').setAttribute('required', 'required');
+                    const unitDesignField = document.getElementById('unit_design_id');
+                    const finishingTypeField = document.getElementById('finishing_type_id');
+                    const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
+                    
+                    if (unitDesignField) unitDesignField.removeAttribute('required');
+                    if (finishingTypeField) finishingTypeField.removeAttribute('required');
+                    if (finishingTypeCommercialField) finishingTypeCommercialField.setAttribute('required', 'required');
 
                 } else {
                     residentialCoastalFields.classList.remove('active');
                     commercialFields.classList.remove('active');
 
                     // Remove required attributes if no specific type is selected
-                    document.getElementById('unit_design_id').removeAttribute('required');
-                    document.getElementById('finishing_type_id').removeAttribute('required');
-                    document.getElementById('finishing_type_id_commercial').removeAttribute('required');
+                    const unitDesignField = document.getElementById('unit_design_id');
+                    const finishingTypeField = document.getElementById('finishing_type_id');
+                    const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
+                    
+                    if (unitDesignField) unitDesignField.removeAttribute('required');
+                    if (finishingTypeField) finishingTypeField.removeAttribute('required');
+                    if (finishingTypeCommercialField) finishingTypeCommercialField.removeAttribute('required');
                 }
             }
 
