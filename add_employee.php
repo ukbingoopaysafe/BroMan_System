@@ -122,33 +122,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <h1><?php echo t('add_new_employee'); ?></h1>
     </div>
 
-    <div class="form-container">
-        <div class="form-card">
-            <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
-                <?php echo csrf_input(); ?>
-                <?php if (!empty($general_err)): ?>
-                    <div class="message message-error"><?php echo htmlspecialchars($general_err); ?></div>
-                <?php endif; ?>
+    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+        <?php echo csrf_input(); ?>
+        <?php if (!empty($general_err)): ?>
+            <div class="message message-error"><?php echo htmlspecialchars($general_err); ?></div>
+        <?php endif; ?>
 
-                <div>
+        <div class="form-section">
+            <h3><?php echo t('basic_info'); ?></h3>
+            <div class="form-grid">
+                <div class="form-group">
                     <label for="fullName"><?php echo t('full_name'); ?>:</label>
                     <input type="text" id="fullName" name="fullName" class="form-input <?php echo (!empty($full_name_err)) ? 'is-invalid' : ''; ?>" value="<?php echo htmlspecialchars($full_name); ?>" required>
                     <?php if (!empty($full_name_err)): ?><span class="error-message"><?php echo htmlspecialchars($full_name_err); ?></span><?php endif; ?>
                 </div>
-
-                <div>
+                <div class="form-group">
                     <label for="username"><?php echo t('username'); ?>:</label>
                     <input type="text" id="username" name="username" class="form-input <?php echo (!empty($username_err)) ? 'is-invalid' : ''; ?>" value="<?php echo htmlspecialchars($username); ?>" required>
                     <?php if (!empty($username_err)): ?><span class="error-message"><?php echo htmlspecialchars($username_err); ?></span><?php endif; ?>
                 </div>
-
-                <div>
+                <div class="form-group">
                     <label for="password"><?php echo t('password'); ?>:</label>
                     <input type="password" id="password" name="password" class="form-input <?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>" required>
                     <?php if (!empty($password_err)): ?><span class="error-message"><?php echo htmlspecialchars($password_err); ?></span><?php endif; ?>
                 </div>
-
-                <div>
+                <div class="form-group">
                     <label for="role"><?php echo t('role'); ?>:</label>
                     <select id="role" name="role" class="form-input <?php echo (!empty($role_err)) ? 'is-invalid' : ''; ?>" required>
                         <option value=""><?php echo t('select_role'); ?></option>
@@ -158,14 +156,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </select>
                     <?php if (!empty($role_err)): ?><span class="error-message"><?php echo htmlspecialchars($role_err); ?></span><?php endif; ?>
                 </div>
-
-                <div class="form-actions">
-                    <input type="submit" value="<?php echo t('add_new_employee'); ?>" class="btn btn-success">
-                    <a href="employees_list.php" class="btn btn-secondary"><?php echo t('cancel'); ?></a>
-                </div>
-            </form>
+            </div>
         </div>
-    </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary"><?php echo t('add_new_employee'); ?></button>
+            <a href="employees_list.php" class="btn btn-secondary"><?php echo t('cancel'); ?></a>
+        </div>
+    </form>
 </div>
 
 </body>

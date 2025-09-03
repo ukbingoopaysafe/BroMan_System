@@ -358,6 +358,13 @@ return [
     'search_clients' => 'بحث في العملاء',
     'search_clients_placeholder' => 'الاسم، الهاتف، البريد الإلكتروني...',
     'client_id' => 'الرقم',
+    // الموظفون
+    'employee_management' => 'إدارة الموظفين',
+    'full_name' => 'الاسم بالكامل',
+    'username' => 'اسم المستخدم',
+    'role' => 'الدور',
+    'date_joined' => 'تاريخ الانضمام',
+    'actions' => 'الإجراءات',
     'client_name' => 'الاسم',
     'client_phone' => 'الهاتف',
     'client_email' => 'البريد الإلكتروني',

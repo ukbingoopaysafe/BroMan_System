@@ -358,6 +358,13 @@ return [
     'client_management' => 'Client Management',
     'search_clients_placeholder' => 'Search by Name, Email, or Phone...',
     'client_id' => 'Client ID',
+    // Employees
+    'employee_management' => 'Employee Management',
+    'full_name' => 'Full Name',
+    'username' => 'Username',
+    'role' => 'Role',
+    'date_joined' => 'Date Joined',
+    'actions' => 'Actions',
     'full_name' => 'Full Name',
     'email' => 'Email',
     'phone' => 'Phone',

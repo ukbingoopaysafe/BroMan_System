@@ -69,10 +69,16 @@ $conn->close(); // Close connection after fetching data
             <a href="add_employee.php" class="btn btn-add">+ <?php echo t('add_new_employee'); ?></a>
         </div>
 
-        <form method="GET" action="employees_list.php" class="search-form">
-            <input type="text" name="search" class="form-input" placeholder="<?php echo t('search_employees_placeholder'); ?>" value="<?php echo htmlspecialchars($search_term); ?>">
-            <input type="submit" value="<?php echo t('search'); ?>" class="btn btn-primary">
-        </form>
+        <div class="filter-section">
+            <form method="GET" action="employees_list.php" class="filter-form">
+                <div class="filter-item">
+                    <input type="text" name="search" class="form-input" placeholder="<?php echo t('search_employees_placeholder'); ?>" value="<?php echo htmlspecialchars($search_term); ?>">
+                </div>
+                <div class="filter-item">
+                    <button type="submit" class="btn btn-primary"><?php echo t('search'); ?></button>
+                </div>
+            </form>
+        </div>
 
         <?php if (isset($_SESSION['error_message'])): ?>
             <p class="error-message"><?php echo htmlspecialchars($_SESSION['error_message']);
@@ -85,7 +91,7 @@ $conn->close(); // Close connection after fetching data
 
         <?php if (!empty($employees)): ?>
             <div class="table-responsive">
-                <table class="data-table">
+                <table class="properties-table">
                     <thead>
                         <tr>
                             <th><?php echo t('employee_id'); ?></th>
