@@ -9,9 +9,8 @@
  */
 
 // التأكد من بدء الجلسة
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/security.php';
+ensure_secure_session_started();
 
 /**
  * فحص ما إذا كان المستخدم مسجل دخول

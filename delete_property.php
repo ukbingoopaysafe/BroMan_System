@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once __DIR__ . '/security.php';
+ensure_secure_session_started();
 require_once 'permissions.php'; // Include permissions system
 
 // Check permissions - only manager and admin can delete properties
@@ -7,10 +8,24 @@ check_permission('manage_properties');
 
 require_once 'db.php'; // Database connection
 
+// Require POST with valid CSRF token
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    $_SESSION["error_message"] = "Invalid request method.";
+    header("Location: index_properties.php");
+    exit();
+}
+if (!validateCSRFToken($_POST['csrf_token'] ?? null)) {
+    http_response_code(403);
+    $_SESSION["error_message"] = "Invalid CSRF token.";
+    header("Location: index_properties.php");
+    exit();
+}
+
 $property_id_to_delete = null;
 
-if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
-    $property_id_to_delete = trim($_GET["id"]);
+if (isset($_POST["id"]) && !empty(trim($_POST["id"]))) {
+    $property_id_to_delete = (int) trim($_POST["id"]);
 
     // In a production system, a POST request with a CSRF token is safer for delete actions.
     // For this project, we are keeping the GET request for simplicity but adding admin check.

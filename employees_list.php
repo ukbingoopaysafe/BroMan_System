@@ -1,11 +1,9 @@
 <?php
+require_once __DIR__ . '/security.php';
+ensure_secure_session_started();
 require_once __DIR__ .
 '/lang/translate.php'; // Include translation handler
 require_once 'permissions.php'; // Include permissions system
-
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
 
 // Check permissions - only manager can manage employees
 check_permission('manage_employees');
@@ -114,7 +112,11 @@ $conn->close(); // Close connection after fetching data
                                     // Use EmployeeID from session if available, otherwise use a placeholder like 'user_id'
                                     $loggedInEmployeeId = $_SESSION['employee_id'] ?? ($_SESSION['user_id'] ?? null);
                             if ($loggedInEmployeeId != $employee['EmployeeID']): ?>
-                                        <a href="delete_employee.php?id=<?php echo $employee['EmployeeID']; ?>" class="btn btn-delete" onclick="return confirm('<?php echo t('confirm_delete_employee'); ?>');"><?php echo t('delete'); ?></a>
+                                        <form method="POST" action="delete_employee.php" style="display:inline" onsubmit="return confirm('<?php echo t('confirm_delete_employee'); ?>');">
+                                            <input type="hidden" name="id" value="<?php echo (int)$employee['EmployeeID']; ?>">
+                                            <?php echo csrf_input(); ?>
+                                            <button type="submit" class="btn btn-delete"><?php echo t('delete'); ?></button>
+                                        </form>
                                     <?php endif; ?>
                                 </td>
                             </tr>

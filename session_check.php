@@ -1,11 +1,11 @@
 <?php
 // Include configuration
 require_once 'config.php';
+require_once __DIR__ . '/security.php';
+ensure_secure_session_started();
 
 // Start session if not already started
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+// Session is already started securely above
 
 // Check if user is logged in
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {

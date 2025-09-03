@@ -1,20 +1,32 @@
 <?php
+require_once __DIR__ . '/security.php';
+ensure_secure_session_started();
 require_once 'session_check.php'; // Include session timeout check
 require_once 'permissions.php'; // Include permissions system
 
-// Check permissions - only manager can manage employees
-if (!isset($_SESSION["role"]) || ($_SESSION["role"] !== "admin" && $_SESSION["role"] !== "manager")) {
-    $_SESSION["error_message"] = "You do not have permission to access this page.";
-    header("Location: login.php");
-    exit;
-}
+// Standardized permission check
+check_permission('manage_employees');
 
 require_once 'db.php'; // Database connection
 
+// Require POST with valid CSRF token
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    $_SESSION["error_message"] = "Invalid request method.";
+    header("Location: employees_list.php");
+    exit();
+}
+if (!validateCSRFToken($_POST['csrf_token'] ?? null)) {
+    http_response_code(403);
+    $_SESSION["error_message"] = "Invalid CSRF token.";
+    header("Location: employees_list.php");
+    exit();
+}
+
 $employee_id_to_delete = null;
 
-if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
-    $employee_id_to_delete = trim($_GET["id"]);
+if (isset($_POST["id"]) && !empty(trim($_POST["id"]))) {
+    $employee_id_to_delete = (int) trim($_POST["id"]);
 
     // Critical: Prevent an admin from deleting their own account, especially if they are the only admin.
     if ($_SESSION["employee_id"] == $employee_id_to_delete) {

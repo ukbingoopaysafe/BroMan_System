@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once __DIR__ . '/security.php';
+ensure_secure_session_started();
 require_once __DIR__ . '/lang/translate.php'; // Include translation handler
 require_once 'session_check.php'; // Include session timeout check
 require_once __DIR__ . '/db.php'; // Database connection
@@ -544,9 +545,11 @@ function getPropertyTypeBadge($typeId, $typeName) {
                             <a href="edit_property.php?id=<?php echo $property['PropertyID']; ?>" class="btn btn-sm btn-warning">
                                 <i class="fas fa-edit"></i> <?php echo t('edit'); ?>
                             </a>
-                            <a href="delete_property.php?id=<?php echo $property['PropertyID']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('<?php echo t('confirm_delete_property'); ?>');">
-                                <i class="fas fa-trash"></i> <?php echo t('delete'); ?>
-                            </a>
+                            <form method="POST" action="delete_property.php" style="display:inline" onsubmit="return confirm('<?php echo t('confirm_delete_property'); ?>');">
+                                <input type="hidden" name="id" value="<?php echo (int)$property['PropertyID']; ?>">
+                                <?php echo csrf_input(); ?>
+                                <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i> <?php echo t('delete'); ?></button>
+                            </form>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -648,9 +651,13 @@ function getPropertyTypeBadge($typeId, $typeName) {
                                     <a href="edit_property.php?id=<?php echo $property['PropertyID']; ?>" class="btn-edit" title="<?php echo t('edit'); ?>">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="delete_property.php?id=<?php echo $property['PropertyID']; ?>" class="btn-delete" onclick="return confirm('<?php echo t('confirm_delete_property'); ?>');" title="<?php echo t('delete'); ?>">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
+                                    <form method="POST" action="delete_property.php" style="display:inline" onsubmit="return confirm('<?php echo t('confirm_delete_property'); ?>');">
+                                        <input type="hidden" name="id" value="<?php echo (int)$property['PropertyID']; ?>">
+                                        <?php echo csrf_input(); ?>
+                                        <button type="submit" class="btn-delete" title="<?php echo t('delete'); ?>">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                             <?php endif; ?>
