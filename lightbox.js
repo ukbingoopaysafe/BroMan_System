@@ -270,6 +270,12 @@ class MediaUploader {
             
             if (data.success) {
                 this.showMessage('success', data.message);
+                // Visual feedback: highlight the newly uploaded media
+                if (type === 'image') {
+                    this.highlightLastImage();
+                }
+                // Optionally add audio item feedback if needed
+                // Update the media display gracefully
                 this.refreshMediaDisplay(type, data);
             } else {
                 this.showMessage('error', data.message);
@@ -333,9 +339,38 @@ class MediaUploader {
     }
 
     refreshMediaDisplay(type, data) {
-        // This would typically reload the media section or add the new item to the DOM
-        // For simplicity, we'll just reload the page
-        location.reload();
+        // Fallback minimal refresh: reload section
+        // For now, reload the page to reflect new media while still giving instant visual feedback
+        setTimeout(() => location.reload(), 600);
+    }
+
+    highlightLastImage() {
+        // Add a temporary visual indicator to the newest image (assumes appended/rendered soon)
+        const images = document.querySelectorAll('.images-grid .image-item img');
+        if (images.length > 0) {
+            const lastImg = images[images.length - 1];
+            lastImg.style.outline = '3px solid #28a745';
+            lastImg.style.outlineOffset = '2px';
+            const overlay = document.createElement('div');
+            overlay.textContent = 'Saved!';
+            overlay.style.position = 'absolute';
+            overlay.style.top = '8px';
+            overlay.style.right = '8px';
+            overlay.style.background = 'rgba(40,167,69,0.9)';
+            overlay.style.color = '#fff';
+            overlay.style.padding = '4px 8px';
+            overlay.style.borderRadius = '4px';
+            overlay.style.fontSize = '12px';
+            const wrapper = lastImg.closest('.image-item');
+            if (wrapper) {
+                wrapper.style.position = 'relative';
+                wrapper.appendChild(overlay);
+                setTimeout(() => {
+                    lastImg.style.outline = '';
+                    overlay.remove();
+                }, 2500);
+            }
+        }
     }
 
     showMessage(type, message) {

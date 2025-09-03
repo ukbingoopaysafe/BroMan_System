@@ -4,10 +4,9 @@ require_once __DIR__ .
 require_once 'session_check.php'; // Include session timeout check
 require_once 'permissions.php'; // Include permissions system
 require_once __DIR__ . '/db.php'; // Database connection
+require_once __DIR__ . '/security.php';
 
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+ensure_secure_session_started();
 
 // Check permissions - only manager and admin can add properties
 check_permission('manage_properties');
@@ -74,6 +73,9 @@ $errors = [];
 $success_message = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? null)) {
+        $errors[] = t('invalid_csrf_token');
+    }
     // --- Data Sanitization ---
     $property_type_id = 1; // Hardcoded for Residential
     $listing_type = $_SESSION['listing_context'] ?? 'Primary';
@@ -122,8 +124,85 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if ($stmt->execute()) {
             $new_property_id = $conn->insert_id;
-            $_SESSION["success_message"] = t('property_added_success_now_add_media');
-            header("Location: edit_property.php?id=" . $new_property_id);
+
+            // Handle optional media uploads
+            $base_upload_dir = __DIR__ . '/uploads/';
+            $image_dir = $base_upload_dir . 'images/';
+            $audio_dir = $base_upload_dir . 'audio/';
+            if (!is_dir($base_upload_dir)) { mkdir($base_upload_dir, 0755, true); }
+            if (!is_dir($image_dir)) { mkdir($image_dir, 0755, true); }
+            if (!is_dir($audio_dir)) { mkdir($audio_dir, 0755, true); }
+
+            // Images
+            if (!empty($_FILES['images']) && is_array($_FILES['images']['name'])) {
+                // Determine if any existing images for this property
+                $is_first_image = true;
+                $check_sql = "SELECT COUNT(*) as count FROM property_images WHERE property_id = ?";
+                if ($check_stmt = $conn->prepare($check_sql)) {
+                    $check_stmt->bind_param("i", $new_property_id);
+                    $check_stmt->execute();
+                    $res = $check_stmt->get_result();
+                    if ($row = $res->fetch_assoc()) { $is_first_image = ($row['count'] == 0); }
+                    $check_stmt->close();
+                }
+
+                $allowed_img_mime = ['image/jpeg' => 'jpg', 'image/jpg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+                $max_img_size = 10 * 1024 * 1024;
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                foreach ($_FILES['images']['name'] as $idx => $name) {
+                    if ($_FILES['images']['error'][$idx] !== UPLOAD_ERR_OK) { continue; }
+                    if ($_FILES['images']['size'][$idx] > $max_img_size) { continue; }
+                    $tmp = $_FILES['images']['tmp_name'][$idx];
+                    $mime = finfo_file($finfo, $tmp);
+                    if (!isset($allowed_img_mime[$mime])) { continue; }
+                    $ext = $allowed_img_mime[$mime];
+                    $filename = 'property_' . $new_property_id . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+                    $dest = $image_dir . $filename;
+                    $relative = 'uploads/images/' . $filename;
+                    if (move_uploaded_file($tmp, $dest)) {
+                        $is_primary = $is_first_image ? 1 : 0;
+                        $is_first_image = false;
+                        $ins = "INSERT INTO property_images (property_id, file_path, is_primary) VALUES (?, ?, ?)";
+                        if ($img_stmt = $conn->prepare($ins)) {
+                            $img_stmt->bind_param("isi", $new_property_id, $relative, $is_primary);
+                            $img_stmt->execute();
+                            $img_stmt->close();
+                        }
+                    }
+                }
+                finfo_close($finfo);
+            }
+
+            // Audio
+            if (!empty($_FILES['audio']) && is_array($_FILES['audio']['name'])) {
+                $allowed_audio_mime = ['audio/mpeg' => 'mp3', 'audio/mp3' => 'mp3', 'audio/wav' => 'wav', 'audio/ogg' => 'ogg', 'audio/m4a' => 'm4a', 'audio/mp4' => 'm4a', 'video/mp4' => 'm4a'];
+                $max_audio_size = 10 * 1024 * 1024;
+                $finfo2 = finfo_open(FILEINFO_MIME_TYPE);
+                foreach ($_FILES['audio']['name'] as $idx => $name) {
+                    if ($_FILES['audio']['error'][$idx] !== UPLOAD_ERR_OK) { continue; }
+                    if ($_FILES['audio']['size'][$idx] > $max_audio_size) { continue; }
+                    $tmp = $_FILES['audio']['tmp_name'][$idx];
+                    $mime = finfo_file($finfo2, $tmp);
+                    if (!isset($allowed_audio_mime[$mime])) { continue; }
+                    $ext = $allowed_audio_mime[$mime];
+                    $filename = 'property_' . $new_property_id . '_audio_' . bin2hex(random_bytes(8)) . '.' . $ext;
+                    $dest = $audio_dir . $filename;
+                    $relative = 'uploads/audio/' . $filename;
+                    if (move_uploaded_file($tmp, $dest)) {
+                        $ins = "INSERT INTO property_audio_notes (property_id, file_path, duration) VALUES (?, ?, ?)";
+                        $duration = null;
+                        if ($aud_stmt = $conn->prepare($ins)) {
+                            $aud_stmt->bind_param("isi", $new_property_id, $relative, $duration);
+                            $aud_stmt->execute();
+                            $aud_stmt->close();
+                        }
+                    }
+                }
+                finfo_close($finfo2);
+            }
+
+            $_SESSION["success_message"] = t('property_added_success');
+            header("Location: residential_properties.php");
             exit();
         } else {
             error_log("DB Error (add_residential_property): " . $stmt->error);
@@ -175,7 +254,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     <?php endif; ?>
 
-    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" class="form-container">
+    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" class="form-container" enctype="multipart/form-data">
+        <?php echo csrf_input(); ?>
 
         <!-- Property Type (Hidden/Fixed for this page) -->
         <input type="hidden" name="property_type_id" value="1">
@@ -372,6 +452,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         <div class="form-note">
             <p><?php echo t('add_property_media_note'); ?></p>
+        </div>
+
+        <!-- Media Upload (optional) -->
+        <div class="form-section">
+            <h3>📷 <?php echo t('property_images'); ?></h3>
+            <input type="file" name="images[]" accept="image/jpeg,image/jpg,image/png,image/webp" multiple>
+            <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                <?php echo t('supported_image_formats'); ?> JPG, JPEG, PNG, WEBP | <?php echo t('max_size'); ?> 10MB
+            </p>
+        </div>
+
+        <div class="form-section">
+            <h3>🎤 <?php echo t('voice_notes'); ?></h3>
+            <input type="file" name="audio[]" accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/mp4,audio/m4a" multiple>
+            <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                <?php echo t('supported_audio_formats'); ?> MP3, WAV, OGG, M4A | <?php echo t('max_size'); ?> 10MB
+            </p>
         </div>
 
         <div class="form-actions">
