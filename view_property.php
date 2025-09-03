@@ -314,10 +314,12 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
             <div class="property-section">
                 <h2><?php echo t('basic_information'); ?></h2>
                 <div class="detail-grid">
+                    <?php if (!empty($property['PropertyID'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('property_id'); ?>:</span>
                         <span class="detail-value"><?php echo htmlspecialchars($property['PropertyID']); ?></span>
                     </div>
+                    <?php endif; ?>
                     <?php if (!empty($property['Title'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('title'); ?>:</span>
