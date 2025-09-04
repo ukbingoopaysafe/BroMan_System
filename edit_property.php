@@ -87,7 +87,6 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $title = $row["Title"];
                 $description = $row["Description"];
                 $location = $row["Location"];
-                $price = $row["Price"];
                 $area = $row["Area"];
                 $status = $row["Status"];
                 $unit_design = $row["unit_design"];
@@ -97,8 +96,11 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $payment_years = $row["payment_years"];
                 $delivery_date = $row["delivery_date"];
                 $project_name = $row["ProjectName"];
-                $min_price = $row["min_price"];
-                $max_price = $row["max_price"];
+                // NEW PRICING MODEL
+                $price_cash = $row["price_cash"];
+                $price_installments = $row["price_installments"];
+                $meter_price_cash = $row["meter_price_cash"];
+                $meter_price_installments = $row["meter_price_installments"];
                 $min_area = $row["min_area"];
                 $max_area = $row["max_area"];
                 $avg_area = $row["avg_area"];
@@ -112,6 +114,13 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $salesperson_phone = $row["salesperson_phone"] ?? '';
                 $owner_name = $row["owner_name"] ?? '';
                 $owner_phone = $row["owner_phone"] ?? '';
+                $seller_type = $row["seller_type"] ?? '';
+                $year_built = $row["year_built"] ?? '';
+                $unit_floor = $row["unit_floor"] ?? '';
+                $net_area = $row["net_area"] ?? '';
+                $loading_percentage = $row["loading_percentage"] ?? '';
+                $latitude = $row["latitude"] ?? '';
+                $longitude = $row["longitude"] ?? '';
                 $listing_type = $row["listing_type"] ?? 'Primary';
             } else {
                 $_SESSION["error_message"] = t('property_not_found');
@@ -150,10 +159,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $title_posted = isset($_POST['title']) ? trim($_POST['title']) : '';
     $description_posted = isset($_POST['description']) ? trim($_POST['description']) : null;
     $location_posted = isset($_POST['location']) ? trim($_POST['location']) : null;
-    $price_posted = isset($_POST["price"]) && trim($_POST["price"]) !== "" ? trim($_POST["price"]) : null;
+    // NEW PRICING MODEL
+    $price_cash_posted = isset($_POST["price_cash"]) && trim($_POST["price_cash"]) !== "" ? trim($_POST["price_cash"]) : null;
+    $price_installments_posted = isset($_POST["price_installments"]) && trim($_POST["price_installments"]) !== "" ? trim($_POST["price_installments"]) : null;
+    $meter_price_cash_posted = isset($_POST["meter_price_cash"]) && trim($_POST["meter_price_cash"]) !== "" ? trim($_POST["meter_price_cash"]) : null;
+    $meter_price_installments_posted = isset($_POST["meter_price_installments"]) && trim($_POST["meter_price_installments"]) !== "" ? trim($_POST["meter_price_installments"]) : null;
     $area_posted = isset($_POST["area"]) && trim($_POST["area"]) !== "" ? trim($_POST["area"]) : null;
     // bathrooms removed from schema and UI
     $status_posted = isset($_POST["status"]) ? trim($_POST["status"]) : "available";
+    $listing_type_posted = isset($_POST["listing_type"]) ? trim($_POST["listing_type"]) : "Primary";
     $unit_design_posted = isset($_POST['unit_design']) && trim($_POST['unit_design']) !== '' ? trim($_POST['unit_design']) : null;
     $finishing_type_id_posted = isset($_POST['finishing_type_id']) && trim($_POST['finishing_type_id']) !== '' ? trim($_POST['finishing_type_id']) : null;
     $compound_area_posted = isset($_POST['compound_area']) && trim($_POST['compound_area']) !== '' ? trim($_POST['compound_area']) : null;
@@ -161,8 +175,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $payment_years_posted = isset($_POST['payment_years']) && trim($_POST['payment_years']) !== '' ? trim($_POST['payment_years']) : null;
     $delivery_date_posted = isset($_POST['delivery_date']) && trim($_POST['delivery_date']) !== '' ? trim($_POST['delivery_date']) : null;
     $project_name_posted = isset($_POST['project_name']) ? trim($_POST['project_name']) : null;
-    $min_price_posted = isset($_POST['min_price']) && trim($_POST['min_price']) !== '' ? trim($_POST['min_price']) : null;
-    $max_price_posted = isset($_POST['max_price']) && trim($_POST['max_price']) !== '' ? trim($_POST['max_price']) : null;
+    // Remove old price fields - replaced with new pricing model above
     $min_area_posted = isset($_POST['min_area']) && trim($_POST['min_area']) !== '' ? trim($_POST['min_area']) : null;
     $max_area_posted = isset($_POST['max_area']) && trim($_POST['max_area']) !== '' ? trim($_POST['max_area']) : null;
     $avg_area_posted = isset($_POST['avg_area']) && trim($_POST['avg_area']) !== '' ? trim($_POST['avg_area']) : null;
@@ -176,6 +189,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $salesperson_phone_posted = isset($_POST['salesperson_phone']) ? trim($_POST['salesperson_phone']) : null;
     $owner_name_posted = isset($_POST['owner_name']) ? trim($_POST['owner_name']) : null;
     $owner_phone_posted = isset($_POST['owner_phone']) ? trim($_POST['owner_phone']) : null;
+    $seller_type_posted = isset($_POST['seller_type']) ? trim($_POST['seller_type']) : null;
+    $year_built_posted = isset($_POST['year_built']) && trim($_POST['year_built']) !== '' ? trim($_POST['year_built']) : null;
+    $unit_floor_posted = isset($_POST['unit_floor']) ? trim($_POST['unit_floor']) : null;
+    $net_area_posted = isset($_POST['net_area']) && trim($_POST['net_area']) !== '' ? trim($_POST['net_area']) : null;
+    $loading_percentage_posted = isset($_POST['loading_percentage']) && trim($_POST['loading_percentage']) !== '' ? trim($_POST['loading_percentage']) : null;
+    $latitude_posted = isset($_POST['latitude']) && trim($_POST['latitude']) !== '' ? trim($_POST['latitude']) : null;
+    $longitude_posted = isset($_POST['longitude']) && trim($_POST['longitude']) !== '' ? trim($_POST['longitude']) : null;
    
     // --- Validation ---
     // Context-aware validation based on property type
@@ -240,25 +260,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // If no errors, proceed with update
     if (empty($errors)) {
         $sql_update = "UPDATE Properties SET 
-            PropertyTypeID = ?, Title = ?, Description = ?, Location = ?, Price = ?, Area = ?, 
-            Status = ?, unit_design = ?, finishing_type_id = ?, 
+            PropertyTypeID = ?, Title = ?, Description = ?, Location = ?, Area = ?, 
+            Status = ?, listing_type = ?, unit_design = ?, finishing_type_id = ?, 
             compound_area = ?, down_payment_percentage = ?, payment_years = ?, delivery_date = ?, 
-            ProjectName = ?, min_price = ?, max_price = ?, min_area = ?, max_area = ?, avg_area = ?, 
+            ProjectName = ?, min_area = ?, max_area = ?, avg_area = ?, 
             district = ?, governorate = ?, company_name = ?, FloorsCount = ?,
             sales_manager_name = ?, sales_manager_phone = ?, salesperson_name = ?, salesperson_phone = ?,
-            owner_name = ?, owner_phone = ?
+            owner_name = ?, owner_phone = ?, price_cash = ?, price_installments = ?, 
+            meter_price_cash = ?, meter_price_installments = ?, latitude = ?, longitude = ?,
+            year_built = ?, unit_floor = ?, net_area = ?, loading_percentage = ?, seller_type = ?
             WHERE PropertyID = ?";
 
         if ($stmt_update = $conn->prepare($sql_update)) {
             $stmt_update->bind_param(
-                "isssddssiddissdddddsssissssssi",
+                "isssdssiddissddddsssissssssddddsssissdsi",
                 $property_type_id_posted,
                 $title_posted,
                 $description_posted,
                 $location_posted,
-                $price_posted,
                 $area_posted,
                 $status_posted,
+                $listing_type_posted,
                 $unit_design_posted,
                 $finishing_type_id_posted,
                 $compound_area_posted,
@@ -266,8 +288,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $payment_years_posted,
                 $delivery_date_posted,
                 $project_name_posted,
-                $min_price_posted,
-                $max_price_posted,
                 $min_area_posted,
                 $max_area_posted,
                 $avg_area_posted,
@@ -281,6 +301,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $salesperson_phone_posted,
                 $owner_name_posted,
                 $owner_phone_posted,
+                $price_cash_posted,
+                $price_installments_posted,
+                $meter_price_cash_posted,
+                $meter_price_installments_posted,
+                $latitude_posted,
+                $longitude_posted,
+                $year_built_posted,
+                $unit_floor_posted,
+                $net_area_posted,
+                $loading_percentage_posted,
+                $seller_type_posted,
                 $property_id
             );
 
@@ -668,6 +699,24 @@ $conn->close();
                     <label for="location"><?php echo t('detailed_address'); ?>:</label>
                     <input type="text" id="location" name="location" class="form-input" value="<?php echo htmlspecialchars($location); ?>">
                 </div>
+                
+                <!-- Interactive Map Section -->
+                <div class="form-group" style="grid-column: 1 / -1; margin-top: 20px;">
+                    <h4><?php echo t('interactive_map'); ?></h4>
+                    <p><?php echo t('click_map_to_select_location'); ?></p>
+                    <div id="map" style="height: 400px; width: 100%; border: 1px solid #ddd; border-radius: 4px;"></div>
+                    <div style="margin-top: 10px;">
+                        <div class="form-group" style="display: inline-block; margin-right: 20px;">
+                            <label for="latitude"><?php echo t('latitude'); ?>:</label>
+                            <input type="number" step="0.0000001" id="latitude" name="latitude" class="form-input" readonly style="width: 150px;" value="<?php echo htmlspecialchars($latitude); ?>">
+                        </div>
+                        <div class="form-group" style="display: inline-block; margin-right: 20px;">
+                            <label for="longitude"><?php echo t('longitude'); ?>:</label>
+                            <input type="number" step="0.0000001" id="longitude" name="longitude" class="form-input" readonly style="width: 150px;" value="<?php echo htmlspecialchars($longitude); ?>">
+                        </div>
+                        <button type="button" id="clear-location" class="btn btn-secondary" style="margin-top: 20px;"><?php echo t('clear_location'); ?></button>
+                    </div>
+                </div>
             </div>
 
             <!-- Residential/Coastal Specific Fields -->
@@ -788,25 +837,31 @@ $conn->close();
                 <h3><?php echo t('pricing_and_payment'); ?></h3>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="price"><?php echo t('unit_price'); ?> (EGP):</label>
-                        <input type="number" step="0.01" id="price" name="price" class="form-input" value="<?php echo htmlspecialchars($price); ?>">
-                        <small><?php echo t('specific_price_note'); ?></small>
-                        <?php if (isset($errors['price'])) {
-                            echo "<span class='error-message'>" . $errors['price'] . "</span>";
+                        <label for="price_cash"><?php echo t('price_cash'); ?>:</label>
+                        <input type="number" step="0.01" id="price_cash" name="price_cash" class="form-input" value="<?php echo htmlspecialchars($price_cash); ?>">
+                        <?php if (isset($errors['price_cash'])) {
+                            echo "<span class='error-message'>" . $errors['price_cash'] . "</span>";
                         } ?>
                     </div>
                     <div class="form-group">
-                        <label for="min_price"><?php echo t('min_price'); ?> (EGP):</label>
-                        <input type="number" step="0.01" id="min_price" name="min_price" class="form-input" value="<?php echo htmlspecialchars($min_price); ?>">
-                        <?php if (isset($errors['min_price'])) {
-                            echo "<span class='error-message'>" . $errors['min_price'] . "</span>";
+                        <label for="price_installments"><?php echo t('price_installments'); ?>:</label>
+                        <input type="number" step="0.01" id="price_installments" name="price_installments" class="form-input" value="<?php echo htmlspecialchars($price_installments); ?>">
+                        <?php if (isset($errors['price_installments'])) {
+                            echo "<span class='error-message'>" . $errors['price_installments'] . "</span>";
                         } ?>
                     </div>
                     <div class="form-group">
-                        <label for="max_price"><?php echo t('max_price'); ?> (EGP):</label>
-                        <input type="number" step="0.01" id="max_price" name="max_price" class="form-input" value="<?php echo htmlspecialchars($max_price); ?>">
-                        <?php if (isset($errors['max_price'])) {
-                            echo "<span class='error-message'>" . $errors['max_price'] . "</span>";
+                        <label for="meter_price_cash"><?php echo t('meter_price_cash'); ?>:</label>
+                        <input type="number" step="0.01" id="meter_price_cash" name="meter_price_cash" class="form-input" value="<?php echo htmlspecialchars($meter_price_cash); ?>">
+                        <?php if (isset($errors['meter_price_cash'])) {
+                            echo "<span class='error-message'>" . $errors['meter_price_cash'] . "</span>";
+                        } ?>
+                    </div>
+                    <div class="form-group">
+                        <label for="meter_price_installments"><?php echo t('meter_price_installments'); ?>:</label>
+                        <input type="number" step="0.01" id="meter_price_installments" name="meter_price_installments" class="form-input" value="<?php echo htmlspecialchars($meter_price_installments); ?>">
+                        <?php if (isset($errors['meter_price_installments'])) {
+                            echo "<span class='error-message'>" . $errors['meter_price_installments'] . "</span>";
                         } ?>
                     </div>
                     <div class="form-group">
@@ -871,12 +926,40 @@ $conn->close();
                 <h3><?php echo t("owner_information"); ?></h3>
                 <div class="form-grid">
                     <div class="form-group">
+                        <label for="seller_type"><?php echo t("seller_type"); ?>:</label>
+                        <select id="seller_type" name="seller_type" class="form-input">
+                            <option value=""><?php echo t('select_seller_type'); ?></option>
+                            <option value="مالك" <?php echo ($seller_type === 'مالك') ? 'selected' : ''; ?>><?php echo t('seller_type_owner'); ?></option>
+                            <option value="وسيط" <?php echo ($seller_type === 'وسيط') ? 'selected' : ''; ?>><?php echo t('seller_type_broker'); ?></option>
+                            <option value="وكيل" <?php echo ($seller_type === 'وكيل') ? 'selected' : ''; ?>><?php echo t('seller_type_agent'); ?></option>
+                            <option value="بواب" <?php echo ($seller_type === 'بواب') ? 'selected' : ''; ?>><?php echo t('seller_type_guard'); ?></option>
+                            <option value="شركة مطورة" <?php echo ($seller_type === 'شركة مطورة') ? 'selected' : ''; ?>><?php echo t('seller_type_developer'); ?></option>
+                            <option value="شركة تشطيب" <?php echo ($seller_type === 'شركة تشطيب') ? 'selected' : ''; ?>><?php echo t('seller_type_finishing_company'); ?></option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="owner_name"><?php echo t("owner_name"); ?></label>
                         <input type="text" id="owner_name" name="owner_name" class="form-input" value="<?php echo htmlspecialchars($owner_name); ?>">
                     </div>
                     <div class="form-group">
                         <label for="owner_phone"><?php echo t("owner_phone"); ?></label>
                         <input type="tel" id="owner_phone" name="owner_phone" class="form-input" value="<?php echo htmlspecialchars($owner_phone); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="year_built"><?php echo t('year_built_label'); ?></label>
+                        <input type="number" id="year_built" name="year_built" class="form-input" value="<?php echo htmlspecialchars($year_built); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="unit_floor"><?php echo t('unit_floor_label'); ?></label>
+                        <input type="text" id="unit_floor" name="unit_floor" class="form-input" value="<?php echo htmlspecialchars($unit_floor); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="net_area"><?php echo t('net_area_label'); ?></label>
+                        <input type="number" step="0.01" id="net_area" name="net_area" class="form-input" value="<?php echo htmlspecialchars($net_area); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="loading_percentage"><?php echo t('loading_percentage_label'); ?></label>
+                        <input type="number" step="0.01" id="loading_percentage" name="loading_percentage" class="form-input" value="<?php echo htmlspecialchars($loading_percentage); ?>">
                     </div>
                 </div>
             </div>
@@ -952,6 +1035,65 @@ $conn->close();
             // Add event listener for changes
             propertyTypeIdSelect.addEventListener('change', togglePropertyTypeFields);
         });
+    </script>
+
+    <!-- Leaflet.js CSS and JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+    // Interactive Map Initialization
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize map centered on Egypt
+        const map = L.map('map').setView([30.0444, 31.2357], 6);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        let marker = null;
+        const latitudeInput = document.getElementById('latitude');
+        const longitudeInput = document.getElementById('longitude');
+        const clearLocationBtn = document.getElementById('clear-location');
+        
+        // If coordinates are already set, show marker
+        if (latitudeInput.value && longitudeInput.value) {
+            const lat = parseFloat(latitudeInput.value);
+            const lng = parseFloat(longitudeInput.value);
+            marker = L.marker([lat, lng]).addTo(map);
+            map.setView([lat, lng], 15);
+        }
+        
+        // Add click event to map
+        map.on('click', function(e) {
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+            
+            // Update input fields
+            latitudeInput.value = lat.toFixed(7);
+            longitudeInput.value = lng.toFixed(7);
+            
+            // Remove existing marker
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            
+            // Add new marker
+            marker = L.marker([lat, lng]).addTo(map);
+        });
+        
+        // Clear location button
+        clearLocationBtn.addEventListener('click', function() {
+            latitudeInput.value = '';
+            longitudeInput.value = '';
+            if (marker) {
+                map.removeLayer(marker);
+                marker = null;
+            }
+            map.setView([30.0444, 31.2357], 6);
+        });
+    });
     </script>
 </body>
 </html>

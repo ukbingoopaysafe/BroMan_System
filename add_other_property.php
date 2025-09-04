@@ -85,9 +85,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $unit_design = null; // Not applicable
     $compound_area = null; // Not applicable
     $finishing_type_id = filter_input(INPUT_POST, 'finishing_type_id', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
-    $min_price = filter_input(INPUT_POST, 'min_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $max_price = filter_input(INPUT_POST, 'max_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    // NEW PRICING MODEL - Replace old price fields
+    $price_cash = filter_input(INPUT_POST, 'price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $price_installments = filter_input(INPUT_POST, 'price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $meter_price_cash = filter_input(INPUT_POST, 'meter_price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $meter_price_installments = filter_input(INPUT_POST, 'meter_price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $down_payment_percentage = filter_input(INPUT_POST, 'down_payment_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $loading_percentage = filter_input(INPUT_POST, 'loading_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $payment_years = filter_input(INPUT_POST, 'payment_years', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
@@ -100,18 +102,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $salesperson_phone = trim($_POST['salesperson_phone'] ?? null);
     $owner_name = trim($_POST['owner_name'] ?? null);
     $owner_phone = trim($_POST['owner_phone'] ?? null);
+    $seller_type = trim($_POST['seller_type'] ?? null);
     $year_built = filter_input(INPUT_POST, 'year_built', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $unit_floor = trim($_POST['unit_floor'] ?? null);
+    $latitude = filter_input(INPUT_POST, 'latitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $longitude = filter_input(INPUT_POST, 'longitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $delivery_date = !empty($delivery_date_str) ? $delivery_date_str : null;
 
     // --- Database Insertion ---
-    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Price, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_price, max_price, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, year_built, unit_floor, net_area, loading_percentage, DateAdded) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, price_cash, price_installments, meter_price_cash, meter_price_installments, latitude, longitude, year_built, unit_floor, net_area, loading_percentage, seller_type, DateAdded) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
     if ($stmt = $conn->prepare($sql)) {
         $stmt->bind_param(
-            "isssddissisiddissdddddsssissssssissdd",
-            $property_type_id, $title, $description, $location, $price, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_price, $max_price, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone, $year_built, $unit_floor, $net_area, $loading_percentage
+            "isssdisisiddissddddsssissssssddddsssissds",
+            $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $latitude, $longitude, $year_built, $unit_floor, $net_area, $loading_percentage, $seller_type
         );
 
         if ($stmt->execute()) {
@@ -383,6 +388,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input type="text" id="location" name="location" class="form-input" value="<?php echo htmlspecialchars($_POST['location'] ?? ''); ?>">
                 </div>
             </div>
+            
+            <!-- Interactive Map Section -->
+            <div class="form-group" style="grid-column: 1 / -1; margin-top: 20px;">
+                <h4><?php echo t('interactive_map'); ?></h4>
+                <p><?php echo t('click_map_to_select_location'); ?></p>
+                <div id="map" style="height: 400px; width: 100%; border: 1px solid #ddd; border-radius: 4px;"></div>
+                <div style="margin-top: 10px;">
+                    <div class="form-group" style="display: inline-block; margin-right: 20px;">
+                        <label for="latitude"><?php echo t('latitude'); ?>:</label>
+                        <input type="number" step="0.0000001" id="latitude" name="latitude" class="form-input" readonly style="width: 150px;" value="<?php echo htmlspecialchars($_POST['latitude'] ?? ''); ?>">
+                    </div>
+                    <div class="form-group" style="display: inline-block; margin-right: 20px;">
+                        <label for="longitude"><?php echo t('longitude'); ?>:</label>
+                        <input type="number" step="0.0000001" id="longitude" name="longitude" class="form-input" readonly style="width: 150px;" value="<?php echo htmlspecialchars($_POST['longitude'] ?? ''); ?>">
+                    </div>
+                    <button type="button" id="clear-location" class="btn btn-secondary" style="margin-top: 20px;"><?php echo t('clear_location'); ?></button>
+                </div>
+            </div>
         </div>
 
         <div class="form-section">
@@ -432,17 +455,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <h3><?php echo t('pricing_and_payment'); ?></h3>
             <div class="form-grid">
                 <div class="form-group">
-                    <label for="price"><?php echo t('unit_price'); ?> (EGP):</label>
-                    <input type="number" step="0.01" id="price" name="price" class="form-input" value="<?php echo htmlspecialchars($_POST['price'] ?? ''); ?>">
-                    <small><?php echo t('specific_price_note'); ?></small>
+                    <label for="price_cash"><?php echo t('price_cash'); ?>:</label>
+                    <input type="number" step="0.01" id="price_cash" name="price_cash" class="form-input" value="<?php echo htmlspecialchars($_POST['price_cash'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
-                    <label for="min_price"><?php echo t('min_price'); ?> (EGP):</label>
-                    <input type="number" step="0.01" id="min_price" name="min_price" class="form-input" value="<?php echo htmlspecialchars($_POST['min_price'] ?? ''); ?>">
+                    <label for="price_installments"><?php echo t('price_installments'); ?>:</label>
+                    <input type="number" step="0.01" id="price_installments" name="price_installments" class="form-input" value="<?php echo htmlspecialchars($_POST['price_installments'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
-                    <label for="max_price"><?php echo t('max_price'); ?> (EGP):</label>
-                    <input type="number" step="0.01" id="max_price" name="max_price" class="form-input" value="<?php echo htmlspecialchars($_POST['max_price'] ?? ''); ?>">
+                    <label for="meter_price_cash"><?php echo t('meter_price_cash'); ?>:</label>
+                    <input type="number" step="0.01" id="meter_price_cash" name="meter_price_cash" class="form-input" value="<?php echo htmlspecialchars($_POST['meter_price_cash'] ?? ''); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="meter_price_installments"><?php echo t('meter_price_installments'); ?>:</label>
+                    <input type="number" step="0.01" id="meter_price_installments" name="meter_price_installments" class="form-input" value="<?php echo htmlspecialchars($_POST['meter_price_installments'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
                     <label for="down_payment_percentage"><?php echo t('down_payment_percentage'); ?> (%):</label>
@@ -496,6 +522,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="form-section">
             <h3><?php echo t("owner_information"); ?></h3>
             <div class="form-grid">
+                <div>
+                    <label for="seller_type"><?php echo t("seller_type"); ?>:</label>
+                    <select id="seller_type" name="seller_type" class="form-input">
+                        <option value=""><?php echo t('select_seller_type'); ?></option>
+                        <option value="مالك" <?php echo (($_POST['seller_type'] ?? '') === 'مالك') ? 'selected' : ''; ?>><?php echo t('seller_type_owner'); ?></option>
+                        <option value="وسيط" <?php echo (($_POST['seller_type'] ?? '') === 'وسيط') ? 'selected' : ''; ?>><?php echo t('seller_type_broker'); ?></option>
+                        <option value="وكيل" <?php echo (($_POST['seller_type'] ?? '') === 'وكيل') ? 'selected' : ''; ?>><?php echo t('seller_type_agent'); ?></option>
+                        <option value="بواب" <?php echo (($_POST['seller_type'] ?? '') === 'بواب') ? 'selected' : ''; ?>><?php echo t('seller_type_guard'); ?></option>
+                        <option value="شركة مطورة" <?php echo (($_POST['seller_type'] ?? '') === 'شركة مطورة') ? 'selected' : ''; ?>><?php echo t('seller_type_developer'); ?></option>
+                        <option value="شركة تشطيب" <?php echo (($_POST['seller_type'] ?? '') === 'شركة تشطيب') ? 'selected' : ''; ?>><?php echo t('seller_type_finishing_company'); ?></option>
+                    </select>
+                </div>
                 <div>
                     <label for="owner_name"><?php echo t("owner_name"); ?></label>
                     <input type="text" id="owner_name" name="owner_name" class="form-input" value="<?php echo htmlspecialchars($_POST["owner_name"] ?? ""); ?>">
@@ -743,6 +781,65 @@ document.addEventListener('DOMContentLoaded', function() {
         updateAudioPreview();
         updateAudioInput();
     };
+});
+</script>
+
+<!-- Leaflet.js CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+// Interactive Map Initialization
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize map centered on Egypt
+    const map = L.map('map').setView([30.0444, 31.2357], 6);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    let marker = null;
+    const latitudeInput = document.getElementById('latitude');
+    const longitudeInput = document.getElementById('longitude');
+    const clearLocationBtn = document.getElementById('clear-location');
+    
+    // If coordinates are already set, show marker
+    if (latitudeInput.value && longitudeInput.value) {
+        const lat = parseFloat(latitudeInput.value);
+        const lng = parseFloat(longitudeInput.value);
+        marker = L.marker([lat, lng]).addTo(map);
+        map.setView([lat, lng], 15);
+    }
+    
+    // Add click event to map
+    map.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        
+        // Update input fields
+        latitudeInput.value = lat.toFixed(7);
+        longitudeInput.value = lng.toFixed(7);
+        
+        // Remove existing marker
+        if (marker) {
+            map.removeLayer(marker);
+        }
+        
+        // Add new marker
+        marker = L.marker([lat, lng]).addTo(map);
+    });
+    
+    // Clear location button
+    clearLocationBtn.addEventListener('click', function() {
+        latitudeInput.value = '';
+        longitudeInput.value = '';
+        if (marker) {
+            map.removeLayer(marker);
+            marker = null;
+        }
+        map.setView([30.0444, 31.2357], 6);
+    });
 });
 </script>
 

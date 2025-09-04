@@ -58,20 +58,19 @@ if ($stmt = $conn->prepare($sql)) {
 // Get property media
 $property_images = getPropertyImages($property_id, $conn);
 $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
+$property_videos = getPropertyVideos($property_id, $conn);
 
 // Format price for display
 function formatPrice($property)
 {
-    if (!empty($property['Price']) && is_numeric($property['Price'])) {
-        return number_format(floatval($property['Price']), 0, '.', ',') . ' ' . t('currency');
-    } elseif (!empty($property['min_price']) && is_numeric($property['min_price']) && !empty($property['max_price']) && is_numeric($property['max_price'])) {
-        return number_format(floatval($property['min_price']), 0, '.', ',') . ' - ' . number_format(floatval($property['max_price']), 0, '.', ',') . ' ' . t('currency');
-    } elseif (!empty($property['min_price']) && is_numeric($property['min_price'])) {
-        return t('starts_from') . ' ' . number_format(floatval($property['min_price']), 0, '.', ',') . ' ' . t('currency');
-    } elseif (!empty($property['max_price']) && is_numeric($property['max_price'])) {
-        return t('up_to') . ' ' . number_format(floatval($property['max_price']), 0, '.', ',') . ' ' . t('currency');
-    } elseif (!empty($property['avg_price']) && is_numeric($property['avg_price'])) {
-        return number_format(floatval($property['avg_price']), 0, '.', ',') . ' ' . t('currency') . ' (' . t('average') . ')';
+    if (!empty($property['price_cash']) && is_numeric($property['price_cash'])) {
+        return number_format(floatval($property['price_cash']), 0, '.', ',') . ' ' . t('currency') . ' (' . t('cash') . ')';
+    } elseif (!empty($property['price_installments']) && is_numeric($property['price_installments'])) {
+        return number_format(floatval($property['price_installments']), 0, '.', ',') . ' ' . t('currency') . ' (' . t('installments') . ')';
+    } elseif (!empty($property['meter_price_cash']) && is_numeric($property['meter_price_cash'])) {
+        return number_format(floatval($property['meter_price_cash']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('square_meter') . ' (' . t('cash') . ')';
+    } elseif (!empty($property['meter_price_installments']) && is_numeric($property['meter_price_installments'])) {
+        return number_format(floatval($property['meter_price_installments']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('square_meter') . ' (' . t('installments') . ')';
     }
     return t('price_not_specified');
 }
@@ -309,6 +308,26 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
         </div>
         <?php endif; ?>
 
+        <!-- Property Videos Section -->
+        <?php if (!empty($property_videos)): ?>
+        <div class="property-section">
+            <h2>🎥 Property Videos</h2>
+            <div class="videos-gallery">
+                <?php foreach ($property_videos as $video): ?>
+                    <div class="video-item">
+                        <video controls width="100%" height="auto">
+                            <source src="<?php echo htmlspecialchars($video['file_path']); ?>" type="video/mp4">
+                            Your browser does not support the video element.
+                        </video>
+                        <div class="video-info">
+                            <div>Uploaded: <?php echo date('Y-m-d H:i', strtotime($video['upload_date'])); ?></div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <div class="property-details">
             <div class="property-section">
                 <h2><?php echo t('basic_information'); ?></h2>
@@ -365,28 +384,43 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                         <span class="detail-value"><?php echo htmlspecialchars($property['Location']); ?></span>
                     </div>
                     <?php endif; ?>
+                    <?php if (!empty($property['latitude']) && !empty($property['longitude'])): ?>
+                    <div class="detail-item full-width">
+                        <span class="detail-label"><?php echo t('coordinates'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['latitude'], 7, '.', ''); ?>, <?php echo number_format($property['longitude'], 7, '.', ''); ?></span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <div id="property-map" style="height: 300px; width: 100%; border-radius: 8px; margin-top: 10px;"></div>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
             <div class="property-section">
                 <h2><?php echo t('pricing_and_area'); ?></h2>
                 <div class="detail-grid">
-                    <?php if (!empty($property['Price'])): ?>
+                    <?php if (!empty($property['price_cash'])): ?>
                     <div class="detail-item">
-                        <span class="detail-label"><?php echo t('unit_price_egp'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['Price'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
+                        <span class="detail-label"><?php echo t('price_cash'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['price_cash'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($property['min_price'])): ?>
+                    <?php if (!empty($property['price_installments'])): ?>
                     <div class="detail-item">
-                        <span class="detail-label"><?php echo t('min_price'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['min_price'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
+                        <span class="detail-label"><?php echo t('price_installments'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['price_installments'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($property['max_price'])): ?>
+                    <?php if (!empty($property['meter_price_cash'])): ?>
                     <div class="detail-item">
-                        <span class="detail-label"><?php echo t('max_price'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['max_price'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
+                        <span class="detail-label"><?php echo t('meter_price_cash'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['meter_price_cash'], 0, '.', ','); ?> <?php echo t('currency'); ?> / <?php echo t('square_meter'); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['meter_price_installments'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('meter_price_installments'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['meter_price_installments'], 0, '.', ','); ?> <?php echo t('currency'); ?> / <?php echo t('square_meter'); ?></span>
                     </div>
                     <?php endif; ?>
 
@@ -421,6 +455,18 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                         <span class="detail-value"><?php echo htmlspecialchars($property['compound_area']); ?> <?php echo t('faddan'); ?></span>
                     </div>
                     <?php endif; ?>
+                    <?php if (!empty($property['net_area'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('net_area'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['net_area'], 2, '.', ','); ?> <?php echo t('sqm'); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['loading_percentage'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('loading_percentage'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['loading_percentage'], 2, '.', ','); ?>%</span>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -443,6 +489,18 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('floors_count'); ?>:</span>
                         <span class="detail-value"><?php echo htmlspecialchars($property['FloorsCount']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['year_built'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('year_built'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['year_built']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['unit_floor'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('unit_floor'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['unit_floor']); ?></span>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -533,10 +591,16 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
             </div>
             <?php endif; // End of the main check for sales information ?>
 
-            <?php if (!empty($property['owner_name']) || !empty($property['owner_phone'])): ?>
+            <?php if (!empty($property['owner_name']) || !empty($property['owner_phone']) || !empty($property['seller_type'])): ?>
             <div class="property-section">
                 <h2><?php echo t('owner_information'); ?></h2>
                 <div class="detail-grid">
+                    <?php if (!empty($property['seller_type'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('seller_type'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['seller_type']); ?></span>
+                    </div>
+                    <?php endif; ?>
                     <?php if (!empty($property['owner_name'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('owner_name'); ?>:</span>
@@ -585,6 +649,27 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
     </div>
 
     <script src="lightbox.js"></script>
+    
+    <?php if (!empty($property['latitude']) && !empty($property['longitude'])): ?>
+    <!-- Leaflet.js for map display -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize map for property view
+        var propertyLat = <?php echo $property['latitude']; ?>;
+        var propertyLng = <?php echo $property['longitude']; ?>;
+        
+        var map = L.map('property-map').setView([propertyLat, propertyLng], 15);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        L.marker([propertyLat, propertyLng]).addTo(map)
+            .bindPopup('<?php echo addslashes($property['Title']); ?>')
+            .openPopup();
+    </script>
+    <?php endif; ?>
 </body>
 </html>
 
