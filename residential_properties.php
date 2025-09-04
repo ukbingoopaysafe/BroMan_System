@@ -92,21 +92,7 @@ if ($stmt_comp = $conn->prepare($sql_companies)) {
     $stmt_comp->close();
 }
 
-// Fetch unit designs for the filter dropdown
-$unit_designs = [];
-$sql_unit_designs = "SELECT DISTINCT pud.DesignID, pud.DesignName 
-                     FROM PropertyUnitDesigns pud 
-                     JOIN Properties p ON p.unit_design_id = pud.DesignID 
-                     ORDER BY pud.DesignName";
-if ($stmt_designs = $conn->prepare($sql_unit_designs)) {
-    if ($stmt_designs->execute()) {
-        $result_designs = $stmt_designs->get_result();
-        while ($row_design = $result_designs->fetch_assoc()) {
-            $unit_designs[$row_design['DesignID']] = $row_design['DesignName'];
-        }
-    }
-    $stmt_designs->close();
-}
+// Unit designs are now handled as text in the properties table
 
 // Fetch property types for the filter dropdown
 $property_types = [];
@@ -121,13 +107,12 @@ if ($stmt_types = $conn->prepare($sql_property_types)) {
     $stmt_types->close();
 }
 
-// Build the main SQL query with proper joins for unit design and finishing type
+// Build the main SQL query with proper joins for finishing type
 $sql_select = "SELECT p.*, pt.TypeName AS PropertyTypeName, e.FullName AS EmployeeName,
-               pud.DesignName AS UnitDesignName, pft.FinishingName AS FinishingTypeName
+               p.unit_design AS UnitDesignName, pft.FinishingName AS FinishingTypeName
                FROM Properties p
                LEFT JOIN PropertyTypes pt ON p.PropertyTypeID = pt.PropertyTypeID
                LEFT JOIN Employees e ON p.EmployeeID = e.EmployeeID
-               LEFT JOIN PropertyUnitDesigns pud ON p.unit_design_id = pud.DesignID
                LEFT JOIN PropertyFinishingTypes pft ON p.finishing_type_id = pft.FinishingID";
 $sql_where = [];
 $params = [];
@@ -140,7 +125,7 @@ $types .= "s";
 
 // Add search term filter
 if (!empty($search_term)) {
-    $sql_where[] = "(p.Title LIKE ? OR p.ProjectName LIKE ? OR p.governorate LIKE ? OR p.district LIKE ? OR p.Location LIKE ? OR p.company_name LIKE ? OR pud.DesignName LIKE ?)";
+    $sql_where[] = "(p.Title LIKE ? OR p.ProjectName LIKE ? OR p.governorate LIKE ? OR p.district LIKE ? OR p.Location LIKE ? OR p.company_name LIKE ? OR p.unit_design LIKE ?)";
     $search_param = "%" . $search_term . "%";
     array_push($params, $search_param, $search_param, $search_param, $search_param, $search_param, $search_param, $search_param);
     $types .= "sssssss";
@@ -169,9 +154,9 @@ if (!empty($company_filter)) {
 
 // Add unit design filter
 if (!empty($unit_design_filter)) {
-    $sql_where[] = "p.unit_design_id = ?";
+    $sql_where[] = "p.unit_design = ?";
     $params[] = $unit_design_filter;
-    $types .= "i";
+    $types .= "s";
 }
 
 // Add status filter
@@ -181,17 +166,7 @@ if (!empty($status_filter)) {
     $types .= "s";
 }
 
-// Add advanced filters
-if (!empty($min_price_filter)) {
-    $sql_where[] = "COALESCE(p.Price, p.min_price) >= ?";
-    $params[] = $min_price_filter;
-    $types .= "d";
-}
-if (!empty($max_price_filter)) {
-    $sql_where[] = "COALESCE(p.Price, p.max_price) <= ?";
-    $params[] = $max_price_filter;
-    $types .= "d";
-}
+// Price filters removed as requested
 if (!empty($min_area_filter)) {
     $sql_where[] = "COALESCE(p.Area, p.min_area) >= ?";
     $params[] = $min_area_filter;
@@ -252,15 +227,6 @@ if ($stmt = $conn->prepare($sql)) {
 // Function to format price for display
 function formatDisplayPrice($row)
 {
-    if (!empty($row['Price']) && is_numeric($row['Price'])) {
-        return number_format(floatval($row['Price']), 0, '.', ',') . ' ' . t('currency');
-    } elseif (!empty($row['min_price']) && is_numeric($row['min_price']) && !empty($row['max_price']) && is_numeric($row['max_price'])) {
-        return number_format(floatval($row['min_price']), 0, '.', ',') . ' - ' . number_format(floatval($row['max_price']), 0, '.', ',') . ' ' . t('currency');
-    } elseif (!empty($row['min_price']) && is_numeric($row['min_price'])) {
-        return t('starts_from') . ' ' . number_format(floatval($row['min_price']), 0, '.', ',') . ' ' . t('currency');
-    } elseif (!empty($row['max_price']) && is_numeric($row['max_price'])) {
-        return t('up_to') . ' ' . number_format(floatval($row['max_price']), 0, '.', ',') . ' ' . t('currency');
-    }
     return t('price_not_specified');
 }
 
@@ -420,14 +386,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
                 </div>
                 <div class="filter-item">
                     <label for="unit_design"><?php echo t('unit_design'); ?>:</label>
-                    <select id="unit_design" name="unit_design" class="form-control">
-                        <option value=""><?php echo t('all_designs'); ?></option>
-                        <?php foreach ($unit_designs as $design_id => $design_name): ?>
-                            <option value="<?php echo $design_id; ?>" <?php echo $unit_design_filter == $design_id ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($design_name); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                    <input type="text" id="unit_design" name="unit_design" class="form-control" value="<?php echo htmlspecialchars($unit_design_filter); ?>" placeholder="<?php echo t('enter_unit_design'); ?>">
                 </div>
             </div>
 
@@ -448,16 +407,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
                         <input type="number" id="max_area" name="max_area" class="form-control" value="<?php echo htmlspecialchars($max_area_filter); ?>" min="0">
                     </div>
                 </div>
-                <div class="filter-row">
-                    <div class="filter-item">
-                        <label for="min_price"><?php echo t('min_price'); ?>:</label>
-                        <input type="number" id="min_price" name="min_price" class="form-control" value="<?php echo htmlspecialchars($min_price_filter); ?>" min="0">
-                    </div>
-                    <div class="filter-item">
-                        <label for="max_price"><?php echo t('max_price'); ?>:</label>
-                        <input type="number" id="max_price" name="max_price" class="form-control" value="<?php echo htmlspecialchars($max_price_filter); ?>" min="0">
-                    </div>
-                </div>
+                <!-- Price filters removed as requested -->
                 <div class="filter-row">
                     <div class="filter-item">
                         <label for="down_payment"><?php echo t('down_payment_percentage'); ?>:</label>

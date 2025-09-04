@@ -123,20 +123,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["excel_file"])) {
                     }
                     
                     // Parse numeric values
-                    $price = parseNumericValueForDB($row[3], true);
                     $area = parseNumericValueForDB($row[4]);
                     $bedrooms = !empty($row[5]) ? intval($row[5]) : null;
-                    $bathrooms = !empty($row[6]) ? intval($row[6]) : null;
                     
                     if ($property_exists) {
                         // Update existing property
                         $update_sql = "UPDATE Properties SET 
                                       Title = ?, 
                                       ProjectName = ?, 
-                                      Price = ?, 
                                       Area = ?, 
                                       Bedrooms = ?, 
-                                      Bathrooms = ?, 
                                       Location = ?, 
                                       Status = ?, 
                                       governorate = ?, 
@@ -145,13 +141,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["excel_file"])) {
                         
                         $update_stmt = $conn->prepare($update_sql);
                         $update_stmt->bind_param(
-                            "ssddiiisssi",
+                            "ssdissssi",
                             $row[1], // Title
                             $row[2], // ProjectName
-                            $price,  // Price
                             $area,   // Area
                             $bedrooms, // Bedrooms
-                            $bathrooms, // Bathrooms
                             $row[7], // Location
                             $row[8], // Status
                             $row[9], // governorate
@@ -167,18 +161,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["excel_file"])) {
                         $update_stmt->close();
                     } else {
                         // Insert new property
-                        $insert_sql = "INSERT INTO Properties (Title, ProjectName, Price, Area, Bedrooms, Bathrooms, Location, Status, governorate, district, DateAdded, EmployeeID) 
-                                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)";
+                        $insert_sql = "INSERT INTO Properties (Title, ProjectName, Area, Bedrooms, Location, Status, governorate, district, DateAdded, EmployeeID) 
+                                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)";
                         
                         $insert_stmt = $conn->prepare($insert_sql);
                         $insert_stmt->bind_param(
-                            "ssddiiisssi",
+                            "ssdissssi",
                             $row[1], // Title
                             $row[2], // ProjectName
-                            $price,  // Price
                             $area,   // Area
                             $bedrooms, // Bedrooms
-                            $bathrooms, // Bathrooms
                             $row[7], // Location
                             $row[8], // Status
                             $row[9], // governorate
@@ -256,7 +248,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["excel_file"])) {
                     <li>Price</li>
                     <li>Area</li>
                     <li>Bedrooms</li>
-                    <li>Bathrooms</li>
+                                            <!-- Bathrooms column removed as requested -->
                     <li>Location</li>
                     <li>Status (available, sold, rented, unavailable)</li>
                     <li>Governorate</li>

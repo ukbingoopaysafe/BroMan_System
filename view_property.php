@@ -25,11 +25,10 @@ $property_id = intval($_GET['id']);
 $property = null;
 $sql = "SELECT p.*, pt.TypeName, 
                e.FullName AS EmployeeName,
-               pud.DesignName AS UnitDesignName, pft.FinishingName AS FinishingTypeName
+               p.unit_design AS UnitDesignName, pft.FinishingName AS FinishingTypeName
         FROM Properties p
         LEFT JOIN PropertyTypes pt ON p.PropertyTypeID = pt.PropertyTypeID
         LEFT JOIN Employees e ON p.EmployeeID = e.EmployeeID
-        LEFT JOIN PropertyUnitDesigns pud ON p.unit_design_id = pud.DesignID
         LEFT JOIN PropertyFinishingTypes pft ON p.finishing_type_id = pft.FinishingID
         WHERE p.PropertyID = ?";
 
@@ -63,17 +62,6 @@ $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
 // Format price for display
 function formatPrice($property)
 {
-    if (!empty($property['Price']) && is_numeric($property['Price'])) {
-        return number_format(floatval($property['Price']), 0, '.', ',') . ' ' . t('currency');
-    } elseif (!empty($property['min_price']) && is_numeric($property['min_price']) && !empty($property['max_price']) && is_numeric($property['max_price'])) {
-        return number_format(floatval($property['min_price']), 0, '.', ',') . ' - ' . number_format(floatval($property['max_price']), 0, '.', ',') . ' ' . t('currency');
-    } elseif (!empty($property['min_price']) && is_numeric($property['min_price'])) {
-        return t('starts_from') . ' ' . number_format(floatval($property['min_price']), 0, '.', ',') . ' ' . t('currency');
-    } elseif (!empty($property['max_price']) && is_numeric($property['max_price'])) {
-        return t('up_to') . ' ' . number_format(floatval($property['max_price']), 0, '.', ',') . ' ' . t('currency');
-    } elseif (!empty($property['avg_price']) && is_numeric($property['avg_price'])) {
-        return number_format(floatval($property['avg_price']), 0, '.', ',') . ' ' . t('currency') . ' (' . t('average') . ')';
-    }
     return t('price_not_specified');
 }
 
