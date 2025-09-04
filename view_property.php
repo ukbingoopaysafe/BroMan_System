@@ -59,6 +59,7 @@ if ($stmt = $conn->prepare($sql)) {
 // Get property media
 $property_images = getPropertyImages($property_id, $conn);
 $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
+$property_videos = getPropertyVideos($property_id, $conn);
 
 // Format price for display
 function formatPrice($property)
@@ -127,6 +128,9 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css">
     <?php endif; ?>
+    <!-- Leaflet.js CSS and JS for static map display -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         /* Enhanced Property Details Styling */
         .property-details {
@@ -232,6 +236,121 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
             color: #444;
         }
         
+        /* Media Gallery Styles */
+        .media-gallery {
+            padding: 20px;
+        }
+        
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .image-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .property-image-clickable {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .property-image-clickable:hover {
+            transform: scale(1.05);
+        }
+        
+        .image-primary-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #007bff;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .audio-notes {
+            padding: 20px;
+        }
+        
+        .audio-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .audio-item audio {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .audio-info {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .audio-info div {
+            margin-bottom: 5px;
+        }
+        
+        /* Video Gallery Styles */
+        .video-gallery {
+            padding: 20px;
+        }
+        
+        .videos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .video-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .property-video {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .video-info {
+            padding: 15px;
+        }
+        
+        .video-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+        
+        .video-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .video-details span {
+            display: block;
+        }
+        
         /* Responsive Adjustments */
         @media (max-width: 768px) {
             .detail-grid {
@@ -310,6 +429,32 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
         </div>
         <?php endif; ?>
 
+        <!-- Property Videos Section -->
+        <?php if (!empty($property_videos)): ?>
+        <div class="property-section">
+            <h2>🎥 <?php echo t('property_videos'); ?></h2>
+            <div class="video-gallery">
+                <div class="videos-grid">
+                    <?php foreach ($property_videos as $video): ?>
+                        <div class="video-item">
+                            <video controls preload="metadata" class="property-video">
+                                <source src="<?php echo htmlspecialchars($video['VideoPath']); ?>" type="video/mp4">
+                                Your browser does not support the video element.
+                            </video>
+                            <div class="video-info">
+                                <div class="video-name"><?php echo htmlspecialchars($video['VideoName']); ?></div>
+                                <div class="video-details">
+                                    <span><?php echo t('video_size'); ?>: <?php echo formatFileSize($video['VideoSize']); ?></span>
+                                    <span><?php echo t('uploaded_on'); ?>: <?php echo date('Y-m-d H:i', strtotime($video['UploadDate'])); ?></span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <div class="property-details">
             <div class="property-section">
                 <h2><?php echo t('basic_information'); ?></h2>
@@ -364,6 +509,14 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                     <div class="detail-item full-width">
                         <span class="detail-label"><?php echo t('detailed_address'); ?>:</span>
                         <span class="detail-value"><?php echo htmlspecialchars($property['Location']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <!-- Static Map Display -->
+                    <?php if (!empty($property['latitude']) && !empty($property['longitude'])): ?>
+                    <div class="detail-item full-width">
+                        <span class="detail-label"><?php echo t('location_on_map'); ?>:</span>
+                        <div id="property-map" style="height: 300px; width: 100%; border: 1px solid #ddd; border-radius: 4px; margin-top: 10px;"></div>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -634,6 +787,29 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
     </div>
 
     <script src="lightbox.js"></script>
+    
+    <?php if (!empty($property['latitude']) && !empty($property['longitude'])): ?>
+    <script>
+        // Initialize static map for property location
+        document.addEventListener('DOMContentLoaded', function() {
+            const lat = <?php echo $property['latitude']; ?>;
+            const lng = <?php echo $property['longitude']; ?>;
+            
+            // Initialize map
+            const map = L.map('property-map').setView([lat, lng], 15);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            // Add marker at property location
+            L.marker([lat, lng]).addTo(map)
+                .bindPopup('<?php echo addslashes($property['Title']); ?>')
+                .openPopup();
+        });
+    </script>
+    <?php endif; ?>
 </body>
 </html>
 

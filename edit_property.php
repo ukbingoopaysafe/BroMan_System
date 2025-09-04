@@ -36,6 +36,7 @@ $unit_design = $finishing_type_id = $compound_area = $down_payment_percentage = 
 $project_name = $min_area = $max_area = $avg_area = $district = $governorate = $company_name = $floors_count = "";
 $sales_manager_name = $sales_manager_phone = $salesperson_name = $salesperson_phone = "";
 $owner_name = $owner_phone = "";
+$latitude = $longitude = "";
 
 $errors = []; // Array to hold errors
 
@@ -111,6 +112,8 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $owner_name = $row["owner_name"] ?? '';
                 $owner_phone = $row["owner_phone"] ?? '';
                 $listing_type = $row["listing_type"] ?? 'Primary';
+                $latitude = $row["latitude"] ?? '';
+                $longitude = $row["longitude"] ?? '';
                 
                 // New Phase 2 fields
                 $year_built = $row["year_built"] ?? null;
@@ -185,6 +188,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $salesperson_phone_posted = isset($_POST['salesperson_phone']) ? trim($_POST['salesperson_phone']) : null;
     $owner_name_posted = isset($_POST['owner_name']) ? trim($_POST['owner_name']) : null;
     $owner_phone_posted = isset($_POST['owner_phone']) ? trim($_POST['owner_phone']) : null;
+    $latitude_posted = isset($_POST['latitude']) && trim($_POST['latitude']) !== '' ? filter_input(INPUT_POST, 'latitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
+    $longitude_posted = isset($_POST['longitude']) && trim($_POST['longitude']) !== '' ? filter_input(INPUT_POST, 'longitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     
     // New Phase 2 fields
     $year_built_posted = isset($_POST['year_built']) && trim($_POST['year_built']) !== '' ? filter_input(INPUT_POST, 'year_built', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) : null;
@@ -267,12 +272,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             sales_manager_name = ?, sales_manager_phone = ?, salesperson_name = ?, salesperson_phone = ?,
             owner_name = ?, owner_phone = ?, year_built = ?, unit_floor = ?, net_area = ?, 
             loading_percentage = ?, price_cash = ?, price_installments = ?, meter_price_cash = ?, 
-            meter_price_installments = ?, seller_type = ?, seller_name = ?, seller_phone = ?
+            meter_price_installments = ?, seller_type = ?, seller_name = ?, seller_phone = ?,
+            latitude = ?, longitude = ?
             WHERE PropertyID = ?";
 
         if ($stmt_update = $conn->prepare($sql_update)) {
             $stmt_update->bind_param(
-                "isssdisiiddissddddsssissssssiisddddddssssi",
+                "isssdisiiddissddddsssissssssiisddddddssssddi",
                 $property_type_id_posted,
                 $title_posted,
                 $description_posted,
@@ -310,6 +316,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $seller_type_posted,
                 $seller_name_posted,
                 $seller_phone_posted,
+                $latitude_posted,
+                $longitude_posted,
                 $property_id
             );
 
@@ -343,6 +351,9 @@ $conn->close();
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css"> 
     <?php endif; ?>
+    <!-- Leaflet.js CSS and JS for interactive map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         /* Add some spacing between form sections */
         .form-section {
@@ -697,6 +708,17 @@ $conn->close();
                     <label for="location"><?php echo t('detailed_address'); ?>:</label>
                     <input type="text" id="location" name="location" class="form-input" value="<?php echo htmlspecialchars($location); ?>">
                 </div>
+                
+                <!-- Interactive Map Section -->
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label><?php echo t('select_location_on_map'); ?>:</label>
+                    <div id="map" style="height: 400px; width: 100%; border: 1px solid #ddd; border-radius: 4px;"></div>
+                    <small><?php echo t('click_map_to_set_location'); ?></small>
+                    
+                    <!-- Hidden inputs for coordinates -->
+                    <input type="hidden" id="latitude" name="latitude" value="<?php echo htmlspecialchars($latitude ?? ''); ?>">
+                    <input type="hidden" id="longitude" name="longitude" value="<?php echo htmlspecialchars($longitude ?? ''); ?>">
+                </div>
             </div>
 
             <!-- Residential/Coastal Specific Fields -->
@@ -1010,6 +1032,54 @@ $conn->close();
 
             // Add event listener for changes
             propertyTypeIdSelect.addEventListener('change', togglePropertyTypeFields);
+            
+            // Initialize interactive map
+            let map;
+            let marker;
+            
+            function initMap() {
+                // Default center on Egypt (Cairo)
+                const defaultLat = 30.0444;
+                const defaultLng = 31.2357;
+                
+                // Get existing coordinates or use default
+                const lat = parseFloat(document.getElementById('latitude').value) || defaultLat;
+                const lng = parseFloat(document.getElementById('longitude').value) || defaultLng;
+                
+                // Initialize map
+                map = L.map('map').setView([lat, lng], 10);
+                
+                // Add OpenStreetMap tiles
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+                
+                // Add marker if coordinates exist
+                if (lat !== defaultLat || lng !== defaultLng) {
+                    marker = L.marker([lat, lng]).addTo(map);
+                }
+                
+                // Add click event to map
+                map.on('click', function(e) {
+                    const clickedLat = e.latlng.lat;
+                    const clickedLng = e.latlng.lng;
+                    
+                    // Update hidden inputs
+                    document.getElementById('latitude').value = clickedLat;
+                    document.getElementById('longitude').value = clickedLng;
+                    
+                    // Remove existing marker
+                    if (marker) {
+                        map.removeLayer(marker);
+                    }
+                    
+                    // Add new marker
+                    marker = L.marker([clickedLat, clickedLng]).addTo(map);
+                });
+            }
+            
+            // Initialize map when page loads
+            initMap();
         });
     </script>
 </body>

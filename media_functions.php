@@ -44,6 +44,27 @@ function getPropertyAudioNotes($property_id, $conn) {
 }
 
 /**
+ * Get all videos for a property
+ */
+function getPropertyVideos($property_id, $conn) {
+    $videos = [];
+    $sql = "SELECT VideoID, VideoPath, VideoName, VideoSize, UploadDate FROM property_videos WHERE PropertyID = ? ORDER BY UploadDate ASC";
+    
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param("i", $property_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        while ($row = $result->fetch_assoc()) {
+            $videos[] = $row;
+        }
+        $stmt->close();
+    }
+    
+    return $videos;
+}
+
+/**
  * Get primary image for a property (for card view)
  */
 function getPropertyPrimaryImage($property_id, $conn) {

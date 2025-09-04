@@ -503,6 +503,22 @@ return [
     'reorder_images' => 'Reorder Images',
     'save_image_order' => 'Save Image Order',
     'image_reorder_instructions' => 'Drag images to reorder them, then click Save Image Order.',
+    
+    // Phase 3: Interactive Map and Video Features
+    'select_location_on_map' => 'Select Location on Map',
+    'click_map_to_set_location' => 'Click on the map to set the property location',
+    'location_on_map' => 'Location on Map',
+    'media_upload' => 'Media Upload',
+    'drag_drop_files_here' => 'Drag and drop files here',
+    'supported_formats' => 'Supported formats',
+    'select_files' => 'Select Files',
+    'selected_files' => 'Selected Files',
+    'uploading' => 'Uploading',
+    'upload_results' => 'Upload Results',
+    'property_videos' => 'Property Videos',
+    'video_name' => 'Video Name',
+    'video_size' => 'Video Size',
+    'uploaded_on' => 'Uploaded on',
 ];
 ?>
 

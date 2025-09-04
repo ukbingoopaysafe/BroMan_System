@@ -113,15 +113,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $seller_type = trim($_POST['seller_type'] ?? null);
     $seller_name = trim($_POST['seller_name'] ?? null);
     $seller_phone = trim($_POST['seller_phone'] ?? null);
+    $latitude = filter_input(INPUT_POST, 'latitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $longitude = filter_input(INPUT_POST, 'longitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
 
     // --- Database Insertion ---
-    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, year_built, unit_floor, net_area, loading_percentage, price_cash, price_installments, meter_price_cash, meter_price_installments, seller_type, seller_name, seller_phone, DateAdded) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, year_built, unit_floor, net_area, loading_percentage, price_cash, price_installments, meter_price_cash, meter_price_installments, seller_type, seller_name, seller_phone, latitude, longitude, DateAdded) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
     if ($stmt = $conn->prepare($sql)) {
         $stmt->bind_param(
-            "isssdiissiiddisssddddsssissssssiisddddddssss",
-            $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone, $year_built, $unit_floor, $net_area, $loading_percentage, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $seller_type, $seller_name, $seller_phone
+            "isssdiissiiddisssddddsssissssssiisddddddssssdd",
+            $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone, $year_built, $unit_floor, $net_area, $loading_percentage, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $seller_type, $seller_name, $seller_phone, $latitude, $longitude
         );
 
         if ($stmt->execute()) {
@@ -228,6 +230,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css">
     <?php endif; ?>
+    <!-- Leaflet.js CSS and JS for interactive map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         .form-section { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
         .form-section h3 { margin-bottom: 15px; color: #0056b3; }
@@ -340,7 +345,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     <?php endif; ?>
 
-    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" class="form-container" enctype="multipart/form-data">
+    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" class="form-container" enctype="multipart/form-data" data-property-id="0" data-csrf-token="<?php echo $csrf_token; ?>">
         <?php echo csrf_input(); ?>
 
         <!-- Property Type (Hidden/Fixed for this page) -->
@@ -394,6 +399,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="form-group" style="grid-column: 1 / -1;">
                     <label for="location"><?php echo t('detailed_address'); ?>:</label>
                     <input type="text" id="location" name="location" class="form-input" value="<?php echo htmlspecialchars($_POST['location'] ?? ''); ?>">
+                </div>
+                
+                <!-- Interactive Map Section -->
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label><?php echo t('select_location_on_map'); ?>:</label>
+                    <div id="map" style="height: 400px; width: 100%; border: 1px solid #ddd; border-radius: 4px;"></div>
+                    <small><?php echo t('click_map_to_set_location'); ?></small>
+                    
+                    <!-- Hidden inputs for coordinates -->
+                    <input type="hidden" id="latitude" name="latitude" value="<?php echo htmlspecialchars($_POST['latitude'] ?? ''); ?>">
+                    <input type="hidden" id="longitude" name="longitude" value="<?php echo htmlspecialchars($_POST['longitude'] ?? ''); ?>">
                 </div>
             </div>
         </div>
@@ -565,46 +581,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         </div>
 
-        <!-- Media Upload Section -->
+        <!-- Unified Media Upload Section -->
         <div class="form-section">
-            <h3>📷 <?php echo t('property_images'); ?></h3>
-            
-            <!-- Image Upload Area -->
-            <div id="image-upload-area" class="upload-area">
-                <p>📁 Drag and drop images here or click to select</p>
-                <button type="button" id="image-upload-btn" class="upload-btn">Choose Images</button>
-                <input type="file" id="image-upload" name="images[]" accept="image/jpeg,image/jpg,image/png,image/webp" multiple style="display: none;">
-                <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                    Supported formats: JPG, JPEG, PNG, WEBP | Max size: 10MB per image
-                </p>
-            </div>
-
-            <!-- Selected Images Preview -->
-            <div id="image-preview" class="images-grid" style="display: none;">
-                <p>Selected images:</p>
-                <div id="image-thumbnails"></div>
-            </div>
-        </div>
-
-        <!-- Audio Notes Section -->
-        <div class="form-section">
-            <h3>🎤 <?php echo t('voice_notes'); ?></h3>
-            
-            <!-- Audio Upload Area -->
-            <div id="audio-upload-area" class="upload-area">
-                <p>🎵 Drag and drop audio files here or click to select</p>
-                <button type="button" id="audio-upload-btn" class="upload-btn">Choose Audio Files</button>
-                <input type="file" id="audio-upload" name="audio[]" accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/mp4,audio/m4a" multiple style="display: none;">
-                <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                    Supported formats: MP3, WAV, OGG, M4A | Max size: 10MB per file
-                </p>
-            </div>
-
-            <!-- Selected Audio Preview -->
-            <div id="audio-preview" class="audio-notes" style="display: none;">
-                <p>Selected audio files:</p>
-                <div id="audio-list"></div>
-            </div>
+            <?php include 'unified_media_uploader.php'; ?>
         </div>
 
         <div class="form-actions">
@@ -618,189 +597,55 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Image upload functionality
-    const imageUploadArea = document.getElementById('image-upload-area');
-    const imageUploadBtn = document.getElementById('image-upload-btn');
-    const imageUploadInput = document.getElementById('image-upload');
-    const imagePreview = document.getElementById('image-preview');
-    const imageThumbnails = document.getElementById('image-thumbnails');
+    // Initialize interactive map
+    let map;
+    let marker;
     
-    // Audio upload functionality
-    const audioUploadArea = document.getElementById('audio-upload-area');
-    const audioUploadBtn = document.getElementById('audio-upload-btn');
-    const audioUploadInput = document.getElementById('audio-upload');
-    const audioPreview = document.getElementById('audio-preview');
-    const audioList = document.getElementById('audio-list');
-    
-    let selectedImages = [];
-    let selectedAudio = [];
-    
-    // Image upload button click
-    imageUploadBtn.addEventListener('click', function() {
-        imageUploadInput.click();
-    });
-    
-    // Audio upload button click
-    audioUploadBtn.addEventListener('click', function() {
-        audioUploadInput.click();
-    });
-    
-    // Image file selection
-    imageUploadInput.addEventListener('change', function(e) {
-        handleImageFiles(e.target.files);
-    });
-    
-    // Audio file selection
-    audioUploadInput.addEventListener('change', function(e) {
-        handleAudioFiles(e.target.files);
-    });
-    
-    // Image drag and drop
-    imageUploadArea.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        imageUploadArea.classList.add('dragover');
-    });
-    
-    imageUploadArea.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        imageUploadArea.classList.remove('dragover');
-    });
-    
-    imageUploadArea.addEventListener('drop', function(e) {
-        e.preventDefault();
-        imageUploadArea.classList.remove('dragover');
-        handleImageFiles(e.dataTransfer.files);
-    });
-    
-    // Audio drag and drop
-    audioUploadArea.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        audioUploadArea.classList.add('dragover');
-    });
-    
-    audioUploadArea.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        audioUploadArea.classList.remove('dragover');
-    });
-    
-    audioUploadArea.addEventListener('drop', function(e) {
-        e.preventDefault();
-        audioUploadArea.classList.remove('dragover');
-        handleAudioFiles(e.dataTransfer.files);
-    });
-    
-    function handleImageFiles(files) {
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-        const maxSize = 10 * 1024 * 1024; // 10MB
+    function initMap() {
+        // Default center on Egypt (Cairo)
+        const defaultLat = 30.0444;
+        const defaultLng = 31.2357;
         
-        Array.from(files).forEach(file => {
-            if (!allowedTypes.includes(file.type)) {
-                alert('Invalid file type: ' + file.name + '. Please select JPG, JPEG, PNG, or WEBP files.');
-                return;
-            }
-            
-            if (file.size > maxSize) {
-                alert('File too large: ' + file.name + '. Maximum size is 10MB.');
-                return;
-            }
-            
-            selectedImages.push(file);
-        });
+        // Get existing coordinates or use default
+        const lat = parseFloat(document.getElementById('latitude').value) || defaultLat;
+        const lng = parseFloat(document.getElementById('longitude').value) || defaultLng;
         
-        updateImagePreview();
-        updateImageInput();
-    }
-    
-    function handleAudioFiles(files) {
-        const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/m4a'];
-        const maxSize = 10 * 1024 * 1024; // 10MB
+        // Initialize map
+        map = L.map('map').setView([lat, lng], 10);
         
-        Array.from(files).forEach(file => {
-            if (!allowedTypes.includes(file.type)) {
-                alert('Invalid file type: ' + file.name + '. Please select MP3, WAV, OGG, or M4A files.');
-                return;
-            }
-            
-            if (file.size > maxSize) {
-                alert('File too large: ' + file.name + '. Maximum size is 10MB.');
-                return;
-            }
-            
-            selectedAudio.push(file);
-        });
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
         
-        updateAudioPreview();
-        updateAudioInput();
-    }
-    
-    function updateImagePreview() {
-        imageThumbnails.innerHTML = '';
-        
-        if (selectedImages.length > 0) {
-            imagePreview.style.display = 'block';
-            
-            selectedImages.forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const div = document.createElement('div');
-                    div.className = 'image-preview';
-                    div.innerHTML = `
-                        <img src="${e.target.result}" alt="${file.name}">
-                        <button type="button" class="remove-file" onclick="removeImage(${index})">×</button>
-                    `;
-                    imageThumbnails.appendChild(div);
-                };
-                reader.readAsDataURL(file);
-            });
-        } else {
-            imagePreview.style.display = 'none';
+        // Add marker if coordinates exist
+        if (lat !== defaultLat || lng !== defaultLng) {
+            marker = L.marker([lat, lng]).addTo(map);
         }
-    }
-    
-    function updateAudioPreview() {
-        audioList.innerHTML = '';
         
-        if (selectedAudio.length > 0) {
-            audioPreview.style.display = 'block';
+        // Add click event to map
+        map.on('click', function(e) {
+            const clickedLat = e.latlng.lat;
+            const clickedLng = e.latlng.lng;
             
-            selectedAudio.forEach((file, index) => {
-                const div = document.createElement('div');
-                div.className = 'audio-preview';
-                div.innerHTML = `
-                    <span>🎵 ${file.name}</span>
-                    <button type="button" class="remove-file" onclick="removeAudio(${index})">×</button>
-                `;
-                audioList.appendChild(div);
-            });
-        } else {
-            audioPreview.style.display = 'none';
-        }
+            // Update hidden inputs
+            document.getElementById('latitude').value = clickedLat;
+            document.getElementById('longitude').value = clickedLng;
+            
+            // Remove existing marker
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            
+            // Add new marker
+            marker = L.marker([clickedLat, clickedLng]).addTo(map);
+        });
     }
     
-    function updateImageInput() {
-        const dt = new DataTransfer();
-        selectedImages.forEach(file => dt.items.add(file));
-        imageUploadInput.files = dt.files;
-    }
-    
-    function updateAudioInput() {
-        const dt = new DataTransfer();
-        selectedAudio.forEach(file => dt.items.add(file));
-        audioUploadInput.files = dt.files;
-    }
-    
-    // Global functions for remove buttons
-    window.removeImage = function(index) {
-        selectedImages.splice(index, 1);
-        updateImagePreview();
-        updateImageInput();
-    };
-    
-    window.removeAudio = function(index) {
-        selectedAudio.splice(index, 1);
-        updateAudioPreview();
-        updateAudioInput();
-    };
+    // Initialize map when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        initMap();
+    });
 });
 </script>
 

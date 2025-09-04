@@ -498,5 +498,21 @@ return [
     'role_admin' => 'مسؤول',
     'role_employee' => 'موظف',
     'role_manager' => 'مدير',
+    
+    // Phase 3: Interactive Map and Video Features
+    'select_location_on_map' => 'اختر الموقع على الخريطة',
+    'click_map_to_set_location' => 'انقر على الخريطة لتحديد موقع العقار',
+    'location_on_map' => 'الموقع على الخريطة',
+    'media_upload' => 'رفع الوسائط',
+    'drag_drop_files_here' => 'اسحب وأفلت الملفات هنا',
+    'supported_formats' => 'الصيغ المدعومة',
+    'select_files' => 'اختر الملفات',
+    'selected_files' => 'الملفات المختارة',
+    'uploading' => 'جاري الرفع',
+    'upload_results' => 'نتائج الرفع',
+    'property_videos' => 'فيديوهات العقار',
+    'video_name' => 'اسم الفيديو',
+    'video_size' => 'حجم الفيديو',
+    'uploaded_on' => 'تم الرفع في',
 ];
 

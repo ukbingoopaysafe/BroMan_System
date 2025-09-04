@@ -24,10 +24,10 @@ if (!isset($_POST['property_id']) || empty($_POST['property_id'])) {
 }
 
 $property_id = intval($_POST['property_id']);
-$upload_type = $_POST['upload_type'] ?? ''; // 'image' or 'audio'
+$upload_type = $_POST['upload_type'] ?? ''; // 'image', 'audio', or 'video'
 
 // Validate upload type
-if (!in_array($upload_type, ['image', 'audio'])) {
+if (!in_array($upload_type, ['image', 'audio', 'video'])) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Invalid upload type']);
     exit;
@@ -37,6 +37,7 @@ if (!in_array($upload_type, ['image', 'audio'])) {
 $base_upload_dir = __DIR__ . '/uploads/';
 $image_dir = $base_upload_dir . 'images/';
 $audio_dir = $base_upload_dir . 'audio/';
+$video_dir = $base_upload_dir . 'videos/';
 
 if (!is_dir($base_upload_dir)) {
     mkdir($base_upload_dir, 0755, true);
@@ -47,12 +48,17 @@ if (!is_dir($image_dir)) {
 if (!is_dir($audio_dir)) {
     mkdir($audio_dir, 0755, true);
 }
+if (!is_dir($video_dir)) {
+    mkdir($video_dir, 0755, true);
+}
 
 // Handle file upload
 if ($upload_type === 'image') {
     handleImageUpload($property_id, $image_dir, $conn);
 } elseif ($upload_type === 'audio') {
     handleAudioUpload($property_id, $audio_dir, $conn);
+} elseif ($upload_type === 'video') {
+    handleVideoUpload($property_id, $video_dir, $conn);
 }
 
 function handleImageUpload($property_id, $upload_dir, $conn) {
@@ -190,6 +196,79 @@ function handleAudioUpload($property_id, $upload_dir, $conn) {
                     'note_id' => $note_id,
                     'file_path' => $relative_path,
                     'duration' => $duration
+                ]);
+            } else {
+                // Delete uploaded file if database insert fails
+                unlink($file_path);
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'Database error: ' . $stmt->error]);
+            }
+            $stmt->close();
+        } else {
+            // Delete uploaded file if prepare fails
+            unlink($file_path);
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Database prepare error: ' . $conn->error]);
+        }
+    } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to move uploaded file']);
+    }
+}
+
+function handleVideoUpload($property_id, $upload_dir, $conn) {
+    if (!isset($_FILES['video']) || $_FILES['video']['error'] !== UPLOAD_ERR_OK) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'No video file uploaded or upload error']);
+        return;
+    }
+
+    $file = $_FILES['video'];
+    $allowed_types = ['video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/flv', 'video/webm'];
+    $max_size = 100 * 1024 * 1024; // 100MB for videos
+
+    // Validate file type
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime_type = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+
+    if (!in_array($mime_type, $allowed_types)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Invalid video format. Only MP4, AVI, MOV, WMV, FLV, and WEBM are allowed.']);
+        return;
+    }
+
+    // Validate file size
+    if ($file['size'] > $max_size) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Video file size exceeds 100MB limit.']);
+        return;
+    }
+
+    // Generate unique filename
+    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $filename = 'property_' . $property_id . '_video_' . uniqid() . '.' . $extension;
+    $file_path = $upload_dir . $filename;
+    $relative_path = 'uploads/videos/' . $filename;
+
+    // Move uploaded file
+    if (move_uploaded_file($file['tmp_name'], $file_path)) {
+        // Get employee ID from session
+        $employee_id = $_SESSION['employee_id'] ?? null;
+
+        // Insert into database
+        $sql = "INSERT INTO property_videos (PropertyID, VideoPath, VideoName, VideoSize, EmployeeID) VALUES (?, ?, ?, ?, ?)";
+        if ($stmt = $conn->prepare($sql)) {
+            $stmt->bind_param("issii", $property_id, $relative_path, $file['name'], $file['size'], $employee_id);
+            if ($stmt->execute()) {
+                $video_id = $conn->insert_id;
+                echo json_encode([
+                    'success' => true, 
+                    'message' => 'Video uploaded successfully',
+                    'video_id' => $video_id,
+                    'file_path' => $relative_path,
+                    'video_name' => $file['name'],
+                    'video_size' => $file['size']
                 ]);
             } else {
                 // Delete uploaded file if database insert fails
