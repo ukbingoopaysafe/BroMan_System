@@ -148,7 +148,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // If there are errors, don't proceed
     if (!empty($errors)) {
         error_log("ERROR: Validation failed, errors: " . implode(", ", $errors));
-        return;
+        $_SESSION['error_message'] = t('fix_errors_proceed') . '<br>' . implode('<br>', $errors);
+        header("Location: add_residential_property.php");
+        exit();
     }
 
     // --- Database Insertion ---
@@ -461,6 +463,12 @@ error_log("End of PHP processing");
     <?php if ($success_message): ?>
         <div class="success-message">
             <p><?php echo htmlspecialchars($success_message); ?></p>
+        </div>
+    <?php endif; ?>
+    
+    <?php if (isset($_SESSION['error_message'])): ?>
+        <div class="error-message">
+            <p><?php echo $_SESSION['error_message']; unset($_SESSION['error_message']); ?></p>
         </div>
     <?php endif; ?>
 
