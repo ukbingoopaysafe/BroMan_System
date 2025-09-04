@@ -121,8 +121,8 @@ CREATE TABLE `properties` (
   `sales_manager_phone` varchar(50) DEFAULT NULL,
   `salesperson_name` varchar(255) DEFAULT NULL,
   `salesperson_phone` varchar(50) DEFAULT NULL,
-  `owner_name` varchar(255) DEFAULT NULL,
-  `owner_phone` varchar(50) DEFAULT NULL,
+  `seller_name` varchar(255) DEFAULT NULL,
+  `seller_phone` varchar(50) DEFAULT NULL,
   -- NEW PRICING FIELDS (replacing old Price, min_price, max_price)
   `price_cash` decimal(15,2) DEFAULT NULL COMMENT 'Cash price',
   `price_installments` decimal(15,2) DEFAULT NULL COMMENT 'Installment price',
@@ -145,7 +145,7 @@ CREATE TABLE `properties` (
 --
 
 INSERT INTO `properties` (
-  `PropertyID`,`PropertyTypeID`,`Title`,`Description`,`Location`,`Area`,`Bedrooms`,`Status`,`listing_type`,`DateAdded`,`EmployeeID`,`unit_design`,`finishing_type_id`,`compound_area`,`down_payment_percentage`,`payment_years`,`delivery_date`,`ProjectName`,`min_area`,`max_area`,`avg_area`,`district`,`governorate`,`company_name`,`FloorsCount`,`sales_manager_name`,`sales_manager_phone`,`salesperson_name`,`salesperson_phone`,`owner_name`,`owner_phone`,`price_cash`,`price_installments`,`meter_price_cash`,`meter_price_installments`,`latitude`,`longitude`,`year_built`,`unit_floor`,`net_area`,`loading_percentage`,`seller_type`
+  `PropertyID`,`PropertyTypeID`,`Title`,`Description`,`Location`,`Area`,`Bedrooms`,`Status`,`listing_type`,`DateAdded`,`EmployeeID`,`unit_design`,`finishing_type_id`,`compound_area`,`down_payment_percentage`,`payment_years`,`delivery_date`,`ProjectName`,`min_area`,`max_area`,`avg_area`,`district`,`governorate`,`company_name`,`FloorsCount`,`sales_manager_name`,`sales_manager_phone`,`salesperson_name`,`salesperson_phone`,`seller_name`,`seller_phone`,`price_cash`,`price_installments`,`meter_price_cash`,`meter_price_installments`,`latitude`,`longitude`,`year_built`,`unit_floor`,`net_area`,`loading_percentage`,`seller_type`
 ) VALUES
 (1,1,'شقة فاخرة بإطلالة مميزة','شقة 3 غرف نوم مع تشطيب كامل وإطلالة على الحديقة المركزية','التجمع الخامس, القاهرة الجديدة',180.00,3,'available','Primary','2025-08-24 13:10:44',1,'استوديو',3,50000.00,10.00,7,'2025-12-31','كمبوند ماونتن فيو',160.00,200.00,180.00,'التجمع الخامس','القاهرة','إعمار مصر',5,'أحمد محمود','01012345678','سارة أحمد','01087654321','محمد علي','01011111111',2500000.00,2800000.00,13888.89,15555.56,30.016700,31.261300,2019,'الدور 3',170.00,5.00,'مالك'),
 (2,1,'فيلا مستقلة بحديقة خاصة','فيلا 5 غرف نوم مع حديقة خاصة وحمام سباحة','الشيخ زايد, الجيزة',450.00,5,'available','Primary','2025-08-24 13:10:44',1,'غرفة',3,100000.00,15.00,10,'2026-06-30','زايد ديونز',400.00,500.00,450.00,'الشيخ زايد','الجيزة','سوديك',2,'محمد علي','01023456789','فاطمة حسن','01076543210','أحمد محمد','01022222222',7000000.00,7800000.00,15555.56,17333.33,30.042800,31.203400,2018,NULL,430.00,4.00,'وسيط'),

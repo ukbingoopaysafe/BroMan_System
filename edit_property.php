@@ -35,7 +35,7 @@ $property_id = $title = $property_type_id = $price = $location = $description = 
 $unit_design = $finishing_type_id = $compound_area = $down_payment_percentage = $payment_years = $delivery_date = "";
 $project_name = $min_price = $max_price = $min_area = $max_area = $avg_area = $district = $governorate = $company_name = $floors_count = "";
 $sales_manager_name = $sales_manager_phone = $salesperson_name = $salesperson_phone = "";
-$owner_name = $owner_phone = "";
+$seller_name = $seller_phone = "";
 
 $errors = []; // Array to hold errors
 
@@ -112,8 +112,8 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $sales_manager_phone = $row["sales_manager_phone"] ?? '';
                 $salesperson_name = $row["salesperson_name"] ?? '';
                 $salesperson_phone = $row["salesperson_phone"] ?? '';
-                $owner_name = $row["owner_name"] ?? '';
-                $owner_phone = $row["owner_phone"] ?? '';
+                $seller_name = $row["seller_name"] ?? '';
+                $seller_phone = $row["seller_phone"] ?? '';
                 $seller_type = $row["seller_type"] ?? '';
                 $year_built = $row["year_built"] ?? '';
                 $unit_floor = $row["unit_floor"] ?? '';
@@ -187,8 +187,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $sales_manager_phone_posted = isset($_POST['sales_manager_phone']) ? trim($_POST['sales_manager_phone']) : null;
     $salesperson_name_posted = isset($_POST['salesperson_name']) ? trim($_POST['salesperson_name']) : null;
     $salesperson_phone_posted = isset($_POST['salesperson_phone']) ? trim($_POST['salesperson_phone']) : null;
-    $owner_name_posted = isset($_POST['owner_name']) ? trim($_POST['owner_name']) : null;
-    $owner_phone_posted = isset($_POST['owner_phone']) ? trim($_POST['owner_phone']) : null;
+    $seller_name_posted = isset($_POST['seller_name']) ? trim($_POST['seller_name']) : null;
+    $seller_phone_posted = isset($_POST['seller_phone']) ? trim($_POST['seller_phone']) : null;
     $seller_type_posted = isset($_POST['seller_type']) ? trim($_POST['seller_type']) : null;
     $year_built_posted = isset($_POST['year_built']) && trim($_POST['year_built']) !== '' ? trim($_POST['year_built']) : null;
     $unit_floor_posted = isset($_POST['unit_floor']) ? trim($_POST['unit_floor']) : null;
@@ -266,7 +266,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             ProjectName = ?, min_area = ?, max_area = ?, avg_area = ?, 
             district = ?, governorate = ?, company_name = ?, FloorsCount = ?,
             sales_manager_name = ?, sales_manager_phone = ?, salesperson_name = ?, salesperson_phone = ?,
-            owner_name = ?, owner_phone = ?, price_cash = ?, price_installments = ?, 
+            seller_name = ?, seller_phone = ?, price_cash = ?, price_installments = ?, 
             meter_price_cash = ?, meter_price_installments = ?, latitude = ?, longitude = ?,
             year_built = ?, unit_floor = ?, net_area = ?, loading_percentage = ?, seller_type = ?
             WHERE PropertyID = ?";
@@ -299,8 +299,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $sales_manager_phone_posted,
                 $salesperson_name_posted,
                 $salesperson_phone_posted,
-                $owner_name_posted,
-                $owner_phone_posted,
+                $seller_name_posted,
+                $seller_phone_posted,
                 $price_cash_posted,
                 $price_installments_posted,
                 $meter_price_cash_posted,
@@ -938,12 +938,12 @@ $conn->close();
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="owner_name"><?php echo t("owner_name"); ?></label>
-                        <input type="text" id="owner_name" name="owner_name" class="form-input" value="<?php echo htmlspecialchars($owner_name); ?>">
+                        <label for="seller_name"><?php echo t("seller_name"); ?></label>
+                        <input type="text" id="seller_name" name="seller_name" class="form-input" value="<?php echo htmlspecialchars($seller_name); ?>">
                     </div>
                     <div class="form-group">
-                        <label for="owner_phone"><?php echo t("owner_phone"); ?></label>
-                        <input type="tel" id="owner_phone" name="owner_phone" class="form-input" value="<?php echo htmlspecialchars($owner_phone); ?>">
+                        <label for="seller_phone"><?php echo t("seller_phone"); ?></label>
+                        <input type="tel" id="seller_phone" name="seller_phone" class="form-input" value="<?php echo htmlspecialchars($seller_phone); ?>">
                     </div>
                     <div class="form-group">
                         <label for="year_built"><?php echo t('year_built_label'); ?></label>

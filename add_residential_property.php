@@ -101,8 +101,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $sales_manager_phone = trim($_POST['sales_manager_phone'] ?? null);
     $salesperson_name = trim($_POST['salesperson_name'] ?? null);
     $salesperson_phone = trim($_POST['salesperson_phone'] ?? null);
-    $owner_name = trim($_POST['owner_name'] ?? null);
-    $owner_phone = trim($_POST['owner_phone'] ?? null);
+    $seller_name = trim($_POST['seller_name'] ?? null);
+    $seller_phone = trim($_POST['seller_phone'] ?? null);
     $seller_type = trim($_POST['seller_type'] ?? null);
     $year_built = filter_input(INPUT_POST, 'year_built', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $unit_floor = trim($_POST['unit_floor'] ?? null);
@@ -111,29 +111,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $delivery_date = !empty($delivery_date_str) ? $delivery_date_str : null;
 
     // --- Database Insertion ---
-    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, price_cash, price_installments, meter_price_cash, meter_price_installments, latitude, longitude, year_built, unit_floor, net_area, loading_percentage, seller_type, DateAdded) 
+    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, seller_name, seller_phone, price_cash, price_installments, meter_price_cash, meter_price_installments, latitude, longitude, year_built, unit_floor, net_area, loading_percentage, seller_type, DateAdded) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
     if ($stmt = $conn->prepare($sql)) {
         $stmt->bind_param(
             "isssdisisiddissddddsssissssssddddsssissds",
-            $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $latitude, $longitude, $year_built, $unit_floor, $net_area, $loading_percentage, $seller_type
+            $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $seller_name, $seller_phone, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $latitude, $longitude, $year_built, $unit_floor, $net_area, $loading_percentage, $seller_type
         );
 
         if ($stmt->execute()) {
             $new_property_id = $conn->insert_id;
 
-            // Handle optional media uploads
+            // Handle unified media uploads (images and videos)
             $base_upload_dir = __DIR__ . '/uploads/';
             $image_dir = $base_upload_dir . 'images/';
+            $video_dir = $base_upload_dir . 'videos/';
             $audio_dir = $base_upload_dir . 'audio/';
+            
             if (!is_dir($base_upload_dir)) { mkdir($base_upload_dir, 0755, true); }
             if (!is_dir($image_dir)) { mkdir($image_dir, 0755, true); }
+            if (!is_dir($video_dir)) { mkdir($video_dir, 0755, true); }
             if (!is_dir($audio_dir)) { mkdir($audio_dir, 0755, true); }
 
-            // Images
-            if (!empty($_FILES['images']) && is_array($_FILES['images']['name'])) {
-                // Determine if any existing images for this property
+            // Process unified media files
+            if (!empty($_FILES['media']) && is_array($_FILES['media']['name'])) {
                 $is_first_image = true;
                 $check_sql = "SELECT COUNT(*) as count FROM property_images WHERE property_id = ?";
                 if ($check_stmt = $conn->prepare($check_sql)) {
@@ -145,58 +147,78 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
 
                 $allowed_img_mime = ['image/jpeg' => 'jpg', 'image/jpg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
-                $max_img_size = 10 * 1024 * 1024;
+                $allowed_video_mime = ['video/mp4' => 'mp4', 'video/avi' => 'avi', 'video/mov' => 'mov', 'video/wmv' => 'wmv', 'video/webm' => 'webm', 'video/ogg' => 'ogg'];
+                $allowed_audio_mime = ['audio/mpeg' => 'mp3', 'audio/mp3' => 'mp3', 'audio/wav' => 'wav', 'audio/ogg' => 'ogg', 'audio/m4a' => 'm4a', 'audio/mp4' => 'm4a', 'video/mp4' => 'm4a'];
+                
+                $max_img_size = 10 * 1024 * 1024; // 10MB
+                $max_video_size = 50 * 1024 * 1024; // 50MB
+                $max_audio_size = 10 * 1024 * 1024; // 10MB
+                
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                foreach ($_FILES['images']['name'] as $idx => $name) {
-                    if ($_FILES['images']['error'][$idx] !== UPLOAD_ERR_OK) { continue; }
-                    if ($_FILES['images']['size'][$idx] > $max_img_size) { continue; }
-                    $tmp = $_FILES['images']['tmp_name'][$idx];
+                
+                foreach ($_FILES['media']['name'] as $idx => $name) {
+                    if ($_FILES['media']['error'][$idx] !== UPLOAD_ERR_OK) { continue; }
+                    
+                    $tmp = $_FILES['media']['tmp_name'][$idx];
                     $mime = finfo_file($finfo, $tmp);
-                    if (!isset($allowed_img_mime[$mime])) { continue; }
-                    $ext = $allowed_img_mime[$mime];
-                    $filename = 'property_' . $new_property_id . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
-                    $dest = $image_dir . $filename;
-                    $relative = 'uploads/images/' . $filename;
-                    if (move_uploaded_file($tmp, $dest)) {
-                        $is_primary = $is_first_image ? 1 : 0;
-                        $is_first_image = false;
-                        $ins = "INSERT INTO property_images (property_id, file_path, is_primary) VALUES (?, ?, ?)";
-                        if ($img_stmt = $conn->prepare($ins)) {
-                            $img_stmt->bind_param("isi", $new_property_id, $relative, $is_primary);
-                            $img_stmt->execute();
-                            $img_stmt->close();
+                    $file_size = $_FILES['media']['size'][$idx];
+                    
+                    // Process images
+                    if (isset($allowed_img_mime[$mime])) {
+                        if ($file_size > $max_img_size) { continue; }
+                        $ext = $allowed_img_mime[$mime];
+                        $filename = 'property_' . $new_property_id . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+                        $dest = $image_dir . $filename;
+                        $relative = 'uploads/images/' . $filename;
+                        
+                        if (move_uploaded_file($tmp, $dest)) {
+                            $is_primary = $is_first_image ? 1 : 0;
+                            $is_first_image = false;
+                            $ins = "INSERT INTO property_images (property_id, file_path, is_primary) VALUES (?, ?, ?)";
+                            if ($img_stmt = $conn->prepare($ins)) {
+                                $img_stmt->bind_param("isi", $new_property_id, $relative, $is_primary);
+                                $img_stmt->execute();
+                                $img_stmt->close();
+                            }
+                        }
+                    }
+                    // Process videos
+                    elseif (isset($allowed_video_mime[$mime])) {
+                        if ($file_size > $max_video_size) { continue; }
+                        $ext = $allowed_video_mime[$mime];
+                        $filename = 'property_' . $new_property_id . '_video_' . bin2hex(random_bytes(8)) . '.' . $ext;
+                        $dest = $video_dir . $filename;
+                        $relative = 'uploads/videos/' . $filename;
+                        
+                        if (move_uploaded_file($tmp, $dest)) {
+                            $ins = "INSERT INTO property_videos (property_id, file_path) VALUES (?, ?)";
+                            if ($vid_stmt = $conn->prepare($ins)) {
+                                $vid_stmt->bind_param("is", $new_property_id, $relative);
+                                $vid_stmt->execute();
+                                $vid_stmt->close();
+                            }
+                        }
+                    }
+                    // Process audio
+                    elseif (isset($allowed_audio_mime[$mime])) {
+                        if ($file_size > $max_audio_size) { continue; }
+                        $ext = $allowed_audio_mime[$mime];
+                        $filename = 'property_' . $new_property_id . '_audio_' . bin2hex(random_bytes(8)) . '.' . $ext;
+                        $dest = $audio_dir . $filename;
+                        $relative = 'uploads/audio/' . $filename;
+                        
+                        if (move_uploaded_file($tmp, $dest)) {
+                            $ins = "INSERT INTO property_audio_notes (property_id, file_path, duration) VALUES (?, ?, ?)";
+                            $duration = null;
+                            if ($aud_stmt = $conn->prepare($ins)) {
+                                $aud_stmt->bind_param("isi", $new_property_id, $relative, $duration);
+                                $aud_stmt->execute();
+                                $aud_stmt->close();
+                            }
                         }
                     }
                 }
                 finfo_close($finfo);
-            }
-
-            // Audio
-            if (!empty($_FILES['audio']) && is_array($_FILES['audio']['name'])) {
-                $allowed_audio_mime = ['audio/mpeg' => 'mp3', 'audio/mp3' => 'mp3', 'audio/wav' => 'wav', 'audio/ogg' => 'ogg', 'audio/m4a' => 'm4a', 'audio/mp4' => 'm4a', 'video/mp4' => 'm4a'];
-                $max_audio_size = 10 * 1024 * 1024;
-                $finfo2 = finfo_open(FILEINFO_MIME_TYPE);
-                foreach ($_FILES['audio']['name'] as $idx => $name) {
-                    if ($_FILES['audio']['error'][$idx] !== UPLOAD_ERR_OK) { continue; }
-                    if ($_FILES['audio']['size'][$idx] > $max_audio_size) { continue; }
-                    $tmp = $_FILES['audio']['tmp_name'][$idx];
-                    $mime = finfo_file($finfo2, $tmp);
-                    if (!isset($allowed_audio_mime[$mime])) { continue; }
-                    $ext = $allowed_audio_mime[$mime];
-                    $filename = 'property_' . $new_property_id . '_audio_' . bin2hex(random_bytes(8)) . '.' . $ext;
-                    $dest = $audio_dir . $filename;
-                    $relative = 'uploads/audio/' . $filename;
-                    if (move_uploaded_file($tmp, $dest)) {
-                        $ins = "INSERT INTO property_audio_notes (property_id, file_path, duration) VALUES (?, ?, ?)";
-                        $duration = null;
-                        if ($aud_stmt = $conn->prepare($ins)) {
-                            $aud_stmt->bind_param("isi", $new_property_id, $relative, $duration);
-                            $aud_stmt->execute();
-                            $aud_stmt->close();
-                        }
-                    }
-                }
-                finfo_close($finfo2);
             }
 
             $_SESSION["success_message"] = t('property_added_success');
@@ -413,7 +435,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
 
         <div class="form-section">
-            <h3><?php echo t('area_and_design'); ?></h3>
+            <h3><?php echo t('area_design'); ?></h3>
             <div class="form-grid">
                  <div class="form-group">
                     <label for="compound_area"><?php echo t('compound_area'); ?> (<?php echo t('faddan'); ?>):</label>
@@ -436,7 +458,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <!-- Bathrooms removed per new schema -->
+                <!-- NEW FIELDS: year_built and unit_floor in Area & Design section -->
+                <div class="form-group">
+                    <label for="year_built"><?php echo t('year_built'); ?>:</label>
+                    <input type="number" id="year_built" name="year_built" class="form-input" min="1900" max="2030" value="<?php echo htmlspecialchars($_POST['year_built'] ?? ''); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="unit_floor"><?php echo t('unit_floor'); ?>:</label>
+                    <input type="text" id="unit_floor" name="unit_floor" class="form-input" value="<?php echo htmlspecialchars($_POST['unit_floor'] ?? ''); ?>">
+                </div>
             </div>
         </div>
 
@@ -448,9 +478,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input type="number" step="0.01" id="area" name="area" class="form-input" value="<?php echo htmlspecialchars($_POST['area'] ?? ''); ?>">
                     <small><?php echo t('specific_area_note'); ?></small>
                 </div>
+                <!-- NEW FIELDS: net_area and loading_percentage in Area Details section -->
                 <div class="form-group">
-                    <label for="net_area"><?php echo t('net_area_label'); ?></label>
+                    <label for="net_area"><?php echo t('net_area'); ?>:</label>
                     <input type="number" step="0.01" id="net_area" name="net_area" class="form-input" value="<?php echo htmlspecialchars($_POST['net_area'] ?? ''); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="loading_percentage"><?php echo t('loading_percentage'); ?> (%):</label>
+                    <input type="number" step="0.01" id="loading_percentage" name="loading_percentage" class="form-input" value="<?php echo htmlspecialchars($_POST['loading_percentage'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
                     <label for="min_area"><?php echo t('min_area_sqm'); ?>:</label>
@@ -537,9 +572,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         </div>
 
-        <!-- Owner Information Section -->
+        <!-- Seller Information Section -->
         <div class="form-section">
-            <h3><?php echo t("owner_information"); ?></h3>
+            <h3><?php echo t("seller_information"); ?></h3>
             <div class="form-grid">
                 <div>
                     <label for="seller_type"><?php echo t("seller_type"); ?>:</label>
@@ -548,71 +583,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <option value="مالك" <?php echo (($_POST['seller_type'] ?? '') === 'مالك') ? 'selected' : ''; ?>><?php echo t('seller_type_owner'); ?></option>
                         <option value="وسيط" <?php echo (($_POST['seller_type'] ?? '') === 'وسيط') ? 'selected' : ''; ?>><?php echo t('seller_type_broker'); ?></option>
                         <option value="وكيل" <?php echo (($_POST['seller_type'] ?? '') === 'وكيل') ? 'selected' : ''; ?>><?php echo t('seller_type_agent'); ?></option>
-                        <option value="بواب" <?php echo (($_POST['seller_type'] ?? '') === 'بواب') ? 'selected' : ''; ?>><?php echo t('seller_type_guard'); ?></option>
+                        <option value="بواب" <?php echo (($_POST['seller_type'] ?? '') === 'بواب') ? 'selected' : ''; ?>><?php echo t('seller_type_doorman'); ?></option>
                         <option value="شركة مطورة" <?php echo (($_POST['seller_type'] ?? '') === 'شركة مطورة') ? 'selected' : ''; ?>><?php echo t('seller_type_developer'); ?></option>
-                        <option value="شركة تشطيب" <?php echo (($_POST['seller_type'] ?? '') === 'شركة تشطيب') ? 'selected' : ''; ?>><?php echo t('seller_type_finishing_company'); ?></option>
+                        <option value="شركة تشطيب" <?php echo (($_POST['seller_type'] ?? '') === 'شركة تشطيب') ? 'selected' : ''; ?>><?php echo t('seller_type_finishing'); ?></option>
                     </select>
                 </div>
                 <div>
-                    <label for="owner_name"><?php echo t("owner_name"); ?></label>
-                    <input type="text" id="owner_name" name="owner_name" class="form-input" value="<?php echo htmlspecialchars($_POST["owner_name"] ?? ""); ?>">
+                    <label for="seller_name"><?php echo t("seller_name"); ?></label>
+                    <input type="text" id="seller_name" name="seller_name" class="form-input" value="<?php echo htmlspecialchars($_POST["seller_name"] ?? ""); ?>">
                 </div>
                 <div>
-                    <label for="owner_phone"><?php echo t("owner_phone"); ?></label>
-                    <input type="tel" id="owner_phone" name="owner_phone" class="form-input" value="<?php echo htmlspecialchars($_POST["owner_phone"] ?? ""); ?>">
-                </div>
-                <div>
-                    <label for="year_built"><?php echo t('year_built_label'); ?></label>
-                    <input type="number" id="year_built" name="year_built" class="form-input" value="<?php echo htmlspecialchars($_POST['year_built'] ?? ''); ?>">
-                </div>
-                <div>
-                    <label for="unit_floor"><?php echo t('unit_floor_label'); ?></label>
-                    <input type="text" id="unit_floor" name="unit_floor" class="form-input" value="<?php echo htmlspecialchars($_POST['unit_floor'] ?? ''); ?>">
+                    <label for="seller_phone"><?php echo t("seller_phone"); ?></label>
+                    <input type="tel" id="seller_phone" name="seller_phone" class="form-input" value="<?php echo htmlspecialchars($_POST["seller_phone"] ?? ""); ?>">
                 </div>
             </div>
         </div>
 
-        <!-- Media Upload Section -->
-        <div class="form-section">
-            <h3>📷 <?php echo t('property_images'); ?></h3>
-            
-            <!-- Image Upload Area -->
-            <div id="image-upload-area" class="upload-area">
-                <p>📁 Drag and drop images here or click to select</p>
-                <button type="button" id="image-upload-btn" class="upload-btn">Choose Images</button>
-                <input type="file" id="image-upload" name="images[]" accept="image/jpeg,image/jpg,image/png,image/webp" multiple style="display: none;">
-                <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                    Supported formats: JPG, JPEG, PNG, WEBP | Max size: 10MB per image
-                </p>
-            </div>
-
-            <!-- Selected Images Preview -->
-            <div id="image-preview" class="images-grid" style="display: none;">
-                <p>Selected images:</p>
-                <div id="image-thumbnails"></div>
-            </div>
-        </div>
-
-        <!-- Audio Notes Section -->
-        <div class="form-section">
-            <h3>🎤 <?php echo t('voice_notes'); ?></h3>
-            
-            <!-- Audio Upload Area -->
-            <div id="audio-upload-area" class="upload-area">
-                <p>🎵 Drag and drop audio files here or click to select</p>
-                <button type="button" id="audio-upload-btn" class="upload-btn">Choose Audio Files</button>
-                <input type="file" id="audio-upload" name="audio[]" accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/mp4,audio/m4a" multiple style="display: none;">
-                <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                    Supported formats: MP3, WAV, OGG, M4A | Max size: 10MB per file
-                </p>
-            </div>
-
-            <!-- Selected Audio Preview -->
-            <div id="audio-preview" class="audio-notes" style="display: none;">
-                <p>Selected audio files:</p>
-                <div id="audio-list"></div>
-            </div>
-        </div>
+        <!-- Unified Media Upload Section -->
+        <?php include 'unified_media_uploader.php'; ?>
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary"><?php echo t('add_property_button'); ?></button>
@@ -623,193 +611,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <?php include 'footer.php'; ?>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Image upload functionality
-    const imageUploadArea = document.getElementById('image-upload-area');
-    const imageUploadBtn = document.getElementById('image-upload-btn');
-    const imageUploadInput = document.getElementById('image-upload');
-    const imagePreview = document.getElementById('image-preview');
-    const imageThumbnails = document.getElementById('image-thumbnails');
-    
-    // Audio upload functionality
-    const audioUploadArea = document.getElementById('audio-upload-area');
-    const audioUploadBtn = document.getElementById('audio-upload-btn');
-    const audioUploadInput = document.getElementById('audio-upload');
-    const audioPreview = document.getElementById('audio-preview');
-    const audioList = document.getElementById('audio-list');
-    
-    let selectedImages = [];
-    let selectedAudio = [];
-    
-    // Image upload button click
-    imageUploadBtn.addEventListener('click', function() {
-        imageUploadInput.click();
-    });
-    
-    // Audio upload button click
-    audioUploadBtn.addEventListener('click', function() {
-        audioUploadInput.click();
-    });
-    
-    // Image file selection
-    imageUploadInput.addEventListener('change', function(e) {
-        handleImageFiles(e.target.files);
-    });
-    
-    // Audio file selection
-    audioUploadInput.addEventListener('change', function(e) {
-        handleAudioFiles(e.target.files);
-    });
-    
-    // Image drag and drop
-    imageUploadArea.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        imageUploadArea.classList.add('dragover');
-    });
-    
-    imageUploadArea.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        imageUploadArea.classList.remove('dragover');
-    });
-    
-    imageUploadArea.addEventListener('drop', function(e) {
-        e.preventDefault();
-        imageUploadArea.classList.remove('dragover');
-        handleImageFiles(e.dataTransfer.files);
-    });
-    
-    // Audio drag and drop
-    audioUploadArea.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        audioUploadArea.classList.add('dragover');
-    });
-    
-    audioUploadArea.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        audioUploadArea.classList.remove('dragover');
-    });
-    
-    audioUploadArea.addEventListener('drop', function(e) {
-        e.preventDefault();
-        audioUploadArea.classList.remove('dragover');
-        handleAudioFiles(e.dataTransfer.files);
-    });
-    
-    function handleImageFiles(files) {
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-        const maxSize = 10 * 1024 * 1024; // 10MB
-        
-        Array.from(files).forEach(file => {
-            if (!allowedTypes.includes(file.type)) {
-                alert('Invalid file type: ' + file.name + '. Please select JPG, JPEG, PNG, or WEBP files.');
-                return;
-            }
-            
-            if (file.size > maxSize) {
-                alert('File too large: ' + file.name + '. Maximum size is 10MB.');
-                return;
-            }
-            
-            selectedImages.push(file);
-        });
-        
-        updateImagePreview();
-        updateImageInput();
-    }
-    
-    function handleAudioFiles(files) {
-        const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/m4a'];
-        const maxSize = 10 * 1024 * 1024; // 10MB
-        
-        Array.from(files).forEach(file => {
-            if (!allowedTypes.includes(file.type)) {
-                alert('Invalid file type: ' + file.name + '. Please select MP3, WAV, OGG, or M4A files.');
-                return;
-            }
-            
-            if (file.size > maxSize) {
-                alert('File too large: ' + file.name + '. Maximum size is 10MB.');
-                return;
-            }
-            
-            selectedAudio.push(file);
-        });
-        
-        updateAudioPreview();
-        updateAudioInput();
-    }
-    
-    function updateImagePreview() {
-        imageThumbnails.innerHTML = '';
-        
-        if (selectedImages.length > 0) {
-            imagePreview.style.display = 'block';
-            
-            selectedImages.forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const div = document.createElement('div');
-                    div.className = 'image-preview';
-                    div.innerHTML = `
-                        <img src="${e.target.result}" alt="${file.name}">
-                        <button type="button" class="remove-file" onclick="removeImage(${index})">×</button>
-                    `;
-                    imageThumbnails.appendChild(div);
-                };
-                reader.readAsDataURL(file);
-            });
-        } else {
-            imagePreview.style.display = 'none';
-        }
-    }
-    
-    function updateAudioPreview() {
-        audioList.innerHTML = '';
-        
-        if (selectedAudio.length > 0) {
-            audioPreview.style.display = 'block';
-            
-            selectedAudio.forEach((file, index) => {
-                const div = document.createElement('div');
-                div.className = 'audio-preview';
-                div.innerHTML = `
-                    <span>🎵 ${file.name}</span>
-                    <button type="button" class="remove-file" onclick="removeAudio(${index})">×</button>
-                `;
-                audioList.appendChild(div);
-            });
-        } else {
-            audioPreview.style.display = 'none';
-        }
-    }
-    
-    function updateImageInput() {
-        const dt = new DataTransfer();
-        selectedImages.forEach(file => dt.items.add(file));
-        imageUploadInput.files = dt.files;
-    }
-    
-    function updateAudioInput() {
-        const dt = new DataTransfer();
-        selectedAudio.forEach(file => dt.items.add(file));
-        audioUploadInput.files = dt.files;
-    }
-    
-    // Global functions for remove buttons
-    window.removeImage = function(index) {
-        selectedImages.splice(index, 1);
-        updateImagePreview();
-        updateImageInput();
-    };
-    
-    window.removeAudio = function(index) {
-        selectedAudio.splice(index, 1);
-        updateAudioPreview();
-        updateAudioInput();
-    };
-});
-</script>
+<!-- The unified media uploader JavaScript is included in unified_media_uploader.php -->
 
 <!-- Leaflet.js CSS and JS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />

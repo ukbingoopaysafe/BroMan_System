@@ -101,8 +101,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $sales_manager_phone = trim($_POST['sales_manager_phone'] ?? null);
     $salesperson_name = trim($_POST['salesperson_name'] ?? null);
     $salesperson_phone = trim($_POST['salesperson_phone'] ?? null);
-    $owner_name = trim($_POST['owner_name'] ?? null);
-    $owner_phone = trim($_POST['owner_phone'] ?? null);
+    $seller_name = trim($_POST['seller_name'] ?? null);
+    $seller_phone = trim($_POST['seller_phone'] ?? null);
     $seller_type = trim($_POST['seller_type'] ?? null);
     $year_built = filter_input(INPUT_POST, 'year_built', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $unit_floor = trim($_POST['unit_floor'] ?? null);
@@ -111,13 +111,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $delivery_date = !empty($delivery_date_str) ? $delivery_date_str : null;
 
     // --- Database Insertion ---
-    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, price_cash, price_installments, meter_price_cash, meter_price_installments, latitude, longitude, year_built, unit_floor, net_area, loading_percentage, seller_type, DateAdded) 
+    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, seller_name, seller_phone, price_cash, price_installments, meter_price_cash, meter_price_installments, latitude, longitude, year_built, unit_floor, net_area, loading_percentage, seller_type, DateAdded) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
     if ($stmt = $conn->prepare($sql)) {
         $stmt->bind_param(
             "isssdisisiddissddddsssissssssddddsssissds",
-            $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $latitude, $longitude, $year_built, $unit_floor, $net_area, $loading_percentage, $seller_type
+            $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $seller_name, $seller_phone, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $latitude, $longitude, $year_built, $unit_floor, $net_area, $loading_percentage, $seller_type
         );
 
         if ($stmt->execute()) {

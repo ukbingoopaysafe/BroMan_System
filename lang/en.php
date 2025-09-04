@@ -532,6 +532,41 @@ return [
     'reorder_images' => 'Reorder Images',
     'save_image_order' => 'Save Image Order',
     'image_reorder_instructions' => 'Drag images to reorder them, then click Save Image Order.',
+    
+    // Unified Media Uploader
+    'media_upload' => 'Media Upload',
+    'drag_drop_media' => 'Drag and drop images and videos here',
+    'or_click_to_select' => 'or click to select files',
+    'choose_media_files' => 'Choose Media Files',
+    'supported_formats' => 'Supported Formats',
+    'images' => 'Images',
+    'videos' => 'Videos',
+    'max_size' => 'Max size',
+    'selected_media' => 'Selected Media',
+    'clear_all' => 'Clear All',
+    
+    // New Schema Fields
+    'seller_information' => 'Seller Information',
+    'seller_name' => 'Name',
+    'seller_phone' => 'Phone',
+    'seller_type' => 'Seller Type',
+    'year_built' => 'Year Built',
+    'unit_floor' => 'Unit Floor',
+    'net_area' => 'Net Area',
+    'loading_percentage' => 'Loading Percentage',
+    'location_map' => 'Location Map',
+    'property_videos' => 'Property Videos',
+    'area_design' => 'Area & Design',
+    'area_details' => 'Area Details',
+    'location_information' => 'Location Information',
+    
+    // Seller Types
+    'seller_type_owner' => 'Owner',
+    'seller_type_broker' => 'Broker',
+    'seller_type_agent' => 'Agent',
+    'seller_type_doorman' => 'Doorman',
+    'seller_type_developer' => 'Developer Company',
+    'seller_type_finishing' => 'Finishing Company',
 ];
 ?>
 

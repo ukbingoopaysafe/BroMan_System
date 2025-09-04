@@ -527,5 +527,40 @@ return [
     'role_admin' => 'مسؤول',
     'role_employee' => 'موظف',
     'role_manager' => 'مدير',
+    
+    // Unified Media Uploader
+    'media_upload' => 'رفع الوسائط',
+    'drag_drop_media' => 'اسحب وأفلت الصور والفيديوهات هنا',
+    'or_click_to_select' => 'أو انقر لاختيار الملفات',
+    'choose_media_files' => 'اختيار ملفات الوسائط',
+    'supported_formats' => 'الصيغ المدعومة',
+    'images' => 'الصور',
+    'videos' => 'الفيديوهات',
+    'max_size' => 'الحد الأقصى',
+    'selected_media' => 'الوسائط المختارة',
+    'clear_all' => 'مسح الكل',
+    
+    // New Schema Fields
+    'seller_information' => 'معلومات البائع',
+    'seller_name' => 'الاسم',
+    'seller_phone' => 'الهاتف',
+    'seller_type' => 'نوع البائع',
+    'year_built' => 'سنة البناء',
+    'unit_floor' => 'دور الوحدة',
+    'net_area' => 'المساحة الصافية',
+    'loading_percentage' => 'نسبة التحميل',
+    'location_map' => 'خريطة الموقع',
+    'property_videos' => 'فيديوهات العقار',
+    'area_design' => 'المساحة والتصميم',
+    'area_details' => 'تفاصيل المساحة',
+    'location_information' => 'معلومات الموقع',
+    
+    // Seller Types
+    'seller_type_owner' => 'مالك',
+    'seller_type_broker' => 'وسيط',
+    'seller_type_agent' => 'وكيل',
+    'seller_type_doorman' => 'بواب',
+    'seller_type_developer' => 'شركة مطورة',
+    'seller_type_finishing' => 'شركة تشطيب',
 ];
 
