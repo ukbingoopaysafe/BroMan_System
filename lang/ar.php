@@ -260,6 +260,9 @@ return [
     'payment_period_label' => 'فترة السداد:',
     'payment_years_label' => 'سنوات التقسيط:',
     'discount_percentage_label' => 'نسبة الخصم (%):',
+    'year_built_label' => 'سنة البناء:',
+    'unit_floor_label' => 'دور الوحدة:',
+    'net_area_label' => 'المساحة الصافي (م²):',
     'min_price_label' => 'الحد الأدنى للسعر:', // Existing
     'max_price_label' => 'الحد الأقصى للسعر:', // Existing
     'avg_price_label' => 'متوسط السعر:', // Existing
@@ -351,6 +354,13 @@ return [
     'owner_information' => 'معلومات المالك',
     'owner_name' => 'اسم المالك',
     'owner_phone' => 'هاتف المالك',
+    'seller_type' => 'نوع البائع',
+    'seller_type_owner' => 'مالك',
+    'seller_type_broker' => 'وسيط',
+    'seller_type_agent' => 'وكيل',
+    'seller_type_guard' => 'بواب',
+    'seller_type_developer' => 'شركة مطورة',
+    'seller_type_finishing_company' => 'شركة تشطيب',
 
     // Client List
     'manage_clients_title' => 'إدارة العملاء',

@@ -83,12 +83,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $max_area = filter_input(INPUT_POST, 'max_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $avg_area = filter_input(INPUT_POST, 'avg_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $area = filter_input(INPUT_POST, 'area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $net_area = filter_input(INPUT_POST, 'net_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $bedrooms = null; // Bedrooms field removed from this form
     $finishing_type_id = filter_input(INPUT_POST, 'finishing_type_id', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $min_price = filter_input(INPUT_POST, 'min_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $max_price = filter_input(INPUT_POST, 'max_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $down_payment_percentage = filter_input(INPUT_POST, 'down_payment_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $loading_percentage = filter_input(INPUT_POST, 'loading_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $payment_years = filter_input(INPUT_POST, 'payment_years', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $delivery_date_str = trim($_POST['delivery_date'] ?? '');
     $status = trim($_POST['status'] ?? 'available');
@@ -99,16 +101,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $salesperson_phone = trim($_POST['salesperson_phone'] ?? null);
     $owner_name = trim($_POST['owner_name'] ?? null);
     $owner_phone = trim($_POST['owner_phone'] ?? null);
+    $year_built = filter_input(INPUT_POST, 'year_built', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+    $unit_floor = trim($_POST['unit_floor'] ?? null);
     $delivery_date = !empty($delivery_date_str) ? $delivery_date_str : null;
 
     // --- Database Insertion ---
-    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Price, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_price, max_price, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, DateAdded) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Price, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_price, max_price, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, year_built, unit_floor, net_area, loading_percentage, DateAdded) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
     if ($stmt = $conn->prepare($sql)) {
         $stmt->bind_param(
-            "isssddissisiddissdddddsssissssss",
-            $property_type_id, $title, $description, $location, $price, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_price, $max_price, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone
+            "isssddissisiddissdddddsssissssssissdd",
+            $property_type_id, $title, $description, $location, $price, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_price, $max_price, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone, $year_built, $unit_floor, $net_area, $loading_percentage
         );
 
         if ($stmt->execute()) {
@@ -423,6 +427,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <small><?php echo t('specific_area_note'); ?></small>
                 </div>
                 <div class="form-group">
+                    <label for="net_area"><?php echo t('net_area_label'); ?></label>
+                    <input type="number" step="0.01" id="net_area" name="net_area" class="form-input" value="<?php echo htmlspecialchars($_POST['net_area'] ?? ''); ?>">
+                </div>
+                <div class="form-group">
                     <label for="min_area"><?php echo t('min_area_sqm'); ?>:</label>
                     <input type="number" step="0.01" id="min_area" name="min_area" class="form-input" value="<?php echo htmlspecialchars($_POST['min_area'] ?? ''); ?>">
                 </div>
@@ -456,6 +464,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="form-group">
                     <label for="down_payment_percentage"><?php echo t('down_payment_percentage'); ?> (%):</label>
                     <input type="number" step="0.01" id="down_payment_percentage" name="down_payment_percentage" class="form-input" value="<?php echo htmlspecialchars($_POST['down_payment_percentage'] ?? ''); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="loading_percentage"><?php echo t('loading_percentage_label'); ?></label>
+                    <input type="number" step="0.01" id="loading_percentage" name="loading_percentage" class="form-input" value="<?php echo htmlspecialchars($_POST['loading_percentage'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
                     <label for="payment_years"><?php echo t('payment_years'); ?>:</label>
@@ -511,6 +523,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div>
                     <label for="owner_phone"><?php echo t("owner_phone"); ?></label>
                     <input type="tel" id="owner_phone" name="owner_phone" class="form-input" value="<?php echo htmlspecialchars($_POST["owner_phone"] ?? ""); ?>">
+                </div>
+                <div>
+                    <label for="year_built"><?php echo t('year_built_label'); ?></label>
+                    <input type="number" id="year_built" name="year_built" class="form-input" value="<?php echo htmlspecialchars($_POST['year_built'] ?? ''); ?>">
+                </div>
+                <div>
+                    <label for="unit_floor"><?php echo t('unit_floor_label'); ?></label>
+                    <input type="text" id="unit_floor" name="unit_floor" class="form-input" value="<?php echo htmlspecialchars($_POST['unit_floor'] ?? ''); ?>">
                 </div>
             </div>
         </div>

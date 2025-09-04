@@ -261,6 +261,9 @@ return [
     'payment_period_label' => 'Payment Period:',
     'payment_years_label' => 'Payment Years:',
     'discount_percentage_label' => 'Discount Percentage (%):',
+    'year_built_label' => 'Year Built:',
+    'unit_floor_label' => 'Unit Floor:',
+    'net_area_label' => 'Net Area (sqm):',
     'min_price_label' => 'Minimum Price:', // Existing
     'max_price_label' => 'Maximum Price:', // Existing
     'avg_price_label' => 'Average Price:', // Existing
@@ -352,6 +355,13 @@ return [
     'owner_information' => 'Owner Information',
     'owner_name' => 'Owner Name',
     'owner_phone' => 'Owner Phone',
+    'seller_type' => 'Seller Type',
+    'seller_type_owner' => 'Owner',
+    'seller_type_broker' => 'Broker',
+    'seller_type_agent' => 'Agent',
+    'seller_type_guard' => 'Doorman',
+    'seller_type_developer' => 'Developer Company',
+    'seller_type_finishing_company' => 'Finishing Company',
 
     // Client List (index.php)
     'manage_clients_title' => 'Manage Clients',
