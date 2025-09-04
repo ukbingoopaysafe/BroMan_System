@@ -1,6 +1,8 @@
 <?php
-session_start();
+require_once __DIR__ . '/security.php';
+ensure_secure_session_started();
 require_once 'db.php';
+require_once 'permissions.php';
 
 // Check if user is logged in
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
@@ -9,8 +11,15 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit;
 }
 
+// Check permissions - only manager and admin can upload media
+if (!can_manage_properties()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Permission denied']);
+    exit;
+}
+
 // CSRF protection
-if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+if (!validateCSRFToken($_POST['csrf_token'] ?? null)) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'CSRF token mismatch']);
     exit;

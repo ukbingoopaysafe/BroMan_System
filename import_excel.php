@@ -1,18 +1,10 @@
 <?php
-session_start();
+require_once __DIR__ . '/security.php';
+ensure_secure_session_started();
+require_once 'permissions.php';
 
-// Ensure user is logged in
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("Location: login.php");
-    exit;
-}
-
-// Ensure user is admin
-if (!isset($_SESSION["role"]) || $_SESSION["role"] !== "admin") {
-    $_SESSION["error_message"] = "You do not have permission to access this page.";
-    header("Location: dashboard.php");
-    exit;
-}
+// Check permissions - only manager and admin can import data
+check_permission('manage_properties');
 
 require_once 'db.php'; // Database connection
 require_once 'navbar.php'; // Navigation bar

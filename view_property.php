@@ -25,11 +25,10 @@ $property_id = intval($_GET['id']);
 $property = null;
 $sql = "SELECT p.*, pt.TypeName, 
                e.FullName AS EmployeeName,
-               pud.DesignName AS UnitDesignName, pft.FinishingName AS FinishingTypeName
+               p.unit_design AS UnitDesignName, pft.FinishingName AS FinishingTypeName
         FROM Properties p
         LEFT JOIN PropertyTypes pt ON p.PropertyTypeID = pt.PropertyTypeID
         LEFT JOIN Employees e ON p.EmployeeID = e.EmployeeID
-        LEFT JOIN PropertyUnitDesigns pud ON p.unit_design_id = pud.DesignID
         LEFT JOIN PropertyFinishingTypes pft ON p.finishing_type_id = pft.FinishingID
         WHERE p.PropertyID = ?";
 
@@ -366,28 +365,44 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                         <span class="detail-value"><?php echo htmlspecialchars($property['Location']); ?></span>
                     </div>
                     <?php endif; ?>
+                    <?php if (!empty($property['latitude']) && !empty($property['longitude'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('latitude'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['latitude']); ?></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('longitude'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['longitude']); ?></span>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
             <div class="property-section">
                 <h2><?php echo t('pricing_and_area'); ?></h2>
                 <div class="detail-grid">
-                    <?php if (!empty($property['Price'])): ?>
+                    <?php if (!empty($property['price_cash'])): ?>
                     <div class="detail-item">
-                        <span class="detail-label"><?php echo t('unit_price_egp'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['Price'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
+                        <span class="detail-label"><?php echo t('price_cash'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['price_cash'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($property['min_price'])): ?>
+                    <?php if (!empty($property['price_installments'])): ?>
                     <div class="detail-item">
-                        <span class="detail-label"><?php echo t('min_price'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['min_price'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
+                        <span class="detail-label"><?php echo t('price_installments'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['price_installments'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($property['max_price'])): ?>
+                    <?php if (!empty($property['meter_price_cash'])): ?>
                     <div class="detail-item">
-                        <span class="detail-label"><?php echo t('max_price'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['max_price'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
+                        <span class="detail-label"><?php echo t('meter_price_cash'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['meter_price_cash'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['meter_price_installments'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('meter_price_installments'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['meter_price_installments'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
                     </div>
                     <?php endif; ?>
 
@@ -420,6 +435,30 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('compound_area_faddan'); ?>:</span>
                         <span class="detail-value"><?php echo htmlspecialchars($property['compound_area']); ?> <?php echo t('faddan'); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['year_built'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('year_built'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['year_built']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['unit_floor'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('unit_floor'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['unit_floor']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['net_area'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('net_area'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['net_area'], 2, '.', ','); ?> <?php echo t('sqm'); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['loading_percentage'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('loading_percentage'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['loading_percentage'], 2, '.', ','); ?>%</span>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -534,20 +573,26 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
             </div>
             <?php endif; // End of the main check for sales information ?>
 
-            <?php if (!empty($property['owner_name']) || !empty($property['owner_phone'])): ?>
+            <?php if (!empty($property['seller_type']) || !empty($property['seller_name']) || !empty($property['seller_phone'])): ?>
             <div class="property-section">
-                <h2><?php echo t('owner_information'); ?></h2>
+                <h2><?php echo t('seller_information'); ?></h2>
                 <div class="detail-grid">
-                    <?php if (!empty($property['owner_name'])): ?>
+                    <?php if (!empty($property['seller_type'])): ?>
                     <div class="detail-item">
-                        <span class="detail-label"><?php echo t('owner_name'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['owner_name']); ?></span>
+                        <span class="detail-label"><?php echo t('seller_type'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['seller_type']); ?></span>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($property['owner_phone'])): ?>
+                    <?php if (!empty($property['seller_name'])): ?>
                     <div class="detail-item">
-                        <span class="detail-label"><?php echo t('owner_phone'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['owner_phone']); ?></span>
+                        <span class="detail-label"><?php echo t('seller_name'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['seller_name']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['seller_phone'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('seller_phone'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['seller_phone']); ?></span>
                     </div>
                     <?php endif; ?>
                 </div>

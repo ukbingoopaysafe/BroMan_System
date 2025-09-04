@@ -32,10 +32,12 @@ const MEDICAL_PROPERTY_TYPE_ID = 6;
 
 // Initialize variables
 $property_id = $title = $property_type_id = $price = $location = $description = $status = "";
-$unit_design_id = $finishing_type_id = $compound_area = $down_payment_percentage = $payment_years = $delivery_date = "";
-$project_name = $min_price = $max_price = $min_area = $max_area = $avg_area = $district = $governorate = $company_name = $floors_count = $bathrooms = "";
+$unit_design = $finishing_type_id = $compound_area = $down_payment_percentage = $payment_years = $delivery_date = "";
+$project_name = $min_price = $max_price = $min_area = $max_area = $avg_area = $district = $governorate = $company_name = $floors_count = $bedrooms = "";
 $sales_manager_name = $sales_manager_phone = $salesperson_name = $salesperson_phone = "";
-$owner_name = $owner_phone = "";
+$seller_type = $seller_name = $seller_phone = "";
+$latitude = $longitude = $year_built = $unit_floor = $net_area = $loading_percentage = "";
+$price_cash = $price_installments = $meter_price_cash = $meter_price_installments = "";
 
 $errors = []; // Array to hold errors
 
@@ -54,18 +56,7 @@ if ($result_property_types = $conn->query($sql_property_types)) {
     error_log("Error fetching property types: " . $conn->error);
 }
 
-// Unit Designs
-$unit_designs_list = [];
-$sql_unit_designs = "SELECT DesignID, DesignName FROM PropertyUnitDesigns ORDER BY DesignName";
-if ($result_unit_designs = $conn->query($sql_unit_designs)) {
-    while ($row_design = $result_unit_designs->fetch_assoc()) {
-        $unit_designs_list[] = $row_design;
-    }
-    $result_unit_designs->free();
-} else {
-    $errors['db_fetch'] = t('error_fetching_unit_designs') . ': ' . $conn->error;
-    error_log("Error fetching unit designs: " . $conn->error);
-}
+// Unit designs are now stored as text in the properties table, no need to fetch from separate table
 
 // Finishing Types
 $finishing_types_list = [];
@@ -100,9 +91,9 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $location = $row["Location"];
                 $price = $row["Price"];
                 $area = $row["Area"];
-                $bathrooms = $row["Bathrooms"];
+                $bedrooms = $row["Bedrooms"];
                 $status = $row["Status"];
-                $unit_design_id = $row["unit_design_id"];
+                $unit_design = $row["unit_design"];
                 $finishing_type_id = $row["finishing_type_id"];
                 $compound_area = $row["compound_area"];
                 $down_payment_percentage = $row["down_payment_percentage"];
@@ -122,8 +113,19 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $sales_manager_phone = $row["sales_manager_phone"] ?? '';
                 $salesperson_name = $row["salesperson_name"] ?? '';
                 $salesperson_phone = $row["salesperson_phone"] ?? '';
-                $owner_name = $row["owner_name"] ?? '';
-                $owner_phone = $row["owner_phone"] ?? '';
+                $seller_type = $row["seller_type"] ?? '';
+                $seller_name = $row["seller_name"] ?? '';
+                $seller_phone = $row["seller_phone"] ?? '';
+                $latitude = $row["latitude"] ?? '';
+                $longitude = $row["longitude"] ?? '';
+                $year_built = $row["year_built"] ?? '';
+                $unit_floor = $row["unit_floor"] ?? '';
+                $net_area = $row["net_area"] ?? '';
+                $loading_percentage = $row["loading_percentage"] ?? '';
+                $price_cash = $row["price_cash"] ?? '';
+                $price_installments = $row["price_installments"] ?? '';
+                $meter_price_cash = $row["meter_price_cash"] ?? '';
+                $meter_price_installments = $row["meter_price_installments"] ?? '';
                 $listing_type = $row["listing_type"] ?? 'Primary';
             } else {
                 $_SESSION["error_message"] = t('property_not_found');
@@ -164,9 +166,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $location_posted = isset($_POST['location']) ? trim($_POST['location']) : null;
     $price_posted = isset($_POST["price"]) && trim($_POST["price"]) !== "" ? trim($_POST["price"]) : null;
     $area_posted = isset($_POST["area"]) && trim($_POST["area"]) !== "" ? trim($_POST["area"]) : null;
-    $bathrooms_posted = isset($_POST["bathrooms"]) && trim($_POST["bathrooms"]) !== "" ? trim($_POST["bathrooms"]) : null;
+    $bedrooms_posted = isset($_POST["bedrooms"]) && trim($_POST["bedrooms"]) !== "" ? trim($_POST["bedrooms"]) : null;
     $status_posted = isset($_POST["status"]) ? trim($_POST["status"]) : "available";
-    $unit_design_id_posted = isset($_POST['unit_design_id']) && trim($_POST['unit_design_id']) !== '' ? trim($_POST['unit_design_id']) : null;
+    $unit_design_posted = isset($_POST['unit_design']) && trim($_POST['unit_design']) !== '' ? trim($_POST['unit_design']) : null;
     $finishing_type_id_posted = isset($_POST['finishing_type_id']) && trim($_POST['finishing_type_id']) !== '' ? trim($_POST['finishing_type_id']) : null;
     $compound_area_posted = isset($_POST['compound_area']) && trim($_POST['compound_area']) !== '' ? trim($_POST['compound_area']) : null;
     $down_payment_percentage_posted = isset($_POST['down_payment_percentage']) && trim($_POST['down_payment_percentage']) !== '' ? trim($_POST['down_payment_percentage']) : null;
@@ -186,8 +188,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $sales_manager_phone_posted = isset($_POST['sales_manager_phone']) ? trim($_POST['sales_manager_phone']) : null;
     $salesperson_name_posted = isset($_POST['salesperson_name']) ? trim($_POST['salesperson_name']) : null;
     $salesperson_phone_posted = isset($_POST['salesperson_phone']) ? trim($_POST['salesperson_phone']) : null;
-    $owner_name_posted = isset($_POST['owner_name']) ? trim($_POST['owner_name']) : null;
-    $owner_phone_posted = isset($_POST['owner_phone']) ? trim($_POST['owner_phone']) : null;
+    $seller_type_posted = isset($_POST['seller_type']) ? trim($_POST['seller_type']) : null;
+    $seller_name_posted = isset($_POST['seller_name']) ? trim($_POST['seller_name']) : null;
+    $seller_phone_posted = isset($_POST['seller_phone']) ? trim($_POST['seller_phone']) : null;
+    $latitude_posted = isset($_POST['latitude']) && trim($_POST['latitude']) !== '' ? trim($_POST['latitude']) : null;
+    $longitude_posted = isset($_POST['longitude']) && trim($_POST['longitude']) !== '' ? trim($_POST['longitude']) : null;
+    $year_built_posted = isset($_POST['year_built']) && trim($_POST['year_built']) !== '' ? trim($_POST['year_built']) : null;
+    $unit_floor_posted = isset($_POST['unit_floor']) ? trim($_POST['unit_floor']) : null;
+    $net_area_posted = isset($_POST['net_area']) && trim($_POST['net_area']) !== '' ? trim($_POST['net_area']) : null;
+    $loading_percentage_posted = isset($_POST['loading_percentage']) && trim($_POST['loading_percentage']) !== '' ? trim($_POST['loading_percentage']) : null;
+    $price_cash_posted = isset($_POST['price_cash']) && trim($_POST['price_cash']) !== '' ? trim($_POST['price_cash']) : null;
+    $price_installments_posted = isset($_POST['price_installments']) && trim($_POST['price_installments']) !== '' ? trim($_POST['price_installments']) : null;
+    $meter_price_cash_posted = isset($_POST['meter_price_cash']) && trim($_POST['meter_price_cash']) !== '' ? trim($_POST['meter_price_cash']) : null;
+    $meter_price_installments_posted = isset($_POST['meter_price_installments']) && trim($_POST['meter_price_installments']) !== '' ? trim($_POST['meter_price_installments']) : null;
    
     // --- Validation ---
     // Context-aware validation based on property type
@@ -203,8 +216,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     // Property type specific validation
     if ($property_type_id == 1 || $property_type_id == 2) { // If Residential or Coastal
-        if (empty($unit_design_id_posted)) {
-            $errors['unit_design_id'] = t('unit_design_required');
+        if (empty($unit_design_posted)) {
+            $errors['unit_design'] = t('unit_design_required');
         }
         if (empty($finishing_type_id_posted)) {
             $errors['finishing_type_id'] = t('finishing_type_required');
@@ -254,35 +267,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // If no errors, proceed with update
     if (empty($errors)) {
         $sql_update = "UPDATE Properties SET 
-            PropertyTypeID = ?, Title = ?, Description = ?, Location = ?, Price = ?, Area = ?, 
-            Bathrooms = ?, Status = ?, unit_design_id = ?, finishing_type_id = ?, 
+            PropertyTypeID = ?, Title = ?, Description = ?, Location = ?, Area = ?, 
+            Bedrooms = ?, Status = ?, unit_design = ?, finishing_type_id = ?, 
             compound_area = ?, down_payment_percentage = ?, payment_years = ?, delivery_date = ?, 
-            ProjectName = ?, min_price = ?, max_price = ?, min_area = ?, max_area = ?, avg_area = ?, 
+            ProjectName = ?, min_area = ?, max_area = ?, avg_area = ?, 
             district = ?, governorate = ?, company_name = ?, FloorsCount = ?,
             sales_manager_name = ?, sales_manager_phone = ?, salesperson_name = ?, salesperson_phone = ?,
-            owner_name = ?, owner_phone = ?
+            seller_type = ?, seller_name = ?, seller_phone = ?, latitude = ?, longitude = ?,
+            year_built = ?, unit_floor = ?, net_area = ?, loading_percentage = ?,
+            price_cash = ?, price_installments = ?, meter_price_cash = ?, meter_price_installments = ?
             WHERE PropertyID = ?";
 
         if ($stmt_update = $conn->prepare($sql_update)) {
             $stmt_update->bind_param(
-                "isssddisiiddissdddddsssissssssi",
+                "isssdiiisiiiddissddddsssssddsssssddddi",
                 $property_type_id_posted,
                 $title_posted,
                 $description_posted,
                 $location_posted,
-                $price_posted,
                 $area_posted,
-                $bathrooms_posted,
+                $bedrooms_posted,
                 $status_posted,
-                $unit_design_id_posted,
+                $unit_design_posted,
                 $finishing_type_id_posted,
                 $compound_area_posted,
                 $down_payment_percentage_posted,
                 $payment_years_posted,
                 $delivery_date_posted,
                 $project_name_posted,
-                $min_price_posted,
-                $max_price_posted,
                 $min_area_posted,
                 $max_area_posted,
                 $avg_area_posted,
@@ -294,8 +306,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $sales_manager_phone_posted,
                 $salesperson_name_posted,
                 $salesperson_phone_posted,
-                $owner_name_posted,
-                $owner_phone_posted,
+                $seller_type_posted,
+                $seller_name_posted,
+                $seller_phone_posted,
+                $latitude_posted,
+                $longitude_posted,
+                $year_built_posted,
+                $unit_floor_posted,
+                $net_area_posted,
+                $loading_percentage_posted,
+                $price_cash_posted,
+                $price_installments_posted,
+                $meter_price_cash_posted,
+                $meter_price_installments_posted,
                 $property_id
             );
 
@@ -683,6 +706,14 @@ $conn->close();
                     <label for="location"><?php echo t('detailed_address'); ?>:</label>
                     <input type="text" id="location" name="location" class="form-input" value="<?php echo htmlspecialchars($location); ?>">
                 </div>
+                <div class="form-group">
+                    <label for="latitude"><?php echo t('latitude'); ?>:</label>
+                    <input type="number" step="0.0000001" id="latitude" name="latitude" class="form-input" value="<?php echo htmlspecialchars($latitude); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="longitude"><?php echo t('longitude'); ?>:</label>
+                    <input type="number" step="0.0000001" id="longitude" name="longitude" class="form-input" value="<?php echo htmlspecialchars($longitude); ?>">
+                </div>
             </div>
 
             <!-- Residential/Coastal Specific Fields -->
@@ -704,21 +735,21 @@ $conn->close();
                                 echo "<span class='error-message'>" . $errors['floors_count'] . "</span>";
                             } ?>
                         </div>
+                        <div class="form-group">
+                            <label for="year_built"><?php echo t('year_built'); ?>:</label>
+                            <input type="number" id="year_built" name="year_built" class="form-input" min="1900" max="2030" value="<?php echo htmlspecialchars($year_built); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label for="unit_floor"><?php echo t('unit_floor'); ?>:</label>
+                            <input type="text" id="unit_floor" name="unit_floor" class="form-input" placeholder="مثال: الطابق الثالث" value="<?php echo htmlspecialchars($unit_floor); ?>">
+                        </div>
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="unit_design_id"><?php echo t('unit_design'); ?>: *</label>
-                            <select id="unit_design_id" name="unit_design_id" class="form-input" required>
-                                <option value=""><?php echo t('select_unit_design'); ?></option>
-                                <?php foreach ($unit_designs_list as $design): ?>
-                                    <option value="<?php echo $design['DesignID']; ?>"
-                                        <?php echo ($unit_design_id == $design['DesignID']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($design['DesignName']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <?php if (isset($errors['unit_design_id'])) {
-                                echo "<span class='error-message'>" . $errors['unit_design_id'] . "</span>";
+                            <label for="unit_design"><?php echo t('unit_design'); ?>: *</label>
+                            <input type="text" id="unit_design" name="unit_design" class="form-input" placeholder="مثال: 3 غرف نوم + صالة + 2 حمام" value="<?php echo htmlspecialchars($unit_design); ?>" required>
+                            <?php if (isset($errors['unit_design'])) {
+                                echo "<span class='error-message'>" . $errors['unit_design'] . "</span>";
                             } ?>
                         </div>
                         <div class="form-group">
@@ -810,6 +841,14 @@ $conn->close();
                             echo "<span class='error-message'>" . $errors['avg_area'] . "</span>";
                         } ?>
                     </div>
+                    <div class="form-group">
+                        <label for="net_area"><?php echo t('net_area'); ?> (<?php echo t('sqm'); ?>):</label>
+                        <input type="number" step="0.01" id="net_area" name="net_area" class="form-input" value="<?php echo htmlspecialchars($net_area); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="loading_percentage"><?php echo t('loading_percentage'); ?> (%):</label>
+                        <input type="number" step="0.01" id="loading_percentage" name="loading_percentage" class="form-input" value="<?php echo htmlspecialchars($loading_percentage); ?>">
+                    </div>
                 </div>
             </div>
 
@@ -817,26 +856,20 @@ $conn->close();
                 <h3><?php echo t('pricing_and_payment'); ?></h3>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="price"><?php echo t('unit_price'); ?> (EGP):</label>
-                        <input type="number" step="0.01" id="price" name="price" class="form-input" value="<?php echo htmlspecialchars($price); ?>">
-                        <small><?php echo t('specific_price_note'); ?></small>
-                        <?php if (isset($errors['price'])) {
-                            echo "<span class='error-message'>" . $errors['price'] . "</span>";
-                        } ?>
+                        <label for="price_cash"><?php echo t('price_cash'); ?> (EGP):</label>
+                        <input type="number" step="0.01" id="price_cash" name="price_cash" class="form-input" value="<?php echo htmlspecialchars($price_cash); ?>">
                     </div>
                     <div class="form-group">
-                        <label for="min_price"><?php echo t('min_price'); ?> (EGP):</label>
-                        <input type="number" step="0.01" id="min_price" name="min_price" class="form-input" value="<?php echo htmlspecialchars($min_price); ?>">
-                        <?php if (isset($errors['min_price'])) {
-                            echo "<span class='error-message'>" . $errors['min_price'] . "</span>";
-                        } ?>
+                        <label for="price_installments"><?php echo t('price_installments'); ?> (EGP):</label>
+                        <input type="number" step="0.01" id="price_installments" name="price_installments" class="form-input" value="<?php echo htmlspecialchars($price_installments); ?>">
                     </div>
                     <div class="form-group">
-                        <label for="max_price"><?php echo t('max_price'); ?> (EGP):</label>
-                        <input type="number" step="0.01" id="max_price" name="max_price" class="form-input" value="<?php echo htmlspecialchars($max_price); ?>">
-                        <?php if (isset($errors['max_price'])) {
-                            echo "<span class='error-message'>" . $errors['max_price'] . "</span>";
-                        } ?>
+                        <label for="meter_price_cash"><?php echo t('meter_price_cash'); ?> (EGP):</label>
+                        <input type="number" step="0.01" id="meter_price_cash" name="meter_price_cash" class="form-input" value="<?php echo htmlspecialchars($meter_price_cash); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="meter_price_installments"><?php echo t('meter_price_installments'); ?> (EGP):</label>
+                        <input type="number" step="0.01" id="meter_price_installments" name="meter_price_installments" class="form-input" value="<?php echo htmlspecialchars($meter_price_installments); ?>">
                     </div>
                     <div class="form-group">
                         <label for="down_payment_percentage"><?php echo t('down_payment_percentage'); ?> (%):</label>
@@ -895,17 +928,29 @@ $conn->close();
                 </div>
             </div>
 
-            <!-- Owner Information Section -->
+            <!-- Seller Information Section -->
             <div class="form-section">
-                <h3><?php echo t("owner_information"); ?></h3>
+                <h3><?php echo t("seller_information"); ?></h3>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="owner_name"><?php echo t("owner_name"); ?></label>
-                        <input type="text" id="owner_name" name="owner_name" class="form-input" value="<?php echo htmlspecialchars($owner_name); ?>">
+                        <label for="seller_type"><?php echo t("seller_type"); ?>:</label>
+                        <select id="seller_type" name="seller_type" class="form-input">
+                            <option value=""><?php echo t("select_seller_type"); ?></option>
+                            <option value="مالك" <?php echo ($seller_type == 'مالك') ? 'selected' : ''; ?>><?php echo t('owner'); ?></option>
+                            <option value="وسيط" <?php echo ($seller_type == 'وسيط') ? 'selected' : ''; ?>><?php echo t('broker'); ?></option>
+                            <option value="وكيل" <?php echo ($seller_type == 'وكيل') ? 'selected' : ''; ?>><?php echo t('agent'); ?></option>
+                            <option value="بواب" <?php echo ($seller_type == 'بواب') ? 'selected' : ''; ?>><?php echo t('doorman'); ?></option>
+                            <option value="شركة مطورة" <?php echo ($seller_type == 'شركة مطورة') ? 'selected' : ''; ?>><?php echo t('development_company'); ?></option>
+                            <option value="شركة تشطيب" <?php echo ($seller_type == 'شركة تشطيب') ? 'selected' : ''; ?>><?php echo t('finishing_company'); ?></option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label for="owner_phone"><?php echo t("owner_phone"); ?></label>
-                        <input type="tel" id="owner_phone" name="owner_phone" class="form-input" value="<?php echo htmlspecialchars($owner_phone); ?>">
+                        <label for="seller_name"><?php echo t("seller_name"); ?></label>
+                        <input type="text" id="seller_name" name="seller_name" class="form-input" value="<?php echo htmlspecialchars($seller_name); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="seller_phone"><?php echo t("seller_phone"); ?></label>
+                        <input type="tel" id="seller_phone" name="seller_phone" class="form-input" value="<?php echo htmlspecialchars($seller_phone); ?>">
                     </div>
                 </div>
             </div>
@@ -939,7 +984,7 @@ $conn->close();
                     commercialFields.classList.remove('active');
 
                     // Enable/disable required attributes for residential/coastal
-                    const unitDesignField = document.getElementById('unit_design_id');
+                    const unitDesignField = document.getElementById('unit_design');
                     const finishingTypeField = document.getElementById('finishing_type_id');
                     const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
                     
@@ -952,7 +997,7 @@ $conn->close();
                     commercialFields.classList.add('active');
 
                     // Enable/disable required attributes for commercial
-                    const unitDesignField = document.getElementById('unit_design_id');
+                    const unitDesignField = document.getElementById('unit_design');
                     const finishingTypeField = document.getElementById('finishing_type_id');
                     const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
                     
@@ -965,7 +1010,7 @@ $conn->close();
                     commercialFields.classList.remove('active');
 
                     // Remove required attributes if no specific type is selected
-                    const unitDesignField = document.getElementById('unit_design_id');
+                    const unitDesignField = document.getElementById('unit_design');
                     const finishingTypeField = document.getElementById('finishing_type_id');
                     const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
                     

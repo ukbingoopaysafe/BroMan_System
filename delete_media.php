@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once __DIR__ . '/security.php';
+ensure_secure_session_started();
 require_once 'db.php';
 require_once 'permissions.php';
 
@@ -18,7 +19,7 @@ if (!can_manage_properties()) {
 }
 
 // CSRF protection
-if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+if (!validateCSRFToken($_POST['csrf_token'] ?? null)) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'CSRF token mismatch']);
     exit;

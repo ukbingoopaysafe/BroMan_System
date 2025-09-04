@@ -485,6 +485,30 @@ return [
     'reorder_images' => 'Reorder Images',
     'save_image_order' => 'Save Image Order',
     'image_reorder_instructions' => 'Drag images to reorder them, then click Save Image Order.',
+    
+    // New fields for updated schema
+    'latitude' => 'Latitude',
+    'longitude' => 'Longitude',
+    'year_built' => 'Year Built',
+    'unit_floor' => 'Unit Floor',
+    'net_area' => 'Net Area',
+    'loading_percentage' => 'Loading Percentage',
+    'seller_type' => 'Seller Type',
+    'seller_name' => 'Seller Name',
+    'seller_phone' => 'Seller Phone',
+    'price_cash' => 'Cash Price',
+    'price_installments' => 'Installment Price',
+    'meter_price_cash' => 'Price per Square Meter (Cash)',
+    'meter_price_installments' => 'Price per Square Meter (Installments)',
+    'seller_information' => 'Seller Information',
+    'select_seller_type' => 'Select Seller Type',
+    'owner' => 'Owner',
+    'broker' => 'Broker',
+    'agent' => 'Agent',
+    'doorman' => 'Doorman',
+    'development_company' => 'Development Company',
+    'finishing_company' => 'Finishing Company',
+    'search_unit_design' => 'Search unit design...',
 ];
 ?>
 
