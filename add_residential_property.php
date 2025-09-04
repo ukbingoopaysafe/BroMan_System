@@ -63,9 +63,18 @@ $errors = [];
 $success_message = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    error_log("POST request received");
+    error_log("CSRF token: " . ($_POST['csrf_token'] ?? 'NOT_SET'));
+    
     if (!validateCSRFToken($_POST['csrf_token'] ?? null)) {
+        error_log("CSRF token validation failed");
         $errors[] = t('invalid_csrf_token');
+    } else {
+        error_log("CSRF token validation passed");
     }
+    
+    error_log("Starting data sanitization");
+    
     // --- Data Sanitization ---
     $property_type_id = 1; // Hardcoded for Residential
     $listing_type = $_SESSION['listing_context'] ?? 'Primary';
@@ -110,6 +119,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $longitude = filter_input(INPUT_POST, 'longitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $delivery_date = !empty($delivery_date_str) ? $delivery_date_str : null;
 
+    error_log("Data sanitization completed");
+
     // Debug: Log all variables
     error_log("Debug - property_type_id: " . $property_type_id);
     error_log("Debug - title: " . $title);
@@ -141,6 +152,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // --- Database Insertion ---
+    error_log("Starting database insertion");
+    error_log("SQL Query: INSERT INTO properties with 39 columns");
+    
     $sql = "INSERT INTO properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, seller_name, seller_phone, price_cash, price_installments, meter_price_cash, meter_price_installments, latitude, longitude, year_built, unit_floor, net_area, seller_type) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -319,9 +333,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->close();
     } else {
         error_log("DB Prepare Error (add_residential_property): " . $conn->error);
+        error_log("Connection error: " . $conn->connect_error);
+        error_log("Connection errno: " . $conn->connect_errno);
         $errors[] = t('database_error');
     }
 }
+
+error_log("End of PHP processing");
 
 ?>
 <!DOCTYPE html>
