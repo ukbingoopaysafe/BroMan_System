@@ -21,15 +21,14 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 
 $property_id = intval($_GET['id']);
 
-// Fetch property details with proper joins for unit design and finishing type
+// Fetch property details with proper joins for finishing type
 $property = null;
 $sql = "SELECT p.*, pt.TypeName, 
                e.FullName AS EmployeeName,
-               pud.DesignName AS UnitDesignName, pft.FinishingName AS FinishingTypeName
+               p.unit_design AS UnitDesignName, pft.FinishingName AS FinishingTypeName
         FROM Properties p
         LEFT JOIN PropertyTypes pt ON p.PropertyTypeID = pt.PropertyTypeID
         LEFT JOIN Employees e ON p.EmployeeID = e.EmployeeID
-        LEFT JOIN PropertyUnitDesigns pud ON p.unit_design_id = pud.DesignID
         LEFT JOIN PropertyFinishingTypes pft ON p.finishing_type_id = pft.FinishingID
         WHERE p.PropertyID = ?";
 

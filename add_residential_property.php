@@ -20,7 +20,6 @@ if (!isset($_SESSION['listing_context']) || ($_SESSION['listing_context'] !== 'P
 $current_mode = $_SESSION['listing_context'];
 
 $property_types = [];
-$unit_designs = [];
 $finishing_types = [];
 $employees = [];
 
@@ -35,16 +34,7 @@ if ($result = $conn->query($sql_types)) {
     error_log("Error fetching residential property types: " . $conn->error);
 }
 
-// Fetch Unit Designs
-$sql_designs = "SELECT DesignID, DesignName FROM propertyunitdesigns ORDER BY DesignID";
-if ($result = $conn->query($sql_designs)) {
-    while ($row = $result->fetch_assoc()) {
-        $unit_designs[] = $row;
-    }
-    $result->free();
-} else {
-    error_log("Error fetching unit designs: " . $conn->error);
-}
+// Removed fetching unit designs (table dropped). Using free-text input for unit_design.
 
 // Fetch Finishing Types
 $sql_finishing = "SELECT FinishingID, FinishingName FROM propertyfinishingtypes ORDER BY FinishingID";
@@ -88,13 +78,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $company_name = trim($_POST['company_name'] ?? null);
     $compound_area = filter_input(INPUT_POST, 'compound_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $floors_count = filter_input(INPUT_POST, 'floors_count', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
-    $unit_design_id = filter_input(INPUT_POST, 'unit_design_id', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+    $unit_design = trim($_POST['unit_design'] ?? null);
     $min_area = filter_input(INPUT_POST, 'min_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $max_area = filter_input(INPUT_POST, 'max_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $avg_area = filter_input(INPUT_POST, 'avg_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $area = filter_input(INPUT_POST, 'area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $bedrooms = null; // Bedrooms field removed from this form
-    $bathrooms = filter_input(INPUT_POST, 'bathrooms', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $finishing_type_id = filter_input(INPUT_POST, 'finishing_type_id', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $min_price = filter_input(INPUT_POST, 'min_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $max_price = filter_input(INPUT_POST, 'max_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
@@ -113,13 +102,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $delivery_date = !empty($delivery_date_str) ? $delivery_date_str : null;
 
     // --- Database Insertion ---
-    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Price, Area, Bedrooms, Bathrooms, Status, listing_type, EmployeeID, unit_design_id, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_price, max_price, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, DateAdded) 
+    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Price, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_price, max_price, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, DateAdded) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
     if ($stmt = $conn->prepare($sql)) {
         $stmt->bind_param(
-            "isssddiissiiiddissdddddsssissssss",
-            $property_type_id, $title, $description, $location, $price, $area, $bedrooms, $bathrooms, $status, $listing_type, $employee_id, $unit_design_id, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_price, $max_price, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone
+            "isssddissisiddissdddddsssissssss",
+            $property_type_id, $title, $description, $location, $price, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_price, $max_price, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone
         );
 
         if ($stmt->execute()) {
@@ -408,13 +397,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input type="number" id="floors_count" name="floors_count" class="form-input" value="<?php echo htmlspecialchars($_POST['floors_count'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
-                    <label for="unit_design_id"><?php echo t('unit_design'); ?>: *</label>
-                    <select id="unit_design_id" name="unit_design_id" class="form-input" required>
-                        <option value=""><?php echo t('select_unit_design'); ?></option>
-                        <?php foreach ($unit_designs as $design): ?>
-                            <option value="<?php echo $design['DesignID']; ?>" <?php echo (($_POST['unit_design_id'] ?? '') == $design['DesignID']) ? 'selected' : ''; ?>><?php echo t(htmlspecialchars($design['DesignName'])); // Translate design name?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <label for="unit_design"><?php echo t('unit_design'); ?>:</label>
+                    <input type="text" id="unit_design" name="unit_design" class="form-input" value="<?php echo htmlspecialchars($_POST['unit_design'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
                     <label for="finishing_type_id"><?php echo t('finishing_type'); ?>: *</label>
@@ -425,11 +409,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <!-- Removed bedrooms field as requested -->
-                <div class="form-group">
-                    <label for="bathrooms"><?php echo t('bathrooms'); ?>:</label>
-                    <input type="number" id="bathrooms" name="bathrooms" class="form-input" value="<?php echo htmlspecialchars($_POST['bathrooms'] ?? ''); ?>">
-                </div>
+                <!-- Bathrooms removed per new schema -->
             </div>
         </div>
 

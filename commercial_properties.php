@@ -92,17 +92,14 @@ if ($stmt_comp = $conn->prepare($sql_companies)) {
     $stmt_comp->close();
 }
 
-// Fetch unit designs for the filter dropdown
+// Fetch distinct unit_design values for the filter dropdown
 $unit_designs = [];
-$sql_unit_designs = "SELECT DISTINCT pud.DesignID, pud.DesignName 
-                     FROM PropertyUnitDesigns pud 
-                     JOIN Properties p ON p.unit_design_id = pud.DesignID 
-                     ORDER BY pud.DesignName";
+$sql_unit_designs = "SELECT DISTINCT unit_design FROM Properties WHERE unit_design IS NOT NULL AND unit_design != '' ORDER BY unit_design";
 if ($stmt_designs = $conn->prepare($sql_unit_designs)) {
     if ($stmt_designs->execute()) {
         $result_designs = $stmt_designs->get_result();
         while ($row_design = $result_designs->fetch_assoc()) {
-            $unit_designs[$row_design['DesignID']] = $row_design['DesignName'];
+            $unit_designs[$row_design['unit_design']] = $row_design['unit_design'];
         }
     }
     $stmt_designs->close();
@@ -123,11 +120,10 @@ if ($stmt_types = $conn->prepare($sql_property_types)) {
 
 // Build the main SQL query with proper joins for unit design and finishing type
 $sql_select = "SELECT p.*, pt.TypeName AS PropertyTypeName, e.FullName AS EmployeeName,
-               pud.DesignName AS UnitDesignName, pft.FinishingName AS FinishingTypeName
+               p.unit_design AS UnitDesignName, pft.FinishingName AS FinishingTypeName
                FROM Properties p
                LEFT JOIN PropertyTypes pt ON p.PropertyTypeID = pt.PropertyTypeID
                LEFT JOIN Employees e ON p.EmployeeID = e.EmployeeID
-               LEFT JOIN PropertyUnitDesigns pud ON p.unit_design_id = pud.DesignID
                LEFT JOIN PropertyFinishingTypes pft ON p.finishing_type_id = pft.FinishingID";
 $sql_where = [];
 $params = [];
@@ -169,9 +165,9 @@ if (!empty($company_filter)) {
 
 // Add unit design filter
 if (!empty($unit_design_filter)) {
-    $sql_where[] = "p.unit_design_id = ?";
+    $sql_where[] = "p.unit_design = ?";
     $params[] = $unit_design_filter;
-    $types .= "i";
+    $types .= "s";
 }
 
 // Add status filter
