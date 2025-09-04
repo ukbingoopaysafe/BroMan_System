@@ -115,6 +115,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     error_log("Debug - title: " . $title);
     error_log("Debug - area: " . $area);
     error_log("Debug - employee_id: " . $employee_id);
+    error_log("Debug - status: " . $status);
+    error_log("Debug - listing_type: " . $listing_type);
+    error_log("Debug - unit_design: " . $unit_design);
+    error_log("Debug - finishing_type_id: " . $finishing_type_id);
+    
+    // Validate required fields
+    if (empty($title)) {
+        error_log("ERROR: Title is empty");
+        $errors[] = t('title_required');
+    }
+    if (empty($area) || $area <= 0) {
+        error_log("ERROR: Area is invalid: " . $area);
+        $errors[] = t('area_required');
+    }
+    if (empty($employee_id)) {
+        error_log("ERROR: Employee ID is empty");
+        $errors[] = t('employee_required');
+    }
+    
+    // If there are errors, don't proceed
+    if (!empty($errors)) {
+        error_log("ERROR: Validation failed, errors: " . implode(", ", $errors));
+        return;
+    }
 
     // --- Database Insertion ---
     $sql = "INSERT INTO properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, seller_name, seller_phone, price_cash, price_installments, meter_price_cash, meter_price_installments, latitude, longitude, year_built, unit_floor, net_area, seller_type) 
@@ -122,6 +146,49 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($stmt = $conn->prepare($sql)) {
         error_log("SQL prepared successfully");
+        
+        // Log all bound parameters for debugging
+        error_log("Binding parameters:");
+        error_log("1. property_type_id: " . $property_type_id);
+        error_log("2. title: " . $title);
+        error_log("3. description: " . $description);
+        error_log("4. location: " . $location);
+        error_log("5. area: " . $area);
+        error_log("6. bedrooms: " . $bedrooms);
+        error_log("7. status: " . $status);
+        error_log("8. listing_type: " . $listing_type);
+        error_log("9. employee_id: " . $employee_id);
+        error_log("10. unit_design: " . $unit_design);
+        error_log("11. finishing_type_id: " . $finishing_type_id);
+        error_log("12. compound_area: " . $compound_area);
+        error_log("13. down_payment_percentage: " . $down_payment_percentage);
+        error_log("14. payment_years: " . $payment_years);
+        error_log("15. delivery_date: " . $delivery_date);
+        error_log("16. project_name: " . $project_name);
+        error_log("17. min_area: " . $min_area);
+        error_log("18. max_area: " . $max_area);
+        error_log("19. avg_area: " . $avg_area);
+        error_log("20. district: " . $district);
+        error_log("21. governorate: " . $governorate);
+        error_log("22. company_name: " . $company_name);
+        error_log("23. floors_count: " . $floors_count);
+        error_log("24. sales_manager_name: " . $sales_manager_name);
+        error_log("25. sales_manager_phone: " . $sales_manager_phone);
+        error_log("26. salesperson_name: " . $salesperson_name);
+        error_log("27. salesperson_phone: " . $salesperson_phone);
+        error_log("28. seller_name: " . $seller_name);
+        error_log("29. seller_phone: " . $seller_phone);
+        error_log("30. price_cash: " . $price_cash);
+        error_log("31. price_installments: " . $price_installments);
+        error_log("32. meter_price_cash: " . $meter_price_cash);
+        error_log("33. meter_price_installments: " . $meter_price_installments);
+        error_log("34. latitude: " . $latitude);
+        error_log("35. longitude: " . $longitude);
+        error_log("36. year_built: " . $year_built);
+        error_log("37. unit_floor: " . $unit_floor);
+        error_log("38. net_area: " . $net_area);
+        error_log("39. seller_type: " . $seller_type);
+        
         $stmt->bind_param(
             "isssdisisiddissddddsssissssssddddsssiss",
             $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $seller_name, $seller_phone, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $latitude, $longitude, $year_built, $unit_floor, $net_area, $seller_type
@@ -130,8 +197,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if ($stmt->execute()) {
             $new_property_id = $conn->insert_id;
+            $rows_affected = $stmt->affected_rows;
             error_log("Property added successfully with ID: " . $new_property_id);
-            error_log("Rows affected: " . $stmt->affected_rows);
+            error_log("Rows affected: " . $rows_affected);
+            
+            // Check if the insert actually worked
+            if ($rows_affected <= 0 || $new_property_id <= 0) {
+                error_log("ERROR: Insert failed - rows affected: " . $rows_affected . ", insert_id: " . $new_property_id);
+                $errors[] = t('database_error') . ': Insert failed';
+                $stmt->close();
+                return;
+            }
 
             // Handle unified media uploads (images and videos)
             $base_upload_dir = __DIR__ . '/uploads/';
