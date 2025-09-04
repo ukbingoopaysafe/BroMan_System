@@ -353,6 +353,24 @@ return [
     'owner_name' => 'Owner Name',
     'owner_phone' => 'Owner Phone',
 
+    // New Phase 2 Fields
+    'year_built' => 'Year Built',
+    'unit_floor' => 'Unit Floor',
+    'net_area' => 'Net Area (sqm)',
+    'loading_percentage' => 'Loading Percentage (%)',
+    'price_cash' => 'Cash Price (EGP)',
+    'price_installments' => 'Installments Price (EGP)',
+    'meter_price_cash' => 'Price per Square Meter - Cash (EGP)',
+    'meter_price_installments' => 'Price per Square Meter - Installments (EGP)',
+    'seller_type' => 'Seller Type',
+    'seller_name' => 'Seller Name',
+    'seller_phone' => 'Seller Phone',
+    'seller_type_direct_owner' => 'Direct Owner',
+    'seller_type_agent' => 'Agent',
+    'seller_type_real_estate_office' => 'Real Estate Office',
+    'seller_type_developer' => 'Developer',
+    'select_seller_type' => 'Select Seller Type',
+
     // Client List (index.php)
     'manage_clients_title' => 'Manage Clients',
     'client_management' => 'Client Management',

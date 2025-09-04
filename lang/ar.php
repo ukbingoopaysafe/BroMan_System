@@ -352,6 +352,24 @@ return [
     'owner_name' => 'اسم المالك',
     'owner_phone' => 'هاتف المالك',
 
+    // New Phase 2 Fields
+    'year_built' => 'سنة البناء',
+    'unit_floor' => 'دور الوحدة',
+    'net_area' => 'المساحة الصافية (م²)',
+    'loading_percentage' => 'نسبة التحميل (%)',
+    'price_cash' => 'السعر نقداً (جنيه)',
+    'price_installments' => 'السعر بالتقسيط (جنيه)',
+    'meter_price_cash' => 'سعر المتر المربع - نقداً (جنيه)',
+    'meter_price_installments' => 'سعر المتر المربع - بالتقسيط (جنيه)',
+    'seller_type' => 'نوع البائع',
+    'seller_name' => 'اسم البائع',
+    'seller_phone' => 'هاتف البائع',
+    'seller_type_direct_owner' => 'مالك مباشر',
+    'seller_type_agent' => 'وكيل',
+    'seller_type_real_estate_office' => 'مكتب عقاري',
+    'seller_type_developer' => 'مطور عقاري',
+    'select_seller_type' => 'اختر نوع البائع',
+
     // Client List
     'manage_clients_title' => 'إدارة العملاء',
     'client_list' => 'قائمة العملاء',

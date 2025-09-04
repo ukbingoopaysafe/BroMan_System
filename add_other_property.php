@@ -97,15 +97,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $owner_name = trim($_POST['owner_name'] ?? null);
     $owner_phone = trim($_POST['owner_phone'] ?? null);
     $delivery_date = !empty($delivery_date_str) ? $delivery_date_str : null;
+    
+    // New Phase 2 fields
+    $year_built = filter_input(INPUT_POST, 'year_built', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+    $unit_floor = trim($_POST['unit_floor'] ?? null);
+    $net_area = filter_input(INPUT_POST, 'net_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $loading_percentage = filter_input(INPUT_POST, 'loading_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $price_cash = filter_input(INPUT_POST, 'price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $price_installments = filter_input(INPUT_POST, 'price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $meter_price_cash = filter_input(INPUT_POST, 'meter_price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $meter_price_installments = filter_input(INPUT_POST, 'meter_price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $seller_type = trim($_POST['seller_type'] ?? null);
+    $seller_name = trim($_POST['seller_name'] ?? null);
+    $seller_phone = trim($_POST['seller_phone'] ?? null);
 
     // --- Database Insertion ---
-    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, DateAdded) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, year_built, unit_floor, net_area, loading_percentage, price_cash, price_installments, meter_price_cash, meter_price_installments, seller_type, seller_name, seller_phone, DateAdded) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
     if ($stmt = $conn->prepare($sql)) {
         $stmt->bind_param(
-            "isssdiissiiddisssddddsssissssss",
-            $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone
+            "isssdiissiiddisssddddsssissssssiisddddddssss",
+            $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone, $year_built, $unit_floor, $net_area, $loading_percentage, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $seller_type, $seller_name, $seller_phone
         );
 
         if ($stmt->execute()) {
@@ -395,6 +408,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="year_built"><?php echo t('year_built'); ?>:</label>
+                    <input type="number" id="year_built" name="year_built" class="form-input" min="1900" max="2030" value="<?php echo htmlspecialchars($_POST['year_built'] ?? ''); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="unit_floor"><?php echo t('unit_floor'); ?>:</label>
+                    <input type="text" id="unit_floor" name="unit_floor" class="form-input" value="<?php echo htmlspecialchars($_POST['unit_floor'] ?? ''); ?>">
+                </div>
                  <!-- Removed Unit Design, Bedrooms, Bathrooms -->
             </div>
         </div>
@@ -419,6 +440,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <label for="avg_area"><?php echo t('avg_area_sqm'); ?>:</label>
                     <input type="number" step="0.01" id="avg_area" name="avg_area" class="form-input" value="<?php echo htmlspecialchars($_POST['avg_area'] ?? ''); ?>">
                 </div>
+                <div class="form-group">
+                    <label for="net_area"><?php echo t('net_area'); ?>:</label>
+                    <input type="number" step="0.01" id="net_area" name="net_area" class="form-input" value="<?php echo htmlspecialchars($_POST['net_area'] ?? ''); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="loading_percentage"><?php echo t('loading_percentage'); ?>:</label>
+                    <input type="number" step="0.01" id="loading_percentage" name="loading_percentage" class="form-input" min="0" max="100" value="<?php echo htmlspecialchars($_POST['loading_percentage'] ?? ''); ?>">
+                </div>
             </div>
         </div>
 
@@ -426,17 +455,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <h3><?php echo t('pricing_and_payment'); ?></h3>
             <div class="form-grid">
                 <div class="form-group">
-                    <label for="price"><?php echo t('unit_price'); ?> (EGP):</label>
-                    <input type="number" step="0.01" id="price" name="price" class="form-input" value="<?php echo htmlspecialchars($_POST['price'] ?? ''); ?>">
-                    <small><?php echo t('specific_price_note'); ?></small>
+                    <label for="price_cash"><?php echo t('price_cash'); ?>:</label>
+                    <input type="number" step="0.01" id="price_cash" name="price_cash" class="form-input" value="<?php echo htmlspecialchars($_POST['price_cash'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
-                    <label for="min_price"><?php echo t('min_price'); ?> (EGP):</label>
-                    <input type="number" step="0.01" id="min_price" name="min_price" class="form-input" value="<?php echo htmlspecialchars($_POST['min_price'] ?? ''); ?>">
+                    <label for="price_installments"><?php echo t('price_installments'); ?>:</label>
+                    <input type="number" step="0.01" id="price_installments" name="price_installments" class="form-input" value="<?php echo htmlspecialchars($_POST['price_installments'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
-                    <label for="max_price"><?php echo t('max_price'); ?> (EGP):</label>
-                    <input type="number" step="0.01" id="max_price" name="max_price" class="form-input" value="<?php echo htmlspecialchars($_POST['max_price'] ?? ''); ?>">
+                    <label for="meter_price_cash"><?php echo t('meter_price_cash'); ?>:</label>
+                    <input type="number" step="0.01" id="meter_price_cash" name="meter_price_cash" class="form-input" value="<?php echo htmlspecialchars($_POST['meter_price_cash'] ?? ''); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="meter_price_installments"><?php echo t('meter_price_installments'); ?>:</label>
+                    <input type="number" step="0.01" id="meter_price_installments" name="meter_price_installments" class="form-input" value="<?php echo htmlspecialchars($_POST['meter_price_installments'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
                     <label for="down_payment_percentage"><?php echo t('down_payment_percentage'); ?> (%):</label>
@@ -486,15 +518,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         </div>
 
-        <!-- Owner Information Section -->
+        <!-- Owner/Seller Information Section -->
         <div class="form-section">
             <h3><?php echo t("owner_information"); ?></h3>
             <div class="form-grid">
-                <div>
+                <div class="form-group">
+                    <label for="seller_type"><?php echo t("seller_type"); ?>:</label>
+                    <select id="seller_type" name="seller_type" class="form-input">
+                        <option value=""><?php echo t('select_seller_type'); ?></option>
+                        <option value="مالك مباشر" <?php echo (($_POST['seller_type'] ?? '') == 'مالك مباشر') ? 'selected' : ''; ?>><?php echo t('seller_type_direct_owner'); ?></option>
+                        <option value="وكيل" <?php echo (($_POST['seller_type'] ?? '') == 'وكيل') ? 'selected' : ''; ?>><?php echo t('seller_type_agent'); ?></option>
+                        <option value="مكتب عقاري" <?php echo (($_POST['seller_type'] ?? '') == 'مكتب عقاري') ? 'selected' : ''; ?>><?php echo t('seller_type_real_estate_office'); ?></option>
+                        <option value="مطور عقاري" <?php echo (($_POST['seller_type'] ?? '') == 'مطور عقاري') ? 'selected' : ''; ?>><?php echo t('seller_type_developer'); ?></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="seller_name"><?php echo t("seller_name"); ?></label>
+                    <input type="text" id="seller_name" name="seller_name" class="form-input" value="<?php echo htmlspecialchars($_POST["seller_name"] ?? ""); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="seller_phone"><?php echo t("seller_phone"); ?></label>
+                    <input type="tel" id="seller_phone" name="seller_phone" class="form-input" value="<?php echo htmlspecialchars($_POST["seller_phone"] ?? ""); ?>">
+                </div>
+                <div class="form-group">
                     <label for="owner_name"><?php echo t("owner_name"); ?></label>
                     <input type="text" id="owner_name" name="owner_name" class="form-input" value="<?php echo htmlspecialchars($_POST["owner_name"] ?? ""); ?>">
                 </div>
-                <div>
+                <div class="form-group">
                     <label for="owner_phone"><?php echo t("owner_phone"); ?></label>
                     <input type="tel" id="owner_phone" name="owner_phone" class="form-input" value="<?php echo htmlspecialchars($_POST["owner_phone"] ?? ""); ?>">
                 </div>
