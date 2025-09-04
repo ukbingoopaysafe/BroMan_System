@@ -84,7 +84,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $avg_area = filter_input(INPUT_POST, 'avg_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $area = filter_input(INPUT_POST, 'area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $net_area = filter_input(INPUT_POST, 'net_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $bedrooms = filter_input(INPUT_POST, 'bedrooms', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+    $bedrooms_input = filter_input(INPUT_POST, 'bedrooms', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+    $bedrooms = ($bedrooms_input === false || $bedrooms_input === null) ? null : $bedrooms_input;
     $finishing_type_id = filter_input(INPUT_POST, 'finishing_type_id', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     // NEW PRICING MODEL - Replace old price fields
     $price_cash = filter_input(INPUT_POST, 'price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
