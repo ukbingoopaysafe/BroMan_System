@@ -93,11 +93,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $meter_price_cash = filter_input(INPUT_POST, 'meter_price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $meter_price_installments = filter_input(INPUT_POST, 'meter_price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $down_payment_percentage = filter_input(INPUT_POST, 'down_payment_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $loading_percentage = filter_input(INPUT_POST, 'loading_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $payment_years = filter_input(INPUT_POST, 'payment_years', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $delivery_date_str = trim($_POST['delivery_date'] ?? '');
     $status = trim($_POST['status'] ?? 'available');
-    $employee_id = $_SESSION['employee_id'] ?? null;
+    $employee_id = $_SESSION['employee_id'] ?? 1; // Default to admin if not set
     $sales_manager_name = trim($_POST['sales_manager_name'] ?? null);
     $sales_manager_phone = trim($_POST['sales_manager_phone'] ?? null);
     $salesperson_name = trim($_POST['salesperson_name'] ?? null);
@@ -111,18 +110,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $longitude = filter_input(INPUT_POST, 'longitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $delivery_date = !empty($delivery_date_str) ? $delivery_date_str : null;
 
+    // Debug: Log all variables
+    error_log("Debug - property_type_id: " . $property_type_id);
+    error_log("Debug - title: " . $title);
+    error_log("Debug - area: " . $area);
+    error_log("Debug - employee_id: " . $employee_id);
+
     // --- Database Insertion ---
-    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, seller_name, seller_phone, price_cash, price_installments, meter_price_cash, meter_price_installments, latitude, longitude, year_built, unit_floor, net_area, seller_type) 
+    $sql = "INSERT INTO properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, seller_name, seller_phone, price_cash, price_installments, meter_price_cash, meter_price_installments, latitude, longitude, year_built, unit_floor, net_area, seller_type) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     if ($stmt = $conn->prepare($sql)) {
+        error_log("SQL prepared successfully");
         $stmt->bind_param(
             "isssdisisiddissddddsssissssssddddsssiss",
             $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $seller_name, $seller_phone, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $latitude, $longitude, $year_built, $unit_floor, $net_area, $seller_type
         );
+        error_log("Parameters bound successfully");
 
         if ($stmt->execute()) {
             $new_property_id = $conn->insert_id;
+            error_log("Property added successfully with ID: " . $new_property_id);
+            error_log("Rows affected: " . $stmt->affected_rows);
 
             // Handle unified media uploads (images and videos)
             $base_upload_dir = __DIR__ . '/uploads/';
@@ -227,6 +236,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             exit();
         } else {
             error_log("DB Error (add_residential_property): " . $stmt->error);
+            error_log("SQL State: " . $stmt->sqlstate);
+            error_log("Error Code: " . $stmt->errno);
             $errors[] = t('database_error') . ': ' . $stmt->error;
         }
         $stmt->close();
