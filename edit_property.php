@@ -259,7 +259,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // If no errors, proceed with update
     if (empty($errors)) {
-        $sql_update = "UPDATE Properties SET 
+        $sql_update = "UPDATE properties SET 
             PropertyTypeID = ?, Title = ?, Description = ?, Location = ?, Area = ?, 
             Status = ?, listing_type = ?, unit_design = ?, finishing_type_id = ?, 
             compound_area = ?, down_payment_percentage = ?, payment_years = ?, delivery_date = ?, 
@@ -268,12 +268,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             sales_manager_name = ?, sales_manager_phone = ?, salesperson_name = ?, salesperson_phone = ?,
             seller_name = ?, seller_phone = ?, price_cash = ?, price_installments = ?, 
             meter_price_cash = ?, meter_price_installments = ?, latitude = ?, longitude = ?,
-            year_built = ?, unit_floor = ?, net_area = ?, loading_percentage = ?, seller_type = ?
+            year_built = ?, unit_floor = ?, net_area = ?, seller_type = ?
             WHERE PropertyID = ?";
 
         if ($stmt_update = $conn->prepare($sql_update)) {
             $stmt_update->bind_param(
-                "isssdssiddissddddsssissssssddddsssissdsi",
+                "isssdssiddissddddsssissssssddddsssissi",
                 $property_type_id_posted,
                 $title_posted,
                 $description_posted,
@@ -310,7 +310,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $year_built_posted,
                 $unit_floor_posted,
                 $net_area_posted,
-                $loading_percentage_posted,
                 $seller_type_posted,
                 $property_id
             );
