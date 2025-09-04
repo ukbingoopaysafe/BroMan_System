@@ -80,13 +80,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $avg_area = filter_input(INPUT_POST, 'avg_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $area = filter_input(INPUT_POST, 'area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $bedrooms = null; // Not applicable
-    $bathrooms = null; // Not applicable
-    $unit_design_id = null; // Not applicable
+    // Bathrooms column removed from schema
+    $unit_design = trim($_POST['unit_design'] ?? '');
     $compound_area = null; // Not applicable
     $finishing_type_id = filter_input(INPUT_POST, 'finishing_type_id', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
-    $min_price = filter_input(INPUT_POST, 'min_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $max_price = filter_input(INPUT_POST, 'max_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    // Price columns removed from schema
     $down_payment_percentage = filter_input(INPUT_POST, 'down_payment_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $payment_years = filter_input(INPUT_POST, 'payment_years', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $delivery_date_str = trim($_POST['delivery_date'] ?? '');
@@ -101,13 +99,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $delivery_date = !empty($delivery_date_str) ? $delivery_date_str : null;
 
     // --- Database Insertion ---
-    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Price, Area, Bedrooms, Bathrooms, Status, listing_type, EmployeeID, unit_design_id, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_price, max_price, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, DateAdded) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, DateAdded) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
     if ($stmt = $conn->prepare($sql)) {
         $stmt->bind_param(
-            "isssddiissiiiddissdddddsssissssss",
-            $property_type_id, $title, $description, $location, $price, $area, $bedrooms, $bathrooms, $status, $listing_type, $employee_id, $unit_design_id, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_price, $max_price, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone
+            "isssdiissiiddisssddddsssissssss",
+            $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone
         );
 
         if ($stmt->execute()) {

@@ -36,16 +36,7 @@ if ($result = $conn->query($sql_types)) {
     error_log("Error fetching coastal property types: " . $conn->error);
 }
 
-// Fetch Unit Designs
-$sql_designs = "SELECT DesignID, DesignName FROM propertyunitdesigns ORDER BY DesignID";
-if ($result = $conn->query($sql_designs)) {
-    while ($row = $result->fetch_assoc()) {
-        $unit_designs[] = $row;
-    }
-    $result->free();
-} else {
-    error_log("Error fetching unit designs: " . $conn->error);
-}
+// Unit designs are now handled as text input, no database lookup needed
 
 // Fetch Finishing Types
 $sql_finishing = "SELECT FinishingID, FinishingName FROM propertyfinishingtypes ORDER BY FinishingID";
@@ -88,17 +79,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $company_name = trim($_POST['company_name'] ?? null);
     $compound_area = filter_input(INPUT_POST, 'compound_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $floors_count = filter_input(INPUT_POST, 'floors_count', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
-    $unit_design_id = filter_input(INPUT_POST, 'unit_design_id', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+    $unit_design = trim($_POST['unit_design'] ?? '');
     $min_area = filter_input(INPUT_POST, 'min_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $max_area = filter_input(INPUT_POST, 'max_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $avg_area = filter_input(INPUT_POST, 'avg_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $area = filter_input(INPUT_POST, 'area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $bedrooms = null; // Bedrooms field removed from this form
-    $bathrooms = filter_input(INPUT_POST, 'bathrooms', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+    // Bathrooms column removed from schema
     $finishing_type_id = filter_input(INPUT_POST, 'finishing_type_id', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
-    $min_price = filter_input(INPUT_POST, 'min_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $max_price = filter_input(INPUT_POST, 'max_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    // Price columns removed from schema
     $down_payment_percentage = filter_input(INPUT_POST, 'down_payment_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $payment_years = filter_input(INPUT_POST, 'payment_years', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $delivery_date_str = trim($_POST['delivery_date'] ?? '');
@@ -113,13 +102,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $delivery_date = !empty($delivery_date_str) ? $delivery_date_str : null;
 
     // --- Database Insertion ---
-    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Price, Area, Bedrooms, Bathrooms, Status, listing_type, EmployeeID, unit_design_id, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_price, max_price, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, DateAdded) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, owner_name, owner_phone, DateAdded) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
     if ($stmt = $conn->prepare($sql)) {
         $stmt->bind_param(
-            "isssddiissiiiddissdddddsssissssss",
-            $property_type_id, $title, $description, $location, $price, $area, $bedrooms, $bathrooms, $status, $listing_type, $employee_id, $unit_design_id, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_price, $max_price, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone
+            "isssdiissiiddisssddddsssissssss",
+            $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $owner_name, $owner_phone
         );
 
         if ($stmt->execute()) {
@@ -409,13 +398,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input type="number" id="floors_count" name="floors_count" class="form-input" value="<?php echo htmlspecialchars($_POST['floors_count'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
-                    <label for="unit_design_id"><?php echo t('unit_design'); ?>: *</label>
-                    <select id="unit_design_id" name="unit_design_id" class="form-input" required>
-                        <option value=""><?php echo t('select_unit_design'); ?></option>
-                        <?php foreach ($unit_designs as $design): ?>
-                            <option value="<?php echo $design['DesignID']; ?>" <?php echo (($_POST['unit_design_id'] ?? '') == $design['DesignID']) ? 'selected' : ''; ?>><?php echo t(htmlspecialchars($design['DesignName'])); ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <label for="unit_design"><?php echo t('unit_design'); ?>: *</label>
+                    <input type="text" id="unit_design" name="unit_design" class="form-input" value="<?php echo htmlspecialchars($_POST['unit_design'] ?? ''); ?>" required>
                 </div>
                 <div class="form-group">
                     <label for="finishing_type_id"><?php echo t('finishing_type'); ?>: *</label>
@@ -427,10 +411,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </select>
                 </div>
                 <!-- Removed bedrooms field as requested -->
-                <div class="form-group">
-                    <label for="bathrooms"><?php echo t('bathrooms'); ?>:</label>
-                    <input type="number" id="bathrooms" name="bathrooms" class="form-input" value="<?php echo htmlspecialchars($_POST['bathrooms'] ?? ''); ?>">
-                </div>
+                <!-- Bathrooms field removed from schema -->
             </div>
         </div>
 
@@ -460,19 +441,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="form-section">
             <h3><?php echo t('pricing_and_payment'); ?></h3>
             <div class="form-grid">
-                <div class="form-group">
-                    <label for="price"><?php echo t('unit_price'); ?> (EGP):</label>
-                    <input type="number" step="0.01" id="price" name="price" class="form-input" value="<?php echo htmlspecialchars($_POST['price'] ?? ''); ?>">
-                    <small><?php echo t('specific_price_note'); ?></small>
-                </div>
-                <div class="form-group">
-                    <label for="min_price"><?php echo t('min_price'); ?> (EGP):</label>
-                    <input type="number" step="0.01" id="min_price" name="min_price" class="form-input" value="<?php echo htmlspecialchars($_POST['min_price'] ?? ''); ?>">
-                </div>
-                <div class="form-group">
-                    <label for="max_price"><?php echo t('max_price'); ?> (EGP):</label>
-                    <input type="number" step="0.01" id="max_price" name="max_price" class="form-input" value="<?php echo htmlspecialchars($_POST['max_price'] ?? ''); ?>">
-                </div>
+                <!-- Price fields removed from schema -->
                 <div class="form-group">
                     <label for="down_payment_percentage"><?php echo t('down_payment_percentage'); ?> (%):</label>
                     <input type="number" step="0.01" id="down_payment_percentage" name="down_payment_percentage" class="form-input" value="<?php echo htmlspecialchars($_POST['down_payment_percentage'] ?? ''); ?>">
