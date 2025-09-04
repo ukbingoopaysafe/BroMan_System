@@ -93,20 +93,7 @@ if ($stmt_comp = $conn->prepare($sql_companies)) {
 }
 
 // Fetch unit designs for the filter dropdown
-$unit_designs = [];
-$sql_unit_designs = "SELECT DISTINCT pud.DesignID, pud.DesignName 
-                     FROM PropertyUnitDesigns pud 
-                     JOIN Properties p ON p.unit_design_id = pud.DesignID 
-                     ORDER BY pud.DesignName";
-if ($stmt_designs = $conn->prepare($sql_unit_designs)) {
-    if ($stmt_designs->execute()) {
-        $result_designs = $stmt_designs->get_result();
-        while ($row_design = $result_designs->fetch_assoc()) {
-            $unit_designs[$row_design['DesignID']] = $row_design['DesignName'];
-        }
-    }
-    $stmt_designs->close();
-}
+// Removed unit design list; unit design is now free-text on properties
 
 // Fetch property types for the filter dropdown
 $property_types = [];
@@ -123,11 +110,10 @@ if ($stmt_types = $conn->prepare($sql_property_types)) {
 
 // Build the main SQL query with proper joins for unit design and finishing type
 $sql_select = "SELECT p.*, pt.TypeName AS PropertyTypeName, e.FullName AS EmployeeName,
-               pud.DesignName AS UnitDesignName, pft.FinishingName AS FinishingTypeName
+               p.unit_design AS UnitDesignName, pft.FinishingName AS FinishingTypeName
                FROM Properties p
                LEFT JOIN PropertyTypes pt ON p.PropertyTypeID = pt.PropertyTypeID
                LEFT JOIN Employees e ON p.EmployeeID = e.EmployeeID
-               LEFT JOIN PropertyUnitDesigns pud ON p.unit_design_id = pud.DesignID
                LEFT JOIN PropertyFinishingTypes pft ON p.finishing_type_id = pft.FinishingID";
 $sql_where = [];
 $params = [];
@@ -140,7 +126,7 @@ $types .= "s";
 
 // Add search term filter
 if (!empty($search_term)) {
-    $sql_where[] = "(p.Title LIKE ? OR p.ProjectName LIKE ? OR p.governorate LIKE ? OR p.district LIKE ? OR p.Location LIKE ? OR p.company_name LIKE ? OR pud.DesignName LIKE ?)";
+    $sql_where[] = "(p.Title LIKE ? OR p.ProjectName LIKE ? OR p.governorate LIKE ? OR p.district LIKE ? OR p.Location LIKE ? OR p.company_name LIKE ? OR p.unit_design LIKE ?)";
     $search_param = "%" . $search_term . "%";
     array_push($params, $search_param, $search_param, $search_param, $search_param, $search_param, $search_param, $search_param);
     $types .= "sssssss";
@@ -168,11 +154,7 @@ if (!empty($company_filter)) {
 }
 
 // Add unit design filter
-if (!empty($unit_design_filter)) {
-    $sql_where[] = "p.unit_design_id = ?";
-    $params[] = $unit_design_filter;
-    $types .= "i";
-}
+// Removed unit_design_id filter (dropped). If needed, add text filter on p.unit_design.
 
 // Add status filter
 if (!empty($status_filter)) {
@@ -421,17 +403,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="filter-item">
-                    <label for="unit_design"><?php echo t('unit_design'); ?>:</label>
-                    <select id="unit_design" name="unit_design" class="form-control">
-                        <option value=""><?php echo t('all_designs'); ?></option>
-                        <?php foreach ($unit_designs as $design_id => $design_name): ?>
-                            <option value="<?php echo $design_id; ?>" <?php echo $unit_design_filter == $design_id ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($design_name); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+                <!-- Removed Unit Design filter dropdown (table dropped) -->
             </div>
 
             <!-- Advanced Filters Toggle -->

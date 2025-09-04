@@ -25,11 +25,10 @@ $property_id = intval($_GET['id']);
 $property = null;
 $sql = "SELECT p.*, pt.TypeName, 
                e.FullName AS EmployeeName,
-               pud.DesignName AS UnitDesignName, pft.FinishingName AS FinishingTypeName
+               p.unit_design AS UnitDesignName, pft.FinishingName AS FinishingTypeName
         FROM Properties p
         LEFT JOIN PropertyTypes pt ON p.PropertyTypeID = pt.PropertyTypeID
         LEFT JOIN Employees e ON p.EmployeeID = e.EmployeeID
-        LEFT JOIN PropertyUnitDesigns pud ON p.unit_design_id = pud.DesignID
         LEFT JOIN PropertyFinishingTypes pft ON p.finishing_type_id = pft.FinishingID
         WHERE p.PropertyID = ?";
 

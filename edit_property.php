@@ -32,7 +32,7 @@ const MEDICAL_PROPERTY_TYPE_ID = 6;
 
 // Initialize variables
 $property_id = $title = $property_type_id = $price = $location = $description = $status = "";
-$unit_design_id = $finishing_type_id = $compound_area = $down_payment_percentage = $payment_years = $delivery_date = "";
+$unit_design = $finishing_type_id = $compound_area = $down_payment_percentage = $payment_years = $delivery_date = "";
 $project_name = $min_price = $max_price = $min_area = $max_area = $avg_area = $district = $governorate = $company_name = $floors_count = $bathrooms = "";
 $sales_manager_name = $sales_manager_phone = $salesperson_name = $salesperson_phone = "";
 $owner_name = $owner_phone = "";
@@ -54,18 +54,7 @@ if ($result_property_types = $conn->query($sql_property_types)) {
     error_log("Error fetching property types: " . $conn->error);
 }
 
-// Unit Designs
-$unit_designs_list = [];
-$sql_unit_designs = "SELECT DesignID, DesignName FROM PropertyUnitDesigns ORDER BY DesignName";
-if ($result_unit_designs = $conn->query($sql_unit_designs)) {
-    while ($row_design = $result_unit_designs->fetch_assoc()) {
-        $unit_designs_list[] = $row_design;
-    }
-    $result_unit_designs->free();
-} else {
-    $errors['db_fetch'] = t('error_fetching_unit_designs') . ': ' . $conn->error;
-    error_log("Error fetching unit designs: " . $conn->error);
-}
+// Removed unit designs lookup; now free text
 
 // Finishing Types
 $finishing_types_list = [];
@@ -100,9 +89,9 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $location = $row["Location"];
                 $price = $row["Price"];
                 $area = $row["Area"];
-                $bathrooms = $row["Bathrooms"];
+                $bathrooms = null;
                 $status = $row["Status"];
-                $unit_design_id = $row["unit_design_id"];
+                $unit_design = $row["unit_design"];
                 $finishing_type_id = $row["finishing_type_id"];
                 $compound_area = $row["compound_area"];
                 $down_payment_percentage = $row["down_payment_percentage"];
@@ -164,9 +153,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $location_posted = isset($_POST['location']) ? trim($_POST['location']) : null;
     $price_posted = isset($_POST["price"]) && trim($_POST["price"]) !== "" ? trim($_POST["price"]) : null;
     $area_posted = isset($_POST["area"]) && trim($_POST["area"]) !== "" ? trim($_POST["area"]) : null;
-    $bathrooms_posted = isset($_POST["bathrooms"]) && trim($_POST["bathrooms"]) !== "" ? trim($_POST["bathrooms"]) : null;
+    $bathrooms_posted = null;
     $status_posted = isset($_POST["status"]) ? trim($_POST["status"]) : "available";
-    $unit_design_id_posted = isset($_POST['unit_design_id']) && trim($_POST['unit_design_id']) !== '' ? trim($_POST['unit_design_id']) : null;
+    $unit_design_posted = isset($_POST['unit_design']) && trim($_POST['unit_design']) !== '' ? trim($_POST['unit_design']) : null;
     $finishing_type_id_posted = isset($_POST['finishing_type_id']) && trim($_POST['finishing_type_id']) !== '' ? trim($_POST['finishing_type_id']) : null;
     $compound_area_posted = isset($_POST['compound_area']) && trim($_POST['compound_area']) !== '' ? trim($_POST['compound_area']) : null;
     $down_payment_percentage_posted = isset($_POST['down_payment_percentage']) && trim($_POST['down_payment_percentage']) !== '' ? trim($_POST['down_payment_percentage']) : null;
@@ -203,9 +192,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     // Property type specific validation
     if ($property_type_id == 1 || $property_type_id == 2) { // If Residential or Coastal
-        if (empty($unit_design_id_posted)) {
-            $errors['unit_design_id'] = t('unit_design_required');
-        }
+        // unit_design is optional free text now
         if (empty($finishing_type_id_posted)) {
             $errors['finishing_type_id'] = t('finishing_type_required');
         }
@@ -255,7 +242,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($errors)) {
         $sql_update = "UPDATE Properties SET 
             PropertyTypeID = ?, Title = ?, Description = ?, Location = ?, Price = ?, Area = ?, 
-            Bathrooms = ?, Status = ?, unit_design_id = ?, finishing_type_id = ?, 
+            Bathrooms = ?, Status = ?, unit_design = ?, finishing_type_id = ?, 
             compound_area = ?, down_payment_percentage = ?, payment_years = ?, delivery_date = ?, 
             ProjectName = ?, min_price = ?, max_price = ?, min_area = ?, max_area = ?, avg_area = ?, 
             district = ?, governorate = ?, company_name = ?, FloorsCount = ?,
@@ -274,7 +261,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $area_posted,
                 $bathrooms_posted,
                 $status_posted,
-                $unit_design_id_posted,
+                $unit_design_posted,
                 $finishing_type_id_posted,
                 $compound_area_posted,
                 $down_payment_percentage_posted,
@@ -707,19 +694,8 @@ $conn->close();
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="unit_design_id"><?php echo t('unit_design'); ?>: *</label>
-                            <select id="unit_design_id" name="unit_design_id" class="form-input" required>
-                                <option value=""><?php echo t('select_unit_design'); ?></option>
-                                <?php foreach ($unit_designs_list as $design): ?>
-                                    <option value="<?php echo $design['DesignID']; ?>"
-                                        <?php echo ($unit_design_id == $design['DesignID']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($design['DesignName']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <?php if (isset($errors['unit_design_id'])) {
-                                echo "<span class='error-message'>" . $errors['unit_design_id'] . "</span>";
-                            } ?>
+                            <label for="unit_design"><?php echo t('unit_design'); ?>:</label>
+                            <input type="text" id="unit_design" name="unit_design" class="form-input" value="<?php echo htmlspecialchars($unit_design ?? '') ?>">
                         </div>
                         <div class="form-group">
                             <label for="finishing_type_id"><?php echo t('finishing_type'); ?>: *</label>
@@ -939,7 +915,7 @@ $conn->close();
                     commercialFields.classList.remove('active');
 
                     // Enable/disable required attributes for residential/coastal
-                    const unitDesignField = document.getElementById('unit_design_id');
+                    const unitDesignField = document.getElementById('unit_design');
                     const finishingTypeField = document.getElementById('finishing_type_id');
                     const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
                     
@@ -952,7 +928,7 @@ $conn->close();
                     commercialFields.classList.add('active');
 
                     // Enable/disable required attributes for commercial
-                    const unitDesignField = document.getElementById('unit_design_id');
+                    const unitDesignField = document.getElementById('unit_design');
                     const finishingTypeField = document.getElementById('finishing_type_id');
                     const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
                     
@@ -965,7 +941,7 @@ $conn->close();
                     commercialFields.classList.remove('active');
 
                     // Remove required attributes if no specific type is selected
-                    const unitDesignField = document.getElementById('unit_design_id');
+                    const unitDesignField = document.getElementById('unit_design');
                     const finishingTypeField = document.getElementById('finishing_type_id');
                     const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
                     
