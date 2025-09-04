@@ -68,7 +68,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
 // Fetch distinct governorates for the filter dropdown
 $governorates_list = [];
-$sql_governorates = "SELECT DISTINCT governorate FROM Properties WHERE governorate IS NOT NULL AND governorate != '' ORDER BY governorate";
+$sql_governorates = "SELECT DISTINCT governorate FROM properties WHERE governorate IS NOT NULL AND governorate != '' ORDER BY governorate";
 if ($stmt_gov = $conn->prepare($sql_governorates)) {
     if ($stmt_gov->execute()) {
         $result_governorates = $stmt_gov->get_result();
@@ -81,7 +81,7 @@ if ($stmt_gov = $conn->prepare($sql_governorates)) {
 
 // Fetch distinct companies for the filter dropdown
 $companies_list = [];
-$sql_companies = "SELECT DISTINCT company_name FROM Properties WHERE company_name IS NOT NULL AND company_name != '' ORDER BY company_name";
+$sql_companies = "SELECT DISTINCT company_name FROM properties WHERE company_name IS NOT NULL AND company_name != '' ORDER BY company_name";
 if ($stmt_comp = $conn->prepare($sql_companies)) {
     if ($stmt_comp->execute()) {
         $result_companies = $stmt_comp->get_result();
@@ -94,7 +94,7 @@ if ($stmt_comp = $conn->prepare($sql_companies)) {
 
 // Fetch distinct unit_design values for the filter dropdown
 $unit_designs = [];
-$sql_unit_designs = "SELECT DISTINCT unit_design FROM Properties WHERE unit_design IS NOT NULL AND unit_design != '' ORDER BY unit_design";
+$sql_unit_designs = "SELECT DISTINCT unit_design FROM properties WHERE unit_design IS NOT NULL AND unit_design != '' ORDER BY unit_design";
 if ($stmt_designs = $conn->prepare($sql_unit_designs)) {
     if ($stmt_designs->execute()) {
         $result_designs = $stmt_designs->get_result();
@@ -121,10 +121,10 @@ if ($stmt_types = $conn->prepare($sql_property_types)) {
 // Build the main SQL query with proper joins for unit design and finishing type
 $sql_select = "SELECT p.*, pt.TypeName AS PropertyTypeName, e.FullName AS EmployeeName,
                p.unit_design AS UnitDesignName, pft.FinishingName AS FinishingTypeName
-               FROM Properties p
-               LEFT JOIN PropertyTypes pt ON p.PropertyTypeID = pt.PropertyTypeID
-               LEFT JOIN Employees e ON p.EmployeeID = e.EmployeeID
-               LEFT JOIN PropertyFinishingTypes pft ON p.finishing_type_id = pft.FinishingID";
+               FROM properties p
+               LEFT JOIN propertytypes pt ON p.PropertyTypeID = pt.PropertyTypeID
+               LEFT JOIN employees e ON p.EmployeeID = e.EmployeeID
+               LEFT JOIN propertyfinishingtypes pft ON p.finishing_type_id = pft.FinishingID";
 $sql_where = [];
 $params = [];
 $types = "";
