@@ -492,10 +492,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input type="number" step="0.01" id="down_payment_percentage" name="down_payment_percentage" class="form-input" value="<?php echo htmlspecialchars($_POST['down_payment_percentage'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
-                    <label for="loading_percentage"><?php echo t('loading_percentage_label'); ?></label>
-                    <input type="number" step="0.01" id="loading_percentage" name="loading_percentage" class="form-input" value="<?php echo htmlspecialchars($_POST['loading_percentage'] ?? ''); ?>">
-                </div>
-                <div class="form-group">
                     <label for="payment_years"><?php echo t('payment_years'); ?>:</label>
                     <input type="number" id="payment_years" name="payment_years" class="form-input" value="<?php echo htmlspecialchars($_POST['payment_years'] ?? ''); ?>">
                 </div>
