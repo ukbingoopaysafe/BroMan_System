@@ -976,10 +976,12 @@ $conn->close();
                         <label for="seller_type"><?php echo t("seller_type"); ?>:</label>
                         <select id="seller_type" name="seller_type" class="form-input">
                             <option value=""><?php echo t('select_seller_type'); ?></option>
-                            <option value="مالك مباشر" <?php echo ($seller_type == 'مالك مباشر') ? 'selected' : ''; ?>><?php echo t('seller_type_direct_owner'); ?></option>
+                            <option value="مالك" <?php echo ($seller_type == 'مالك') ? 'selected' : ''; ?>><?php echo t('seller_type_owner'); ?></option>
+                            <option value="وسيط" <?php echo ($seller_type == 'وسيط') ? 'selected' : ''; ?>><?php echo t('seller_type_broker'); ?></option>
                             <option value="وكيل" <?php echo ($seller_type == 'وكيل') ? 'selected' : ''; ?>><?php echo t('seller_type_agent'); ?></option>
-                            <option value="مكتب عقاري" <?php echo ($seller_type == 'مكتب عقاري') ? 'selected' : ''; ?>><?php echo t('seller_type_real_estate_office'); ?></option>
-                            <option value="مطور عقاري" <?php echo ($seller_type == 'مطور عقاري') ? 'selected' : ''; ?>><?php echo t('seller_type_developer'); ?></option>
+                            <option value="بواب" <?php echo ($seller_type == 'بواب') ? 'selected' : ''; ?>><?php echo t('seller_type_doorman'); ?></option>
+                            <option value="شركة مطورة" <?php echo ($seller_type == 'شركة مطورة') ? 'selected' : ''; ?>><?php echo t('seller_type_developer_company'); ?></option>
+                            <option value="شركة تشطيب" <?php echo ($seller_type == 'شركة تشطيب') ? 'selected' : ''; ?>><?php echo t('seller_type_finishing_company'); ?></option>
                         </select>
                     </div>
                     <div class="form-group">

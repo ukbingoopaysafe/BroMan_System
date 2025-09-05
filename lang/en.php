@@ -350,8 +350,6 @@ return [
     'area_and_specifications' => 'Area and Specifications',
     'add_property_media_note' => 'Note: After adding the property, you will be redirected to upload images and voice notes.',
     'owner_information' => 'Owner Information',
-    'owner_name' => 'Owner Name',
-    'owner_phone' => 'Owner Phone',
 
     // New Phase 2 Fields
     'year_built' => 'Year Built',
@@ -370,6 +368,12 @@ return [
     'seller_type_real_estate_office' => 'Real Estate Office',
     'seller_type_developer' => 'Developer',
     'select_seller_type' => 'Select Seller Type',
+    // New seller type labels
+    'seller_type_owner' => 'Owner',
+    'seller_type_broker' => 'Broker',
+    'seller_type_doorman' => 'Doorman',
+    'seller_type_developer_company' => 'Developer Company',
+    'seller_type_finishing_company' => 'Finishing Company',
 
     // Client List (index.php)
     'manage_clients_title' => 'Manage Clients',

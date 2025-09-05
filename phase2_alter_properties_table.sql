@@ -10,6 +10,6 @@ ADD COLUMN `price_cash` DECIMAL(15,2) NULL AFTER `loading_percentage`,
 ADD COLUMN `price_installments` DECIMAL(15,2) NULL AFTER `price_cash`,
 ADD COLUMN `meter_price_cash` DECIMAL(10,2) NULL AFTER `price_installments`,
 ADD COLUMN `meter_price_installments` DECIMAL(10,2) NULL AFTER `meter_price_cash`,
-ADD COLUMN `seller_type` ENUM('مالك مباشر', 'وكيل', 'مكتب عقاري', 'مطور عقاري') NULL AFTER `meter_price_installments`,
+ADD COLUMN `seller_type` ENUM('مالك', 'وسيط', 'وكيل', 'بواب', 'شركة مطورة', 'شركة تشطيب') NULL AFTER `meter_price_installments`,
 ADD COLUMN `seller_name` VARCHAR(255) NULL AFTER `seller_type`,
 ADD COLUMN `seller_phone` VARCHAR(50) NULL AFTER `seller_name`;

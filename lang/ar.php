@@ -349,8 +349,6 @@ return [
     'area_and_specifications' => 'المساحة والمواصفات',
     'add_property_media_note' => 'ملاحظة: بعد إضافة العقار، سيتم توجيهك مباشرةً لرفع الصور والملاحظات الصوتية.',
     'owner_information' => 'معلومات المالك',
-    'owner_name' => 'اسم المالك',
-    'owner_phone' => 'هاتف المالك',
 
     // New Phase 2 Fields
     'year_built' => 'سنة البناء',
@@ -364,11 +362,17 @@ return [
     'seller_type' => 'نوع البائع',
     'seller_name' => 'اسم البائع',
     'seller_phone' => 'هاتف البائع',
-    'seller_type_direct_owner' => 'مالك مباشر',
+    'seller_type_direct_owner' => 'مالك',
     'seller_type_agent' => 'وكيل',
-    'seller_type_real_estate_office' => 'مكتب عقاري',
-    'seller_type_developer' => 'مطور عقاري',
+    'seller_type_real_estate_office' => 'وسيط',
+    'seller_type_developer' => 'شركة مطورة',
     'select_seller_type' => 'اختر نوع البائع',
+    // New seller type labels
+    'seller_type_owner' => 'مالك',
+    'seller_type_broker' => 'وسيط',
+    'seller_type_doorman' => 'بواب',
+    'seller_type_developer_company' => 'شركة مطورة',
+    'seller_type_finishing_company' => 'شركة تشطيب',
 
     // Client List
     'manage_clients_title' => 'إدارة العملاء',
