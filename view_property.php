@@ -23,13 +23,16 @@ $property_id = intval($_GET['id']);
 
 // Fetch property details with proper joins for unit design and finishing type
 $property = null;
-$sql = "SELECT p.*, pt.TypeName, 
+$sql = "SELECT p.*, 
+               pt.TypeName, 
+               pt.TypeName_ar,
                e.FullName AS EmployeeName,
-               p.unit_design AS UnitDesignName, pft.FinishingName AS FinishingTypeName
+               p.unit_design AS UnitDesignName, 
+               pft.FinishingName AS FinishingTypeName,
+               pft.FinishingName_ar AS FinishingTypeName_ar
         FROM Properties p
         LEFT JOIN PropertyTypes pt ON p.PropertyTypeID = pt.PropertyTypeID
         LEFT JOIN Employees e ON p.EmployeeID = e.EmployeeID
-        -- Unit design is now a text field, no join needed
         LEFT JOIN PropertyFinishingTypes pft ON p.finishing_type_id = pft.FinishingID
         WHERE p.PropertyID = ?";
 
@@ -128,9 +131,8 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css">
     <?php endif; ?>
-    <!-- Leaflet.js CSS and JS for static map display -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Google Maps JS API (set API key in config.php or env GOOGLE_MAPS_API_KEY) -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo GOOGLE_MAPS_API_KEY; ?>&v=weekly" async defer></script>
     <style>
         /* Enhanced Property Details Styling */
         .property-details {
@@ -608,7 +610,15 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                     <?php if (!empty($property['FinishingTypeName'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('finishing_type'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['FinishingTypeName']); ?></span>
+                        <span class="detail-value">
+                            <?php 
+                            if (get_lang_code() === 'ar' && !empty($property['FinishingTypeName_ar'])) {
+                                echo htmlspecialchars($property['FinishingTypeName_ar']);
+                            } else {
+                                echo htmlspecialchars($property['FinishingTypeName']);
+                            }
+                            ?>
+                        </span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['FloorsCount'])): ?>
@@ -739,18 +749,6 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                         <span class="detail-value"><?php echo htmlspecialchars($property['seller_phone']); ?></span>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($property['owner_name'])): ?>
-                    <div class="detail-item">
-                        <span class="detail-label"><?php echo t('owner_name'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['owner_name']); ?></span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if (!empty($property['owner_phone'])): ?>
-                    <div class="detail-item">
-                        <span class="detail-label"><?php echo t('owner_phone'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['owner_phone']); ?></span>
-                    </div>
-                    <?php endif; ?>
                 </div>
             </div>
             <?php endif; ?>
@@ -790,23 +788,19 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
     
     <?php if (!empty($property['latitude']) && !empty($property['longitude'])): ?>
     <script>
-        // Initialize static map for property location
+        // Initialize static Google Map for property location
         document.addEventListener('DOMContentLoaded', function() {
             const lat = <?php echo $property['latitude']; ?>;
             const lng = <?php echo $property['longitude']; ?>;
-            
-            // Initialize map
-            const map = L.map('property-map').setView([lat, lng], 15);
-            
-            // Add OpenStreetMap tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-            
-            // Add marker at property location
-            L.marker([lat, lng]).addTo(map)
-                .bindPopup('<?php echo addslashes($property['Title']); ?>')
-                .openPopup();
+
+            const map = new google.maps.Map(document.getElementById('property-map'), {
+                center: { lat: lat, lng: lng },
+                zoom: 15,
+            });
+
+            const marker = new google.maps.Marker({ position: { lat: lat, lng: lng }, map: map });
+            const infowindow = new google.maps.InfoWindow({ content: '<?php echo addslashes($property['Title']); ?>' });
+            infowindow.open(map, marker);
         });
     </script>
     <?php endif; ?>

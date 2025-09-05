@@ -227,9 +227,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css">
     <?php endif; ?>
-    <!-- Leaflet.js CSS and JS for interactive map -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Google Maps JS API (set API key in config.php or env GOOGLE_MAPS_API_KEY) -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo GOOGLE_MAPS_API_KEY; ?>&v=weekly" async defer></script>
     <style>
         .form-section { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
         .form-section h3 { margin-bottom: 15px; color: #0056b3; }
@@ -596,49 +595,44 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize interactive map
+    // Initialize interactive map (Google Maps)
     let map;
     let marker;
-    
+
     function initMap() {
-        // Default center on Egypt (Cairo)
         const defaultLat = 30.0444;
         const defaultLng = 31.2357;
-        
-        // Get existing coordinates or use default
-        const lat = parseFloat(document.getElementById('latitude').value) || defaultLat;
-        const lng = parseFloat(document.getElementById('longitude').value) || defaultLng;
-        
-        // Initialize map
-        map = L.map('map').setView([lat, lng], 10);
-        
-        // Add OpenStreetMap tiles
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-        
-        // Add marker if coordinates exist
-        if (lat !== defaultLat || lng !== defaultLng) {
-            marker = L.marker([lat, lng]).addTo(map);
-        }
-        
-        // Add click event to map
-        map.on('click', function(e) {
-            const clickedLat = e.latlng.lat;
-            const clickedLng = e.latlng.lng;
-            
-            // Update hidden inputs
-            document.getElementById('latitude').value = clickedLat;
-            document.getElementById('longitude').value = clickedLng;
-            
-            // Remove existing marker
-            if (marker) {
-                map.removeLayer(marker);
-            }
-            
-            // Add new marker
-            marker = L.marker([clickedLat, clickedLng]).addTo(map);
+
+        const latInput = document.getElementById('latitude');
+        const lngInput = document.getElementById('longitude');
+        const lat = parseFloat(latInput.value) || defaultLat;
+        const lng = parseFloat(lngInput.value) || defaultLng;
+
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: { lat: lat, lng: lng },
+            zoom: 10,
         });
+
+        if (!isNaN(parseFloat(latInput.value)) && !isNaN(parseFloat(lngInput.value))) {
+            marker = new google.maps.Marker({ position: { lat: lat, lng: lng }, map: map });
+        }
+
+        map.addListener('click', function(e) {
+            const clickedLat = e.latLng.lat();
+            const clickedLng = e.latLng.lng();
+
+            latInput.value = clickedLat;
+            lngInput.value = clickedLng;
+
+            if (marker) marker.setMap(null);
+            marker = new google.maps.Marker({ position: { lat: clickedLat, lng: clickedLng }, map: map });
+        });
+    }
+
+    if (window.google && window.google.maps) {
+        initMap();
+    } else {
+        window.addEventListener('load', initMap);
     }
     
     // Initialize map when page loads
