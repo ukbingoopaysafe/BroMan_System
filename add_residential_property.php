@@ -227,8 +227,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css">
     <?php endif; ?>
-    <!-- Google Maps JS API (set API key in config.php or env GOOGLE_MAPS_API_KEY) -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo GOOGLE_MAPS_API_KEY; ?>&v=weekly" async defer></script>
+    <!-- Map provider: Google Maps when API key supplied, otherwise Leaflet+OSM -->
+    <?php if (defined('GOOGLE_MAPS_API_KEY') && GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE'): ?>
+        <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo GOOGLE_MAPS_API_KEY; ?>&v=weekly" async defer></script>
+    <?php else: ?>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <?php endif; ?>
     <style>
         .form-section { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
         .form-section h3 { margin-bottom: 15px; color: #0056b3; }
@@ -608,25 +613,50 @@ document.addEventListener('DOMContentLoaded', function() {
         const lat = parseFloat(latInput.value) || defaultLat;
         const lng = parseFloat(lngInput.value) || defaultLng;
 
-        map = new google.maps.Map(document.getElementById('map'), {
-            center: { lat: lat, lng: lng },
-            zoom: 10,
-        });
+        if (window.google && window.google.maps) {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: lat, lng: lng },
+                zoom: 10,
+            });
 
-        if (!isNaN(parseFloat(latInput.value)) && !isNaN(parseFloat(lngInput.value))) {
-            marker = new google.maps.Marker({ position: { lat: lat, lng: lng }, map: map });
+            if (!isNaN(parseFloat(latInput.value)) && !isNaN(parseFloat(lngInput.value))) {
+                marker = new google.maps.Marker({ position: { lat: lat, lng: lng }, map: map });
+            }
+
+            map.addListener('click', function(e) {
+                const clickedLat = e.latLng.lat();
+                const clickedLng = e.latLng.lng();
+
+                latInput.value = clickedLat;
+                lngInput.value = clickedLng;
+
+                if (marker) marker.setMap(null);
+                marker = new google.maps.Marker({ position: { lat: clickedLat, lng: clickedLng }, map: map });
+            });
+        } else if (typeof L !== 'undefined') {
+            map = L.map('map').setView([lat, lng], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            if (!isNaN(parseFloat(latInput.value)) && !isNaN(parseFloat(lngInput.value))) {
+                marker = L.marker([lat, lng]).addTo(map);
+            }
+
+            map.on('click', function(e) {
+                const clickedLat = e.latlng.lat;
+                const clickedLng = e.latlng.lng;
+
+                latInput.value = clickedLat;
+                lngInput.value = clickedLng;
+
+                if (marker) { map.removeLayer(marker); }
+                marker = L.marker([clickedLat, clickedLng]).addTo(map);
+            });
+        } else {
+            console.warn('No map provider available.');
         }
-
-        map.addListener('click', function(e) {
-            const clickedLat = e.latLng.lat();
-            const clickedLng = e.latLng.lng();
-
-            latInput.value = clickedLat;
-            lngInput.value = clickedLng;
-
-            if (marker) marker.setMap(null);
-            marker = new google.maps.Marker({ position: { lat: clickedLat, lng: clickedLng }, map: map });
-        });
     }
 
     if (window.google && window.google.maps) {
