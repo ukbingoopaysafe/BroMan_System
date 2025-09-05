@@ -31,12 +31,25 @@ const HOTEL_PROPERTY_TYPE_ID = 5;
 const MEDICAL_PROPERTY_TYPE_ID = 6;
 
 // Initialize variables
-$property_id = $title = $property_type_id = $price = $location = $description = $status = "";
-$unit_design = $finishing_type_id = $compound_area = $down_payment_percentage = $payment_years = $delivery_date = "";
-$project_name = $min_area = $max_area = $avg_area = $district = $governorate = $company_name = $floors_count = "";
+$property_id = null;
+$property_type_id = null;
+$title = $description = $location = $status = "";
+$area = null;
+$unit_design = "";
+$finishing_type_id = null;
+$compound_area = $down_payment_percentage = null;
+$payment_years = null;
+$delivery_date = "";
+$project_name = "";
+$min_area = $max_area = $avg_area = null;
+$district = $governorate = $company_name = "";
+$floors_count = null;
 $sales_manager_name = $sales_manager_phone = $salesperson_name = $salesperson_phone = "";
-$owner_name = $owner_phone = "";
-$latitude = $longitude = "";
+$year_built = $unit_floor = "";
+$net_area = $loading_percentage = null;
+$price_cash = $price_installments = $meter_price_cash = $meter_price_installments = null;
+$seller_type = $seller_name = $seller_phone = "";
+$latitude = $longitude = null;
 
 $errors = []; // Array to hold errors
 
@@ -59,7 +72,7 @@ if ($result_property_types = $conn->query($sql_property_types)) {
 
 // Finishing Types
 $finishing_types_list = [];
-$sql_finishing_types = "SELECT FinishingID, FinishingName FROM PropertyFinishingTypes ORDER BY FinishingName";
+$sql_finishing_types = "SELECT FinishingID, FinishingName, FinishingName_ar FROM PropertyFinishingTypes ORDER BY FinishingID";
 if ($result_finishing_types = $conn->query($sql_finishing_types)) {
     while ($row_finish = $result_finishing_types->fetch_assoc()) {
         $finishing_types_list[] = $row_finish;
@@ -109,8 +122,6 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $sales_manager_phone = $row["sales_manager_phone"] ?? '';
                 $salesperson_name = $row["salesperson_name"] ?? '';
                 $salesperson_phone = $row["salesperson_phone"] ?? '';
-                $owner_name = $row["owner_name"] ?? '';
-                $owner_phone = $row["owner_phone"] ?? '';
                 $listing_type = $row["listing_type"] ?? 'Primary';
                 $latitude = $row["latitude"] ?? '';
                 $longitude = $row["longitude"] ?? '';
@@ -152,8 +163,7 @@ $property_images = getPropertyImages($property_id, $conn);
 $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
 
 // --- Process form submission for update ---
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    error_log("POST data: " . print_r($_POST, true)); // Log all POST data
+    if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $property_id_post = trim($_POST["property_id"]);
     if (empty($property_id_post) || $property_id_post != $property_id) {
         $errors['general'] = t('invalid_property_id');
@@ -186,8 +196,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $sales_manager_phone_posted = isset($_POST['sales_manager_phone']) ? trim($_POST['sales_manager_phone']) : null;
     $salesperson_name_posted = isset($_POST['salesperson_name']) ? trim($_POST['salesperson_name']) : null;
     $salesperson_phone_posted = isset($_POST['salesperson_phone']) ? trim($_POST['salesperson_phone']) : null;
-    $owner_name_posted = isset($_POST['owner_name']) ? trim($_POST['owner_name']) : null;
-    $owner_phone_posted = isset($_POST['owner_phone']) ? trim($_POST['owner_phone']) : null;
     $latitude_posted = isset($_POST['latitude']) && trim($_POST['latitude']) !== '' ? filter_input(INPUT_POST, 'latitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $longitude_posted = isset($_POST['longitude']) && trim($_POST['longitude']) !== '' ? filter_input(INPUT_POST, 'longitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     
@@ -203,6 +211,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $seller_type_posted = isset($_POST['seller_type']) ? trim($_POST['seller_type']) : null;
     $seller_name_posted = isset($_POST['seller_name']) ? trim($_POST['seller_name']) : null;
     $seller_phone_posted = isset($_POST['seller_phone']) ? trim($_POST['seller_phone']) : null;
+    $bedrooms_posted = isset($_POST['bedrooms']) ? filter_input(INPUT_POST, 'bedrooms', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) : null;
+    $bathrooms_posted = isset($_POST['bathrooms']) ? filter_input(INPUT_POST, 'bathrooms', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) : null;
    
     // --- Validation ---
     // Context-aware validation based on property type
@@ -228,9 +238,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (empty($finishing_type_id_posted)) {
             $errors['finishing_type_id'] = t('finishing_type_required');
         }
-    }
-    if ($price_posted !== null && (!is_numeric($price_posted) || $price_posted < 0)) {
-        $errors["price"] = t("enter_valid_price");
     }
     if ($area_posted !== null && (!is_numeric($area_posted) || $area_posted < 0)) {
         $errors["area"] = t("enter_valid_area");
@@ -264,60 +271,81 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // If no errors, proceed with update
     if (empty($errors)) {
         $sql_update = "UPDATE Properties SET 
-            PropertyTypeID = ?, Title = ?, Description = ?, Location = ?, Area = ?, 
+            PropertyTypeID = ?, Title = ?, Description = ?, Location = ?, Area = ?,
             Status = ?, unit_design = ?, finishing_type_id = ?, 
             compound_area = ?, down_payment_percentage = ?, payment_years = ?, delivery_date = ?, 
             ProjectName = ?, min_area = ?, max_area = ?, avg_area = ?, 
             district = ?, governorate = ?, company_name = ?, FloorsCount = ?,
             sales_manager_name = ?, sales_manager_phone = ?, salesperson_name = ?, salesperson_phone = ?,
-            owner_name = ?, owner_phone = ?, year_built = ?, unit_floor = ?, net_area = ?, 
-            loading_percentage = ?, price_cash = ?, price_installments = ?, meter_price_cash = ?, 
-            meter_price_installments = ?, seller_type = ?, seller_name = ?, seller_phone = ?,
+            year_built = ?, unit_floor = ?, net_area = ?, loading_percentage = ?, 
+            price_cash = ?, price_installments = ?, meter_price_cash = ?, meter_price_installments = ?, 
+            seller_type = ?, seller_name = ?, seller_phone = ?,
             latitude = ?, longitude = ?
             WHERE PropertyID = ?";
 
         if ($stmt_update = $conn->prepare($sql_update)) {
+            // Convert empty strings to null for numeric fields
+            $area_val = empty($area_posted) ? null : $area_posted;
+            $compound_area_val = empty($compound_area_posted) ? null : $compound_area_posted;
+            $down_payment_val = empty($down_payment_percentage_posted) ? null : $down_payment_percentage_posted;
+            $payment_years_val = empty($payment_years_posted) ? null : $payment_years_posted;
+            $min_area_val = empty($min_area_posted) ? null : $min_area_posted;
+            $max_area_val = empty($max_area_posted) ? null : $max_area_posted;
+            $avg_area_val = empty($avg_area_posted) ? null : $avg_area_posted;
+            $floors_count_val = empty($floors_count_posted) ? null : $floors_count_posted;
+            $net_area_val = empty($net_area_posted) ? null : $net_area_posted;
+            $loading_percentage_val = empty($loading_percentage_posted) ? null : $loading_percentage_posted;
+            $price_cash_val = empty($price_cash_posted) ? null : $price_cash_posted;
+            $price_installments_val = empty($price_installments_posted) ? null : $price_installments_posted;
+            $meter_price_cash_val = empty($meter_price_cash_posted) ? null : $meter_price_cash_posted;
+            $meter_price_installments_val = empty($meter_price_installments_posted) ? null : $meter_price_installments_posted;
+            $latitude_val = empty($latitude_posted) ? null : $latitude_posted;
+            $longitude_val = empty($longitude_posted) ? null : $longitude_posted;
+            // Ensure finishing type is an integer when provided (helps with bind types)
+            $finishing_type_id_val = empty($finishing_type_id_posted) ? null : intval($finishing_type_id_posted);
+
+            // temporary debug logging removed
+
             $stmt_update->bind_param(
-                "isssdisiiddissddddsssissssssiisddddddssssddi",
+                "isssdssiddissdddsssissssssddddddsssddi",
                 $property_type_id_posted,
                 $title_posted,
                 $description_posted,
                 $location_posted,
-                $area_posted,
+                $area_val,
+
                 $status_posted,
                 $unit_design_posted,
-                $finishing_type_id_posted,
-                $compound_area_posted,
-                $down_payment_percentage_posted,
-                $payment_years_posted,
+                $finishing_type_id_val,
+                $compound_area_val,
+                $down_payment_val,
+                $payment_years_val,
                 $delivery_date_posted,
                 $project_name_posted,
-                $min_area_posted,
-                $max_area_posted,
-                $avg_area_posted,
+                $min_area_val,
+                $max_area_val,
+                $avg_area_val,
                 $district_posted,
                 $governorate_posted,
                 $company_name_posted,
-                $floors_count_posted,
+                $floors_count_val,
                 $sales_manager_name_posted,
                 $sales_manager_phone_posted,
                 $salesperson_name_posted,
                 $salesperson_phone_posted,
-                $owner_name_posted,
-                $owner_phone_posted,
                 $year_built_posted,
                 $unit_floor_posted,
-                $net_area_posted,
-                $loading_percentage_posted,
-                $price_cash_posted,
-                $price_installments_posted,
-                $meter_price_cash_posted,
-                $meter_price_installments_posted,
+                $net_area_val,
+                $loading_percentage_val,
+                $price_cash_val,
+                $price_installments_val,
+                $meter_price_cash_val,
+                $meter_price_installments_val,
                 $seller_type_posted,
                 $seller_name_posted,
                 $seller_phone_posted,
-                $latitude_posted,
-                $longitude_posted,
+                $latitude_val,
+                $longitude_val,
                 $property_id
             );
 
@@ -639,9 +667,14 @@ $conn->close();
                         <label for="property_type_id"><?php echo t('property_type'); ?>:</label>
                         <select id="property_type_id" name="property_type_id" required>
                             <?php foreach ($property_types_list as $type): ?>
-                                <option value="<?php echo $type['PropertyTypeID']; ?>"
-                                    <?php echo ($property_type_id == $type['PropertyTypeID']) ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($type['TypeName']); ?>
+                                <option value="<?php echo $type['PropertyTypeID']; ?>" <?php echo ($property_type_id == $type['PropertyTypeID']) ? 'selected' : ''; ?>>
+                                    <?php
+                                    if (get_lang_code() === 'ar' && !empty($type['TypeName_ar'])) {
+                                        echo htmlspecialchars($type['TypeName_ar']);
+                                    } else {
+                                        echo htmlspecialchars($type['TypeName']);
+                                    }
+                                    ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -756,7 +789,13 @@ $conn->close();
                                 <?php foreach ($finishing_types_list as $finish): ?>
                                     <option value="<?php echo $finish['FinishingID']; ?>"
                                         <?php echo ($finishing_type_id == $finish['FinishingID']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($finish['FinishingName']); ?>
+                                        <?php 
+                                        if (get_lang_code() === 'ar' && !empty($finish['FinishingName_ar'])) {
+                                            echo htmlspecialchars($finish['FinishingName_ar']);
+                                        } else {
+                                            echo htmlspecialchars($finish['FinishingName']);
+                                        }
+                                        ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -951,14 +990,6 @@ $conn->close();
                         <label for="seller_phone"><?php echo t("seller_phone"); ?></label>
                         <input type="tel" id="seller_phone" name="seller_phone" class="form-input" value="<?php echo htmlspecialchars($seller_phone); ?>">
                     </div>
-                    <div class="form-group">
-                        <label for="owner_name"><?php echo t("owner_name"); ?></label>
-                        <input type="text" id="owner_name" name="owner_name" class="form-input" value="<?php echo htmlspecialchars($owner_name); ?>">
-                    </div>
-                    <div class="form-group">
-                        <label for="owner_phone"><?php echo t("owner_phone"); ?></label>
-                        <input type="tel" id="owner_phone" name="owner_phone" class="form-input" value="<?php echo htmlspecialchars($owner_phone); ?>">
-                    </div>
                 </div>
             </div>
 
@@ -996,8 +1027,14 @@ $conn->close();
                     const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
                     
                     if (unitDesignField) unitDesignField.setAttribute('required', 'required');
-                    if (finishingTypeField) finishingTypeField.setAttribute('required', 'required');
-                    if (finishingTypeCommercialField) finishingTypeCommercialField.removeAttribute('required');
+                    if (finishingTypeField) {
+                        finishingTypeField.setAttribute('required', 'required');
+                        finishingTypeField.disabled = false;
+                    }
+                    if (finishingTypeCommercialField) {
+                        finishingTypeCommercialField.removeAttribute('required');
+                        finishingTypeCommercialField.disabled = true;
+                    }
 
                 } else if (selectedTypeId === COMMERCIAL_ID || selectedTypeId === ADMINISTRATIVE_ID || selectedTypeId === HOTEL_ID || selectedTypeId === MEDICAL_ID) {
                     residentialCoastalFields.classList.remove('active');
@@ -1009,8 +1046,14 @@ $conn->close();
                     const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
                     
                     if (unitDesignField) unitDesignField.removeAttribute('required');
-                    if (finishingTypeField) finishingTypeField.removeAttribute('required');
-                    if (finishingTypeCommercialField) finishingTypeCommercialField.setAttribute('required', 'required');
+                    if (finishingTypeField) {
+                        finishingTypeField.removeAttribute('required');
+                        finishingTypeField.disabled = true;
+                    }
+                    if (finishingTypeCommercialField) {
+                        finishingTypeCommercialField.setAttribute('required', 'required');
+                        finishingTypeCommercialField.disabled = false;
+                    }
 
                 } else {
                     residentialCoastalFields.classList.remove('active');
@@ -1022,8 +1065,14 @@ $conn->close();
                     const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
                     
                     if (unitDesignField) unitDesignField.removeAttribute('required');
-                    if (finishingTypeField) finishingTypeField.removeAttribute('required');
-                    if (finishingTypeCommercialField) finishingTypeCommercialField.removeAttribute('required');
+                    if (finishingTypeField) {
+                        finishingTypeField.removeAttribute('required');
+                        finishingTypeField.disabled = true;
+                    }
+                    if (finishingTypeCommercialField) {
+                        finishingTypeCommercialField.removeAttribute('required');
+                        finishingTypeCommercialField.disabled = true;
+                    }
                 }
             }
 
