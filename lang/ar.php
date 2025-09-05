@@ -349,8 +349,7 @@ return [
     'area_and_specifications' => 'المساحة والمواصفات',
     'add_property_media_note' => 'ملاحظة: بعد إضافة العقار، سيتم توجيهك مباشرةً لرفع الصور والملاحظات الصوتية.',
     'owner_information' => 'معلومات المالك',
-    'owner_name' => 'اسم المالك',
-    'owner_phone' => 'هاتف المالك',
+    
 
     // New Phase 2 Fields
     'year_built' => 'سنة البناء',

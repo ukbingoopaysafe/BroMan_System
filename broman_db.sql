@@ -80,18 +80,16 @@ CREATE TABLE `properties` (
   `sales_manager_name` varchar(255) DEFAULT NULL,
   `sales_manager_phone` varchar(50) DEFAULT NULL,
   `salesperson_name` varchar(255) DEFAULT NULL,
-  `salesperson_phone` varchar(50) DEFAULT NULL,
-  `owner_name` varchar(255) DEFAULT NULL,
-  `owner_phone` varchar(50) DEFAULT NULL
+  `salesperson_phone` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `properties`
 --
 
-INSERT INTO `properties` (`PropertyID`, `PropertyTypeID`, `Title`, `Description`, `Location`, `Area`, `Bedrooms`, `Status`, `listing_type`, `DateAdded`, `EmployeeID`, `unit_design`, `finishing_type_id`, `compound_area`, `down_payment_percentage`, `payment_years`, `delivery_date`, `ProjectName`, `min_area`, `max_area`, `avg_area`, `district`, `governorate`, `company_name`, `FloorsCount`, `sales_manager_name`, `sales_manager_phone`, `salesperson_name`, `salesperson_phone`, `owner_name`, `owner_phone`) VALUES
-(1, 1, 'شقة فاخرة بإطلالة مميزة', 'شقة 3 غرف نوم مع تشطيب كامل وإطلالة على الحديقة المركزية', 'التجمع الخامس, القاهرة الجديدة', 180.00, 3, 'available', 'Primary', '2025-08-24 13:10:44', 1, 'استوديو', 3, 50000.00, 10.00, 7, '2025-12-31', 'كمبوند ماونتن فيو', 160.00, 200.00, 180.00, 'التجمع الخامس', 'القاهرة', 'إعمار مصر', 5, 'أحمد محمود', '01012345678', 'سارة أحمد', '01087654321', NULL, NULL),
-(2, 1, 'فيلا مستقلة بحديقة خاصة', 'فيلا 5 غرف نوم مع حديقة خاصة وحمام سباحة', 'الشيخ زايد, الجيزة', 450.00, 5, 'available', 'Primary', '2025-08-24 13:10:44', 1, 'غرفة', 3, 100000.00, 15.00, 10, '2026-06-30', 'زايد ديونز', 400.00, 500.00, 450.00, 'الشيخ زايد', 'الجيزة', 'سوديك', 2, 'محمد علي', '01023456789', 'فاطمة حسن', '01076543210', NULL, NULL),
+(INSERT INTO `properties` (`PropertyID`, `PropertyTypeID`, `Title`, `Description`, `Location`, `Area`, `Bedrooms`, `Status`, `listing_type`, `DateAdded`, `EmployeeID`, `unit_design`, `finishing_type_id`, `compound_area`, `down_payment_percentage`, `payment_years`, `delivery_date`, `ProjectName`, `min_area`, `max_area`, `avg_area`, `district`, `governorate`, `company_name`, `FloorsCount`, `sales_manager_name`, `sales_manager_phone`, `salesperson_name`, `salesperson_phone`) VALUES
+(1, 1, 'شقة فاخرة بإطلالة مميزة', 'شقة 3 غرف نوم مع تشطيب كامل وإطلالة على الحديقة المركزية', 'التجمع الخامس, القاهرة الجديدة', 180.00, 3, 'available', 'Primary', '2025-08-24 13:10:44', 1, 'استوديو', 3, 50000.00, 10.00, 7, '2025-12-31', 'كمبوند ماونتن فيو', 160.00, 200.00, 180.00, 'التجمع الخامس', 'القاهرة', 'إعمار مصر', 5, 'أحمد محمود', '01012345678', 'سارة أحمد', '01087654321'),
+(2, 1, 'فيلا مستقلة بحديقة خاصة', 'فيلا 5 غرف نوم مع حديقة خاصة وحمام سباحة', 'الشيخ زايد, الجيزة', 450.00, 5, 'available', 'Primary', '2025-08-24 13:10:44', 1, 'غرفة', 3, 100000.00, 15.00, 10, '2026-06-30', 'زايد ديونز', 400.00, 500.00, 450.00, 'الشيخ زايد', 'الجيزة', 'سوديك', 2, 'محمد علي', '01023456789', 'فاطمة حسن', '01076543210'),
 (3, 1, 'دوبلكس أنيق في كمبوند راقي', 'دوبلكس 4 غرف نوم مع تشطيب فاخر', 'مدينة نصر, القاهرة', 280.00, 4, 'available', 'Primary', '2025-08-24 13:10:44', 2, 'غرفتين', 3, 75000.00, 12.00, 8, '2025-09-15', 'جرين هيلز', 250.00, 300.00, 280.00, 'مدينة نصر', 'القاهرة', 'مجموعة طلعت مصطفى', 3, 'علي محمد', '01034567890', 'نورا سعيد', '01065432109', NULL, NULL),
 (4, 1, 'شقة مميزة في برج سكني', 'شقة 2 غرف نوم مع إطلالة على النيل', 'المعادي, القاهرة', 120.00, 2, 'sold', 'Primary', '2025-08-24 13:10:44', 1, 'استوديو', 2, NULL, 20.00, 5, '2024-08-01', 'ريفر فيو تاورز', 110.00, 130.00, 120.00, 'المعادي', 'القاهرة', 'إعمار مصر', 12, 'كريم أحمد', '01045678901', 'ليلى محمود', '01054321098', NULL, NULL),
 (5, 1, 'فيلا كلاسيكية في ضاحية هادئة', 'فيلا 6 غرف نوم مع حديقة واسعة', '6 أكتوبر, الجيزة', 550.00, 6, 'available', 'Resale', '2025-08-24 13:10:44', 2, 'غرفة', 1, 120000.00, NULL, NULL, NULL, 'أكتوبر بارك', NULL, NULL, NULL, '6 أكتوبر', 'الجيزة', 'سوديك', 2, 'حسن علي', '01056789012', 'رانيا أحمد', '01043210987', NULL, NULL),

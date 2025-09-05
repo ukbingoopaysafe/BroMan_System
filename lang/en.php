@@ -350,8 +350,7 @@ return [
     'area_and_specifications' => 'Area and Specifications',
     'add_property_media_note' => 'Note: After adding the property, you will be redirected to upload images and voice notes.',
     'owner_information' => 'Owner Information',
-    'owner_name' => 'Owner Name',
-    'owner_phone' => 'Owner Phone',
+    
 
     // New Phase 2 Fields
     'year_built' => 'Year Built',

@@ -35,7 +35,6 @@ $property_id = $title = $property_type_id = $price = $location = $description = 
 $unit_design = $finishing_type_id = $compound_area = $down_payment_percentage = $payment_years = $delivery_date = "";
 $project_name = $min_area = $max_area = $avg_area = $district = $governorate = $company_name = $floors_count = "";
 $sales_manager_name = $sales_manager_phone = $salesperson_name = $salesperson_phone = "";
-$owner_name = $owner_phone = "";
 $latitude = $longitude = "";
 
 $errors = []; // Array to hold errors
@@ -109,8 +108,7 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $sales_manager_phone = $row["sales_manager_phone"] ?? '';
                 $salesperson_name = $row["salesperson_name"] ?? '';
                 $salesperson_phone = $row["salesperson_phone"] ?? '';
-                $owner_name = $row["owner_name"] ?? '';
-                $owner_phone = $row["owner_phone"] ?? '';
+                
                 $listing_type = $row["listing_type"] ?? 'Primary';
                 $latitude = $row["latitude"] ?? '';
                 $longitude = $row["longitude"] ?? '';
@@ -186,8 +184,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $sales_manager_phone_posted = isset($_POST['sales_manager_phone']) ? trim($_POST['sales_manager_phone']) : null;
     $salesperson_name_posted = isset($_POST['salesperson_name']) ? trim($_POST['salesperson_name']) : null;
     $salesperson_phone_posted = isset($_POST['salesperson_phone']) ? trim($_POST['salesperson_phone']) : null;
-    $owner_name_posted = isset($_POST['owner_name']) ? trim($_POST['owner_name']) : null;
-    $owner_phone_posted = isset($_POST['owner_phone']) ? trim($_POST['owner_phone']) : null;
+    
     $latitude_posted = isset($_POST['latitude']) && trim($_POST['latitude']) !== '' ? filter_input(INPUT_POST, 'latitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $longitude_posted = isset($_POST['longitude']) && trim($_POST['longitude']) !== '' ? filter_input(INPUT_POST, 'longitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     
@@ -270,7 +267,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             ProjectName = ?, min_area = ?, max_area = ?, avg_area = ?, 
             district = ?, governorate = ?, company_name = ?, FloorsCount = ?,
             sales_manager_name = ?, sales_manager_phone = ?, salesperson_name = ?, salesperson_phone = ?,
-            owner_name = ?, owner_phone = ?, year_built = ?, unit_floor = ?, net_area = ?, 
+            year_built = ?, unit_floor = ?, net_area = ?, 
             loading_percentage = ?, price_cash = ?, price_installments = ?, meter_price_cash = ?, 
             meter_price_installments = ?, seller_type = ?, seller_name = ?, seller_phone = ?,
             latitude = ?, longitude = ?
@@ -278,7 +275,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if ($stmt_update = $conn->prepare($sql_update)) {
             $stmt_update->bind_param(
-                "isssdisiiddissddddsssissssssiisddddddssssddi",
+                "isssdisiiddissddddsssissssiisddddddssssddi",
                 $property_type_id_posted,
                 $title_posted,
                 $description_posted,
@@ -303,8 +300,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $sales_manager_phone_posted,
                 $salesperson_name_posted,
                 $salesperson_phone_posted,
-                $owner_name_posted,
-                $owner_phone_posted,
                 $year_built_posted,
                 $unit_floor_posted,
                 $net_area_posted,
@@ -951,14 +946,7 @@ $conn->close();
                         <label for="seller_phone"><?php echo t("seller_phone"); ?></label>
                         <input type="tel" id="seller_phone" name="seller_phone" class="form-input" value="<?php echo htmlspecialchars($seller_phone); ?>">
                     </div>
-                    <div class="form-group">
-                        <label for="owner_name"><?php echo t("owner_name"); ?></label>
-                        <input type="text" id="owner_name" name="owner_name" class="form-input" value="<?php echo htmlspecialchars($owner_name); ?>">
-                    </div>
-                    <div class="form-group">
-                        <label for="owner_phone"><?php echo t("owner_phone"); ?></label>
-                        <input type="tel" id="owner_phone" name="owner_phone" class="form-input" value="<?php echo htmlspecialchars($owner_phone); ?>">
-                    </div>
+                    
                 </div>
             </div>
 

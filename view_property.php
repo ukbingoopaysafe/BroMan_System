@@ -717,7 +717,7 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
             </div>
             <?php endif; // End of the main check for sales information ?>
 
-            <?php if (!empty($property['seller_type']) || !empty($property['seller_name']) || !empty($property['seller_phone']) || !empty($property['owner_name']) || !empty($property['owner_phone'])): ?>
+            <?php if (!empty($property['seller_type']) || !empty($property['seller_name']) || !empty($property['seller_phone'])): ?>
             <div class="property-section">
                 <h2><?php echo t('owner_information'); ?></h2>
                 <div class="detail-grid">
@@ -737,18 +737,6 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('seller_phone'); ?>:</span>
                         <span class="detail-value"><?php echo htmlspecialchars($property['seller_phone']); ?></span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if (!empty($property['owner_name'])): ?>
-                    <div class="detail-item">
-                        <span class="detail-label"><?php echo t('owner_name'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['owner_name']); ?></span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if (!empty($property['owner_phone'])): ?>
-                    <div class="detail-item">
-                        <span class="detail-label"><?php echo t('owner_phone'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['owner_phone']); ?></span>
                     </div>
                     <?php endif; ?>
                 </div>
