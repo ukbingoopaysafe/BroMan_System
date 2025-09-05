@@ -9,7 +9,8 @@
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
-SET time_zone = "+00:00";
+SET time_zoALTER TABLE `propertyfinishingtypes`
+  MODIFY `FinishingID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9; = "+00:00";
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -129,17 +130,23 @@ INSERT INTO `properties` (`PropertyID`, `PropertyTypeID`, `Title`, `Description`
 
 CREATE TABLE `propertyfinishingtypes` (
   `FinishingID` int(11) NOT NULL,
-  `FinishingName` varchar(100) NOT NULL
+  `FinishingName` varchar(100) NOT NULL,
+  `FinishingName_ar` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `propertyfinishingtypes`
 --
 
-INSERT INTO `propertyfinishingtypes` (`FinishingID`, `FinishingName`) VALUES
-(3, 'تشطيب كامل'),
-(1, 'طوب أحمر'),
-(2, 'نصف تشطيب');
+INSERT INTO `propertyfinishingtypes` (`FinishingID`, `FinishingName`, `FinishingName_ar`) VALUES
+(1, 'Red Brick', 'طوب أحمر'),
+(2, 'Semi Finished', 'نصف تشطيب'),
+(3, 'Plastered & Framed', 'محارة وحلوق'),
+(4, 'Lux', 'لوكس'),
+(5, 'Super Lux', 'سوبر لوكس'),
+(6, 'Ultra Super Lux', 'الترا سوبر لوكس'),
+(7, 'Smart', 'سمارت'),
+(8, 'Hotel Finish', 'فندقي');
 
 -- --------------------------------------------------------
 

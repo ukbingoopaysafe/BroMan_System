@@ -131,13 +131,9 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css">
     <?php endif; ?>
-    <!-- Map provider: Google Maps when API key supplied, otherwise Leaflet+OSM -->
-    <?php if (defined('GOOGLE_MAPS_API_KEY') && GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE'): ?>
-        <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo GOOGLE_MAPS_API_KEY; ?>&v=weekly" async defer></script>
-    <?php else: ?>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <?php endif; ?>
+    <!-- Map provider: Leaflet + OpenStreetMap (Leaflet-only) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         /* Enhanced Property Details Styling */
         .property-details {
@@ -793,31 +789,23 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
     
     <?php if (!empty($property['latitude']) && !empty($property['longitude'])): ?>
     <script>
-        // Initialize static map for property location (Google Maps preferred, Leaflet fallback)
+        // Initialize static map for property location (Leaflet-only)
         document.addEventListener('DOMContentLoaded', function() {
             const lat = <?php echo $property['latitude']; ?>;
             const lng = <?php echo $property['longitude']; ?>;
 
-            if (window.google && window.google.maps) {
-                const map = new google.maps.Map(document.getElementById('property-map'), {
-                    center: { lat: lat, lng: lng },
-                    zoom: 15,
-                });
-
-                const marker = new google.maps.Marker({ position: { lat: lat, lng: lng }, map: map });
-                const infowindow = new google.maps.InfoWindow({ content: '<?php echo addslashes($property['Title']); ?>' });
-                infowindow.open(map, marker);
-            } else if (typeof L !== 'undefined') {
-                const map = L.map('property-map').setView([lat, lng], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '&copy; OpenStreetMap contributors'
-                }).addTo(map);
-                const marker = L.marker([lat, lng]).addTo(map);
-                marker.bindPopup('<?php echo addslashes($property['Title']); ?>').openPopup();
-            } else {
-                console.warn('No map provider available.');
+            if (typeof L === 'undefined') {
+                console.error('Leaflet is not loaded.');
+                return;
             }
+
+            const map = L.map('property-map').setView([lat, lng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+            const marker = L.marker([lat, lng]).addTo(map);
+            marker.bindPopup('<?php echo addslashes($property['Title']); ?>').openPopup();
         });
     </script>
     <?php endif; ?>
