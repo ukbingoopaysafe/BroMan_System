@@ -313,6 +313,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             margin-left: auto;
         }
     </style>
+</n+    <!-- Map provider: Google Maps when API key supplied, otherwise Leaflet+OSM -->
+    <?php if (defined('GOOGLE_MAPS_API_KEY') && GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE'): ?>
+        <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo GOOGLE_MAPS_API_KEY; ?>&v=weekly" async defer></script>
+    <?php else: ?>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <?php endif; ?>
     <script src="session_timeout.js"></script>
 </head>
 <body>
@@ -392,6 +399,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="form-group" style="grid-column: 1 / -1;">
                     <label for="location"><?php echo t('detailed_address'); ?>:</label>
                     <input type="text" id="location" name="location" class="form-input" value="<?php echo htmlspecialchars($_POST['location'] ?? ''); ?>">
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label><?php echo t('select_location_on_map'); ?>:</label>
+                    <div id="map" style="height: 400px; width: 100%; border: 1px solid #ddd; border-radius: 4px;"></div>
+                    <small><?php echo t('click_map_to_set_location'); ?></small>
+                    <input type="hidden" id="latitude" name="latitude" value="<?php echo htmlspecialchars($_POST['latitude'] ?? ''); ?>">
+                    <input type="hidden" id="longitude" name="longitude" value="<?php echo htmlspecialchars($_POST['longitude'] ?? ''); ?>">
                 </div>
             </div>
         </div>
@@ -801,6 +815,71 @@ document.addEventListener('DOMContentLoaded', function() {
         updateAudioPreview();
         updateAudioInput();
     };
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Map initialization: Google Maps preferred, Leaflet fallback
+    let map;
+    let marker;
+
+    function initMap() {
+        const defaultLat = 30.0444;
+        const defaultLng = 31.2357;
+
+        const latInput = document.getElementById('latitude');
+        const lngInput = document.getElementById('longitude');
+        const lat = parseFloat(latInput.value) || defaultLat;
+        const lng = parseFloat(lngInput.value) || defaultLng;
+
+        if (window.google && window.google.maps) {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: lat, lng: lng },
+                zoom: 10,
+            });
+
+            if (!isNaN(parseFloat(latInput.value)) && !isNaN(parseFloat(lngInput.value))) {
+                marker = new google.maps.Marker({ position: { lat: lat, lng: lng }, map: map });
+            }
+
+            map.addListener('click', function(e) {
+                const clickedLat = e.latLng.lat();
+                const clickedLng = e.latLng.lng();
+                latInput.value = clickedLat;
+                lngInput.value = clickedLng;
+                if (marker) marker.setMap(null);
+                marker = new google.maps.Marker({ position: { lat: clickedLat, lng: clickedLng }, map: map });
+            });
+        } else if (typeof L !== 'undefined') {
+            map = L.map('map').setView([lat, lng], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            if (!isNaN(parseFloat(latInput.value)) && !isNaN(parseFloat(lngInput.value))) {
+                marker = L.marker([lat, lng]).addTo(map);
+            }
+
+            map.on('click', function(e) {
+                const clickedLat = e.latlng.lat;
+                const clickedLng = e.latlng.lng;
+                latInput.value = clickedLat;
+                lngInput.value = clickedLng;
+                if (marker) { map.removeLayer(marker); }
+                marker = L.marker([clickedLat, clickedLng]).addTo(map);
+            });
+        } else {
+            console.warn('No map provider available.');
+        }
+    }
+
+    if (window.google && window.google.maps) {
+        initMap();
+    } else {
+        window.addEventListener('load', initMap);
+    }
 });
 </script>
 
