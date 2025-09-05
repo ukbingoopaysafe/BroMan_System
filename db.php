@@ -6,7 +6,7 @@
 // Attempt to get credentials from environment variables (best practice)
 $host = getenv('DB_HOST') ?: "127.0.0.1";
 $user = getenv('DB_USER') ?: "root";
-$pass = getenv('DB_PASS') ?: "1671";
+$pass = getenv('DB_PASS') ?: "";
 $dbname = getenv('DB_NAME') ?: "broman_db";
 
 // Use mysqli_report to turn errors into exceptions for better handling
