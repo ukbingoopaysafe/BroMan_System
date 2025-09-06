@@ -201,6 +201,21 @@ $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
     
     // New Phase 2 fields
     $year_built_posted = isset($_POST['year_built']) && trim($_POST['year_built']) !== '' ? filter_input(INPUT_POST, 'year_built', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) : null;
+    if ($year_built_posted !== null) {
+        $year_int = intval($year_built_posted);
+        $current_year = intval(date('Y'));
+        if ($year_int < 1900 || $year_int > ($current_year + 1)) {
+            $year_built_posted = null;
+        } else {
+            $year_built_posted = $year_int;
+        }
+    }
+    $seller_type_posted = isset($_POST['seller_type']) ? trim($_POST['seller_type']) : null;
+    if ($seller_type_posted !== null && $seller_type_posted === '') { $seller_type_posted = null; }
+    // Validate against allowed UI list; normalize to DB value if needed
+    if ($seller_type_posted !== null && !in_array($seller_type_posted, allowed_seller_types(), true)) {
+        $seller_type_posted = normalize_seller_type_for_db($conn, $seller_type_posted);
+    }
     $unit_floor_posted = isset($_POST['unit_floor']) ? trim($_POST['unit_floor']) : null;
     $net_area_posted = isset($_POST['net_area']) && trim($_POST['net_area']) !== '' ? filter_input(INPUT_POST, 'net_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $loading_percentage_posted = isset($_POST['loading_percentage']) && trim($_POST['loading_percentage']) !== '' ? filter_input(INPUT_POST, 'loading_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
@@ -227,7 +242,8 @@ $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
     }
     
     // Property type specific validation
-    if ($property_type_id == 1 || $property_type_id == 2) { // If Residential or Coastal
+    if ($property_type_id == 1 || $property_type_id == 2) // If Residential or Coastal
+    {
         if (empty($unit_design_posted)) {
             $errors['unit_design'] = t('unit_design_required');
         }
@@ -349,14 +365,26 @@ $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
                 $property_id
             );
 
+            // Debug: log key fields before executing the UPDATE to diagnose persistence issues
+            error_log("DEBUG edit_property UPDATE: year_built_posted=" . var_export($year_built_posted, true) . " seller_type_posted=" . var_export($seller_type_posted, true));
+            // Log normalized seller_type right before executing the UPDATE so we can verify what is being written
+            error_log("DEBUG edit_property BEFORE EXECUTE: normalized_seller_type=" . var_export($seller_type_posted, true));
             if ($stmt_update->execute()) {
                 $_SESSION["success_message"] = t('property_updated_success');
+                // Move any temporary uploads (from unified uploader during edit) into this property
+                if (function_exists('moveTempUploadsToProperty')) {
+                    $moved = moveTempUploadsToProperty($property_id, session_id(), $conn);
+                    error_log('Moved temp uploads after edit for session ' . session_id() . ': ' . json_encode($moved));
+                }
                 header("Location: view_property.php?id=" . $property_id);
                 exit();
             } else {
                 $errors['db_update'] = t('error_updating_property') . ': ' . $stmt_update->error;
                 error_log("Error executing property update: " . $stmt_update->error);
             }
+            // Log result so we can see whether the DB accepted the value and any mysqli error
+            error_log("DEBUG edit_property AFTER EXECUTE: affected_rows=" . $stmt_update->affected_rows . " mysqli_error=" . (isset($conn) ? $conn->error : 'conn_not_set'));
+
             $stmt_update->close();
         } else {
             $errors['db_prepare'] = t('error_preparing_statement') . ': ' . $conn->error;
@@ -574,82 +602,9 @@ $conn->close();
         }
         ?>
 
-        <!-- Media Upload Section -->
+        <!-- Unified Media Upload Section -->
         <div class="form-section">
-            <h3>📷 Property Images</h3>
-            
-            <!-- Image Upload Area -->
-            <div id="image-upload-area" class="upload-area">
-                <p>📁 Drag and drop images here or click to select</p>
-                <button type="button" id="image-upload-btn" class="upload-btn">Choose Images</button>
-                <input type="file" id="image-upload" accept="image/jpeg,image/jpg,image/png,image/webp" multiple style="display: none;">
-                <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                    Supported formats: JPG, JPEG, PNG, WEBP | Max size: 10MB per image
-                </p>
-            </div>
-
-            <!-- Existing Images -->
-            <?php if (!empty($property_images)): ?>
-                <div class="images-grid">
-                    <?php foreach ($property_images as $index => $image): ?>
-                        <div class="image-item">
-                            <img src="<?php echo htmlspecialchars($image['file_path']); ?>" 
-                                 alt="Property Image" 
-                                 class="property-image-clickable" 
-                                 data-image-index="<?php echo $index; ?>">
-                            <?php if ($image['is_primary']): ?>
-                                <div class="image-primary-badge">Primary</div>
-                            <?php endif; ?>
-                            <button type="button" 
-                                    class="image-delete-btn delete-image-btn" 
-                                    data-image-id="<?php echo $image['image_id']; ?>"
-                                    title="Delete Image">×</button>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php else: ?>
-                <p style="color: #666; font-style: italic;">No images uploaded yet.</p>
-            <?php endif; ?>
-        </div>
-
-        <!-- Audio Notes Section -->
-        <div class="form-section">
-            <h3>🎤 Voice Notes</h3>
-            
-            <!-- Audio Upload Area -->
-            <div id="audio-upload-area" class="upload-area">
-                <p>🎵 Drag and drop audio files here or click to select</p>
-                <button type="button" id="audio-upload-btn" class="upload-btn">Choose Audio Files</button>
-                <input type="file" id="audio-upload" accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/mp4,audio/m4a" multiple style="display: none;">
-                <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                    Supported formats: MP3, WAV, OGG, M4A | Max size: 10MB per file
-                </p>
-            </div>
-
-            <!-- Existing Audio Notes -->
-            <?php if (!empty($property_audio_notes)): ?>
-                <div class="audio-notes">
-                    <?php foreach ($property_audio_notes as $audio): ?>
-                        <div class="audio-item">
-                            <audio controls>
-                                <source src="<?php echo htmlspecialchars($audio['file_path']); ?>" type="audio/mpeg">
-                                Your browser does not support the audio element.
-                            </audio>
-                            <div class="audio-info">
-                                <div>Uploaded: <?php echo date('Y-m-d H:i', strtotime($audio['upload_date'])); ?></div>
-                                <?php if ($audio['duration']): ?>
-                                    <div>Duration: <?php echo formatDuration($audio['duration']); ?></div>
-                                <?php endif; ?>
-                            </div>
-                            <button type="button" 
-                                    class="audio-delete-btn delete-audio-btn" 
-                                    data-audio-id="<?php echo $audio['note_id']; ?>">Delete</button>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php else: ?>
-                <p style="color: #666; font-style: italic;">No voice notes uploaded yet.</p>
-            <?php endif; ?>
+            <?php include 'unified_media_uploader.php'; ?>
         </div>
 
         <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]) . '?id=' . $property_id; ?>" method="post">

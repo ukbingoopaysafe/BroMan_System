@@ -14,12 +14,12 @@ require_once __DIR__ . '/media_functions.php';
         <div class="upload-content">
             <i class="fas fa-cloud-upload-alt upload-icon"></i>
             <p class="upload-text"><?php echo t('drag_drop_files_here'); ?></p>
-            <p class="upload-subtext"><?php echo t('supported_formats'); ?>: JPG, PNG, WEBP, MP4, AVI, MOV, WMV, FLV, WEBM</p>
+            <p class="upload-subtext"><?php echo t('supported_formats'); ?>: JPG, PNG, WEBP, MP4, AVI, MOV, WMV, FLV, WEBM (videos up to 250MB)</p>
             <button type="button" class="btn btn-secondary" id="selectFilesBtn">
                 <i class="fas fa-folder-open"></i> <?php echo t('select_files'); ?>
             </button>
         </div>
-        <input type="file" id="fileInput" multiple accept="image/*,video/*" style="display: none;">
+    <input type="file" id="fileInput" multiple accept="image/*,video/*,audio/*" style="display: none;">
     </div>
     
     <!-- File Preview Area -->
@@ -73,7 +73,8 @@ require_once __DIR__ . '/media_functions.php';
 }
 
 .upload-content {
-    pointer-events: none;
+    /* allow button clicks inside upload content */
+    pointer-events: auto;
 }
 
 .upload-icon {
@@ -310,19 +311,24 @@ class UnifiedMediaUploader {
         });
         
         this.updatePreview();
+        // If property exists, upload immediately
+        if (this.propertyId && this.propertyId > 0) {
+            this.uploadFiles();
+        }
     }
     
     validateFile(file) {
         const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-        const allowedVideoTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/flv', 'video/webm'];
-        const allowedTypes = [...allowedImageTypes, ...allowedVideoTypes];
-        
+        const allowedVideoTypes = ['video/mp4', 'video/avi', 'video/quicktime', 'video/x-ms-wmv', 'video/x-flv', 'video/webm', 'video/ogg', 'video/mpeg'];
+        const allowedAudioTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/mp4', 'audio/webm', 'audio/x-m4a'];
+        const allowedTypes = [...allowedImageTypes, ...allowedVideoTypes, ...allowedAudioTypes];
+
         if (!allowedTypes.includes(file.type)) {
             alert(`File ${file.name} has an unsupported format.`);
             return false;
         }
-        
-        const maxSize = file.type.startsWith('video/') ? 100 * 1024 * 1024 : 10 * 1024 * 1024; // 100MB for videos, 10MB for images
+
+        const maxSize = file.type.startsWith('video/') ? 250 * 1024 * 1024 : (file.type.startsWith('audio/') ? 10 * 1024 * 1024 : 10 * 1024 * 1024); // 250MB for videos, 10MB for audio/images
         
         if (file.size > maxSize) {
             alert(`File ${file.name} is too large. Maximum size is ${this.formatFileSize(maxSize)}.`);
@@ -348,16 +354,30 @@ class UnifiedMediaUploader {
         preview.className = 'file-preview';
         
         const isVideo = file.type.startsWith('video/');
-        const mediaElement = isVideo ? document.createElement('video') : document.createElement('img');
-        mediaElement.src = URL.createObjectURL(file);
-        mediaElement.controls = isVideo;
+        const isAudio = file.type.startsWith('audio/');
+        let mediaElement;
+        if (isVideo) {
+            mediaElement = document.createElement('video');
+            mediaElement.controls = true;
+            mediaElement.src = URL.createObjectURL(file);
+        } else if (isAudio) {
+            mediaElement = document.createElement('audio');
+            mediaElement.controls = true;
+            mediaElement.src = URL.createObjectURL(file);
+            mediaElement.style.width = '100%';
+            mediaElement.style.height = '48px';
+            mediaElement.style.objectFit = 'cover';
+        } else {
+            mediaElement = document.createElement('img');
+            mediaElement.src = URL.createObjectURL(file);
+        }
         
         const fileInfo = document.createElement('div');
         fileInfo.className = 'file-info';
         fileInfo.innerHTML = `
             <div class="file-name">${file.name}</div>
             <div class="file-size">${this.formatFileSize(file.size)}</div>
-            <div class="file-type">${isVideo ? 'Video' : 'Image'}</div>
+            <div class="file-type">${isVideo ? 'Video' : (isAudio ? 'Audio' : 'Image')}</div>
         `;
         
         const removeBtn = document.createElement('button');
@@ -390,10 +410,13 @@ class UnifiedMediaUploader {
         
         for (let i = 0; i < this.selectedFiles.length; i++) {
             const file = this.selectedFiles[i];
-            const isVideo = file.type.startsWith('video/');
+            let type;
+            if (file.type.startsWith('video/')) type = 'video';
+            else if (file.type.startsWith('audio/')) type = 'audio';
+            else type = 'image';
             
             try {
-                const result = await this.uploadFile(file, isVideo ? 'video' : 'image');
+                const result = await this.uploadFile(file, type);
                 this.uploadedFiles.push(result);
                 this.updateProgress((i + 1) / this.selectedFiles.length * 100);
             } catch (error) {
@@ -458,7 +481,7 @@ class UnifiedMediaUploader {
                 <span class="result-icon">${icon}</span>
                 <span class="result-message">${result.fileName || result.message}</span>
                 <div class="result-actions">
-                    ${result.success ? '<button class="btn btn-success" onclick="viewFile(\'' + result.file_path + '\')">View</button>' : ''}
+                    ${result.success ? '<button class="btn btn-success" onclick="viewFile(\'' + (result.file_path || result.temp_path) + '\')">View</button>' : ''}
                 </div>
             `;
             
@@ -494,22 +517,78 @@ function viewFile(filePath) {
 
 // Initialize uploader when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    const propertyId = document.querySelector('[data-property-id]')?.dataset.propertyId;
+    const propEl = document.querySelector('[data-property-id]');
+    const propertyId = propEl ? parseInt(propEl.dataset.propertyId || '0', 10) : 0;
     const csrfToken = document.querySelector('[data-csrf-token]')?.dataset.csrfToken;
-    
-    if (propertyId && csrfToken) {
-        window.mediaUploader = new UnifiedMediaUploader(propertyId, csrfToken);
-        
-        // Add upload button
-        const uploadBtn = document.createElement('button');
-        uploadBtn.className = 'btn btn-primary';
-        uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Files';
-        uploadBtn.style.marginTop = '15px';
-        uploadBtn.addEventListener('click', () => {
-            window.mediaUploader.uploadFiles();
-        });
-        
-        document.querySelector('.unified-media-uploader').appendChild(uploadBtn);
+
+    const container = document.querySelector('.unified-media-uploader');
+    if (!container) return;
+
+    // If there's no CSRF token, don't enable uploader (security)
+    if (!csrfToken) {
+        const note = document.createElement('div');
+        note.className = 'upload-note';
+        note.style.color = '#856404';
+        note.style.background = '#fff3cd';
+        note.style.padding = '10px';
+        note.style.borderRadius = '6px';
+        note.style.marginTop = '10px';
+        note.textContent = 'Media uploader is disabled (CSRF token missing).';
+        container.appendChild(note);
+        return;
+    }
+
+    // If propertyId is not a saved property yet, show an instruction and do not enable uploads
+    if (!propertyId || propertyId <= 0) {
+        const note = document.createElement('div');
+        note.className = 'upload-note';
+        note.style.color = '#0c5460';
+        note.style.background = '#d1ecf1';
+        note.style.padding = '10px';
+        note.style.borderRadius = '6px';
+        note.style.marginTop = '10px';
+        note.innerHTML = 'يمكنك الآن رفع الوسائط مؤقتًا؛ سيتم ربطها بالعقار بعد حفظ النموذج.';
+        container.appendChild(note);
+    }
+
+    // Initialize uploader for an existing property
+    window.mediaUploader = new UnifiedMediaUploader(propertyId, csrfToken);
+
+    // No separate upload button.
+    // If this is an add page (propertyId <= 0), intercept form submission and append queued files
+    if (!propertyId || propertyId <= 0) {
+        const form = container.closest('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const fm = new FormData(form);
+
+                const uploader = window.mediaUploader;
+                if (uploader && Array.isArray(uploader.selectedFiles)) {
+                    uploader.selectedFiles.forEach(f => {
+                        if (f.type.startsWith('image/')) fm.append('images[]', f, f.name);
+                        else if (f.type.startsWith('audio/')) fm.append('audio[]', f, f.name);
+                        else if (f.type.startsWith('video/')) fm.append('videos[]', f, f.name);
+                    });
+                }
+
+                fetch(form.action || window.location.href, {
+                    method: form.method || 'POST',
+                    body: fm,
+                    credentials: 'same-origin'
+                }).then(response => {
+                    if (response.redirected) {
+                        window.location = response.url;
+                    } else {
+                        return response.text().then(html => {
+                            document.open(); document.write(html); document.close();
+                        });
+                    }
+                }).catch(err => {
+                    alert('حدث خطأ أثناء حفظ النموذج: ' + err.message);
+                });
+            });
+        }
     }
 });
 </script>

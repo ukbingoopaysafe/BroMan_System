@@ -101,14 +101,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     // New Phase 2 fields
     $year_built = filter_input(INPUT_POST, 'year_built', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+    // Normalize year_built: accept only reasonable years, otherwise set null to avoid storing 0/0000
+    if ($year_built !== null) {
+        $year_int = intval($year_built);
+        $current_year = intval(date('Y'));
+        if ($year_int < 1900 || $year_int > ($current_year + 1)) {
+            $year_built = null;
+        } else {
+            $year_built = $year_int;
+        }
+    }
     $unit_floor = trim($_POST['unit_floor'] ?? null);
     $net_area = filter_input(INPUT_POST, 'net_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $loading_percentage = filter_input(INPUT_POST, 'loading_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $price_cash = filter_input(INPUT_POST, 'price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $price_installments = filter_input(INPUT_POST, 'price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $meter_price_cash = filter_input(INPUT_POST, 'meter_price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $seller_type = trim($_POST['seller_type'] ?? '');
+    if ($seller_type === '') { $seller_type = null; }
+    // Validate against allowed UI list first; then normalize for DB storage
+    if ($seller_type !== null && !in_array($seller_type, allowed_seller_types(), true)) {
+        // If the posted value isn't an allowed UI value, try normalization as a fallback
+        $seller_type = normalize_seller_type_for_db($conn, $seller_type);
+    }
     $meter_price_installments = filter_input(INPUT_POST, 'meter_price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $seller_type = trim($_POST['seller_type'] ?? null);
     $seller_name = trim($_POST['seller_name'] ?? null);
     $seller_phone = trim($_POST['seller_phone'] ?? null);
     $latitude = filter_input(INPUT_POST, 'latitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
@@ -118,12 +134,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
     if ($stmt = $conn->prepare($sql)) {
-        $stmt->bind_param(
-            "isssdiissiiddisssddddsssissssssiisddddddsssdd",
+        safe_bind_param(
+            $stmt,
+            "isssdissisiddissdddsssissssisddddddsssdd",
             $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $year_built, $unit_floor, $net_area, $loading_percentage, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $seller_type, $seller_name, $seller_phone, $latitude, $longitude
         );
 
-        if ($stmt->execute()) {
+    // Debug: log key fields before execute to help diagnose missing storage
+    error_log("DEBUG add_residential_property: year_built=" . var_export($year_built, true) . " seller_type=" . var_export($seller_type, true));
+    if ($stmt->execute()) {
             $new_property_id = $conn->insert_id;
 
             // Handle optional media uploads
@@ -200,6 +219,62 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     }
                 }
                 finfo_close($finfo2);
+            }
+
+            // Videos
+            if (!empty($_FILES['videos']) && is_array($_FILES['videos']['name'])) {
+                $allowed_video_mime = [
+                    'video/mp4' => 'mp4', 'video/webm' => 'webm', 'video/ogg' => 'ogv',
+                    'video/avi' => 'avi', 'video/quicktime' => 'mov', 'video/x-ms-wmv' => 'wmv', 'video/x-flv' => 'flv'
+                ];
+                $max_video_size = 250 * 1024 * 1024; // 250MB
+                $finfo3 = finfo_open(FILEINFO_MIME_TYPE);
+                foreach ($_FILES['videos']['name'] as $idx => $name) {
+                    if ($_FILES['videos']['error'][$idx] !== UPLOAD_ERR_OK) { continue; }
+                    if ($_FILES['videos']['size'][$idx] > $max_video_size) { continue; }
+                    $tmp = $_FILES['videos']['tmp_name'][$idx];
+                    $mime = finfo_file($finfo3, $tmp);
+                    // Allow if mime is known or fallback to extension
+                    $ext = pathinfo($name, PATHINFO_EXTENSION);
+                    // prefer extension inferred from mime if available
+                    if (isset($allowed_video_mime[$mime])) {
+                        $ext = $allowed_video_mime[$mime];
+                    }
+                    if (empty($ext)) {
+                        error_log('Skipping video (no extension/mime): ' . $name . ' mime=' . $mime);
+                        continue;
+                    }
+                    $filename = 'property_' . $new_property_id . '_video_' . bin2hex(random_bytes(8)) . '.' . $ext;
+                    $dest = $base_upload_dir . 'videos/' . $filename;
+                    $relative = 'uploads/videos/' . $filename;
+                    if (move_uploaded_file($tmp, $dest)) {
+                        $employee_id = $_SESSION['employee_id'] ?? 0;
+                        $emp_id_int = (int)$employee_id; // ensure a variable (not an expression) is passed by reference to bind_param
+                        $ins = "INSERT INTO property_videos (PropertyID, VideoPath, VideoName, VideoSize, EmployeeID) VALUES (?, ?, ?, ?, ?)";
+                        if ($vstmt = $conn->prepare($ins)) {
+                            $videoSize = filesize($dest);
+                            $vstmt->bind_param("issii", $new_property_id, $relative, $name, $videoSize, $emp_id_int);
+                            $vstmt->execute();
+                            if ($vstmt->affected_rows > 0) {
+                                error_log('Inserted video for property ' . $new_property_id . ' => ' . $relative);
+                            } else {
+                                error_log('Failed to insert video DB row for ' . $relative . ': ' . $vstmt->error);
+                            }
+                            $vstmt->close();
+                        }
+                    }
+                    else {
+                        error_log('Failed to move uploaded video file ' . $tmp . ' to ' . $dest);
+                    }
+                }
+                finfo_close($finfo3);
+            }
+
+            // Move any temporary uploads (uploaded before saving the property) into this property
+            if (function_exists('moveTempUploadsToProperty')) {
+                $moved = moveTempUploadsToProperty($new_property_id, session_id(), $conn);
+                // Optionally log what was moved for debugging
+                error_log('Moved temp uploads for session ' . session_id() . ': ' . json_encode($moved));
             }
 
             $_SESSION["success_message"] = t('property_added_success');

@@ -11,6 +11,9 @@ ensure_secure_session_started();
 // Check permissions - only manager and admin can add properties
 check_permission('manage_properties');
 
+// Ensure a CSRF token variable is available for the form/uploader
+$csrf_token = generateCSRFToken();
+
 // Enforce mode selection - redirect to dashboard if no mode is set
 if (!isset($_SESSION['listing_context']) || ($_SESSION['listing_context'] !== 'Primary' && $_SESSION['listing_context'] !== 'Resale')) {
     header('Location: dashboard.php');
@@ -101,6 +104,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     // New Phase 2 fields
     $year_built = filter_input(INPUT_POST, 'year_built', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+    // Normalize year_built: accept only reasonable years, otherwise set null to avoid storing 0/0000
+    if ($year_built !== null) {
+        $year_int = intval($year_built);
+        $current_year = intval(date('Y'));
+        if ($year_int < 1900 || $year_int > ($current_year + 1)) {
+            $year_built = null;
+        } else {
+            $year_built = $year_int;
+        }
+    }
     $unit_floor = trim($_POST['unit_floor'] ?? null);
     $net_area = filter_input(INPUT_POST, 'net_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $loading_percentage = filter_input(INPUT_POST, 'loading_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
@@ -108,7 +121,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $price_installments = filter_input(INPUT_POST, 'price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $meter_price_cash = filter_input(INPUT_POST, 'meter_price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $meter_price_installments = filter_input(INPUT_POST, 'meter_price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $seller_type = trim($_POST['seller_type'] ?? null);
+    $seller_type = trim($_POST['seller_type'] ?? '');
+    if ($seller_type === '') { $seller_type = null; }
+    if ($seller_type !== null && !in_array($seller_type, allowed_seller_types(), true)) {
+        $seller_type = normalize_seller_type_for_db($conn, $seller_type);
+    }
     $seller_name = trim($_POST['seller_name'] ?? null);
     $seller_phone = trim($_POST['seller_phone'] ?? null);
 
@@ -116,12 +133,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
     if ($stmt = $conn->prepare($sql)) {
-        $stmt->bind_param(
-            "isssdiissiiddisssddddsssissssssiisddddddsss",
+        safe_bind_param(
+            $stmt,
+            "isssdissisiddissdddsssissssisddddddsss",
             $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $year_built, $unit_floor, $net_area, $loading_percentage, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $seller_type, $seller_name, $seller_phone
         );
 
-        if ($stmt->execute()) {
+    // Debug: log key fields before execute to help diagnose missing storage
+    error_log("DEBUG add_coastal_property: year_built=" . var_export($year_built, true) . " seller_type=" . var_export($seller_type, true));
+    if ($stmt->execute()) {
             $new_property_id = $conn->insert_id;
 
             // Handle optional media uploads (same as residential)
@@ -197,6 +217,53 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     }
                 }
                 finfo_close($finfo2);
+            }
+
+            // Videos (same implementation as residential)
+            if (!empty($_FILES['videos']) && is_array($_FILES['videos']['name'])) {
+                $allowed_video_mime = [
+                    'video/mp4' => 'mp4', 'video/webm' => 'webm', 'video/ogg' => 'ogv',
+                    'video/avi' => 'avi', 'video/quicktime' => 'mov', 'video/x-ms-wmv' => 'wmv', 'video/x-flv' => 'flv'
+                ];
+                $max_video_size = 250 * 1024 * 1024; // 250MB
+                $finfo3 = finfo_open(FILEINFO_MIME_TYPE);
+                foreach ($_FILES['videos']['name'] as $idx => $name) {
+                    if ($_FILES['videos']['error'][$idx] !== UPLOAD_ERR_OK) { continue; }
+                    if ($_FILES['videos']['size'][$idx] > $max_video_size) { continue; }
+                    $tmp = $_FILES['videos']['tmp_name'][$idx];
+                    $mime = finfo_file($finfo3, $tmp);
+                    $ext = pathinfo($name, PATHINFO_EXTENSION);
+                    if (isset($allowed_video_mime[$mime])) {
+                        $ext = $allowed_video_mime[$mime];
+                    }
+                    if (empty($ext)) {
+                        error_log('Skipping video (no extension/mime): ' . $name . ' mime=' . $mime);
+                        continue;
+                    }
+                    $filename = 'property_' . $new_property_id . '_video_' . bin2hex(random_bytes(8)) . '.' . $ext;
+                    $dest = $base_upload_dir . 'videos/' . $filename;
+                    $relative = 'uploads/videos/' . $filename;
+                    if (move_uploaded_file($tmp, $dest)) {
+                        $employee_id = $_SESSION['employee_id'] ?? 0;
+                        $emp_id_int = (int)$employee_id;
+                        $ins = "INSERT INTO property_videos (PropertyID, VideoPath, VideoName, VideoSize, EmployeeID) VALUES (?, ?, ?, ?, ?)";
+                        if ($vstmt = $conn->prepare($ins)) {
+                            $videoSize = filesize($dest);
+                            $vstmt->bind_param("issii", $new_property_id, $relative, $name, $videoSize, $emp_id_int);
+                            $vstmt->execute();
+                            $vstmt->close();
+                        }
+                    } else {
+                        error_log('Failed to move uploaded video file ' . $tmp . ' to ' . $dest);
+                    }
+                }
+                finfo_close($finfo3);
+            }
+
+            // Move any temporary uploads (uploaded before saving the property) into this property
+            if (function_exists('moveTempUploadsToProperty')) {
+                $moved = moveTempUploadsToProperty($new_property_id, session_id(), $conn);
+                error_log('Moved temp uploads for session ' . session_id() . ': ' . json_encode($moved));
             }
 
             $_SESSION["success_message"] = t('property_added_success');
@@ -339,7 +406,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     <?php endif; ?>
 
-    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" class="form-container" enctype="multipart/form-data">
+    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" class="form-container" enctype="multipart/form-data" data-property-id="0" data-csrf-token="<?php echo $csrf_token; ?>">
         <?php echo csrf_input(); ?>
 
         <!-- Property Type (Hidden/Fixed for this page) -->
@@ -575,46 +642,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         </div>
 
-        <!-- Media Upload Section -->
+        <!-- Unified Media Upload Section -->
         <div class="form-section">
-            <h3>📷 <?php echo t('property_images'); ?></h3>
-            
-            <!-- Image Upload Area -->
-            <div id="image-upload-area" class="upload-area">
-                <p>📁 Drag and drop images here or click to select</p>
-                <button type="button" id="image-upload-btn" class="upload-btn">Choose Images</button>
-                <input type="file" id="image-upload" name="images[]" accept="image/jpeg,image/jpg,image/png,image/webp" multiple style="display: none;">
-                <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                    Supported formats: JPG, JPEG, PNG, WEBP | Max size: 10MB per image
-                </p>
-            </div>
-
-            <!-- Selected Images Preview -->
-            <div id="image-preview" class="images-grid" style="display: none;">
-                <p>Selected images:</p>
-                <div id="image-thumbnails"></div>
-            </div>
-        </div>
-
-        <!-- Audio Notes Section -->
-        <div class="form-section">
-            <h3>🎤 <?php echo t('voice_notes'); ?></h3>
-            
-            <!-- Audio Upload Area -->
-            <div id="audio-upload-area" class="upload-area">
-                <p>🎵 Drag and drop audio files here or click to select</p>
-                <button type="button" id="audio-upload-btn" class="upload-btn">Choose Audio Files</button>
-                <input type="file" id="audio-upload" name="audio[]" accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/mp4,audio/m4a" multiple style="display: none;">
-                <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                    Supported formats: MP3, WAV, OGG, M4A | Max size: 10MB per file
-                </p>
-            </div>
-
-            <!-- Selected Audio Preview -->
-            <div id="audio-preview" class="audio-notes" style="display: none;">
-                <p>Selected audio files:</p>
-                <div id="audio-list"></div>
-            </div>
+            <?php include 'unified_media_uploader.php'; ?>
         </div>
 
         <div class="form-actions">

@@ -340,6 +340,35 @@ body {
     margin-top: 20px;
 }
 
+/* Inline detail grid for owner/seller info */
+.detail-grid--inline {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(150px, 1fr));
+    gap: 16px 24px;
+    align-items: start;
+}
+.detail-grid--inline .detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.detail-grid--inline .detail-label {
+    font-weight:600;
+    color:var(--secondary-color);
+    font-size: 0.95rem;
+}
+.detail-grid--inline .detail-value { font-size: 1rem; }
+.detail-grid--inline .detail-value a { color: var(--primary-color); text-decoration: none; }
+.detail-grid--inline .detail-value a:hover { text-decoration: underline; }
+
+/* Specific styling for name and phone columns */
+.detail-item.detail-name .detail-value { font-weight:700; }
+.detail-item.detail-phone .detail-value { color: var(--dark-color); }
+
+/* RTL adjustments */
+html[dir="rtl"] .detail-grid--inline { direction: rtl; }
+html[dir="rtl"] .detail-grid--inline .detail-item { align-items: flex-end; }
+
 /* Dashboard */
 .dashboard-grid {
     display: grid;

@@ -628,10 +628,22 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                         <span class="detail-value"><?php echo htmlspecialchars($property['FloorsCount']); ?></span>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($property['year_built'])): ?>
+                    <?php
+                    // Normalize and validate year_built before display. Treat NULL, empty, 0 or unrealistic values as not set.
+                    $year_raw = $property['year_built'] ?? null;
+                    $show_year = false;
+                    if ($year_raw !== null && trim((string)$year_raw) !== '') {
+                        $year_int = intval($year_raw);
+                        $current_year = intval(date('Y'));
+                        // Consider valid years between 1900 and next year
+                        if ($year_int >= 1900 && $year_int <= ($current_year + 1)) {
+                            $show_year = true;
+                        }
+                    }
+                    if ($show_year): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('year_built'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['year_built']); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars((string)$year_int); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['unit_floor'])): ?>
@@ -731,28 +743,41 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
             <?php if (!empty($property['seller_type']) || !empty($property['seller_name']) || !empty($property['seller_phone']) || !empty($property['owner_name']) || !empty($property['owner_phone'])): ?>
             <div class="property-section">
                 <h2><?php echo t('owner_information'); ?></h2>
-                <div class="detail-grid">
-                    <?php if (!empty($property['seller_type'])): ?>
+                <div class="detail-grid detail-grid--inline">
+                <?php
+                // Seller/owner section: render three inline columns: type, name, phone.
+                $seller_type_raw = $property['seller_type'] ?? null;
+                $seller_name_raw = $property['seller_name'] ?? null;
+                $seller_phone_raw = $property['seller_phone'] ?? null;
+
+                // Helper to render a value or a fallback
+                function render_or_fallback($val) {
+                    if ($val !== null && trim((string)$val) !== '') return htmlspecialchars(trim((string)$val));
+                    return htmlspecialchars(t('undefined'));
+                }
+
+                // Prepare clickable phone if available
+                $seller_phone_html = null;
+                if (!empty($seller_phone_raw)) {
+                    $phone_display = htmlspecialchars(trim($seller_phone_raw));
+                    $tel = preg_replace('/[^+0-9]/', '', $seller_phone_raw);
+                    $seller_phone_html = '<a href="tel:' . $tel . '">' . $phone_display . '</a>';
+                }
+                ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('seller_type'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['seller_type']); ?></span>
+                        <span class="detail-value"><?php echo render_or_fallback($seller_type_raw); ?></span>
                     </div>
-                    <?php endif; ?>
-                    <?php if (!empty($property['seller_name'])): ?>
-                    <div class="detail-item">
-                        <span class="detail-label"><?php echo t('seller_name'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['seller_name']); ?></span>
+                    <div class="detail-item detail-name">
+                        <span class="detail-label"><?php echo t('name'); ?>:</span>
+                        <span class="detail-value"><?php echo render_or_fallback($seller_name_raw); ?></span>
                     </div>
-                    <?php endif; ?>
-                    <?php if (!empty($property['seller_phone'])): ?>
-                    <div class="detail-item">
-                        <span class="detail-label"><?php echo t('seller_phone'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['seller_phone']); ?></span>
+                    <div class="detail-item detail-phone">
+                        <span class="detail-label"><?php echo t('phone'); ?>:</span>
+                        <span class="detail-value"><?php echo $seller_phone_html !== null ? $seller_phone_html : htmlspecialchars(t('undefined')); ?></span>
                     </div>
-                    <?php endif; ?>
                 </div>
-            </div>
-            <?php endif; ?>
+                <?php endif; ?>
 
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'manager'): ?>
 <div class="property-section">
@@ -811,5 +836,3 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
     <?php endif; ?>
 </body>
 </html>
-
-

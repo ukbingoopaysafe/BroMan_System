@@ -16,14 +16,9 @@ if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_tok
     exit;
 }
 
-// Check if property ID is provided
-if (!isset($_POST['property_id']) || empty($_POST['property_id'])) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Property ID is required']);
-    exit;
-}
-
-$property_id = intval($_POST['property_id']);
+// Property ID may be omitted or 0 for temporary uploads. We'll accept that and
+// store files under uploads/temp/{session_id}/ until the property is created.
+$property_id = intval($_POST['property_id'] ?? 0);
 $upload_type = $_POST['upload_type'] ?? ''; // 'image', 'audio', or 'video'
 
 // Validate upload type
@@ -33,11 +28,20 @@ if (!in_array($upload_type, ['image', 'audio', 'video'])) {
     exit;
 }
 
+// Allow temporary uploads when property_id <= 0: they'll be stored under uploads/temp/{session_id}/
+// and must be moved to the property record after the property is created.
+
 // Create upload directories if they don't exist
 $base_upload_dir = __DIR__ . '/uploads/';
 $image_dir = $base_upload_dir . 'images/';
 $audio_dir = $base_upload_dir . 'audio/';
 $video_dir = $base_upload_dir . 'videos/';
+
+// Temp upload dirs per session for pre-save uploads
+$session_temp_dir = $base_upload_dir . 'temp/' . session_id() . '/';
+$temp_image_dir = $session_temp_dir . 'images/';
+$temp_audio_dir = $session_temp_dir . 'audio/';
+$temp_video_dir = $session_temp_dir . 'videos/';
 
 if (!is_dir($base_upload_dir)) {
     mkdir($base_upload_dir, 0755, true);
@@ -52,16 +56,27 @@ if (!is_dir($video_dir)) {
     mkdir($video_dir, 0755, true);
 }
 
-// Handle file upload
-if ($upload_type === 'image') {
-    handleImageUpload($property_id, $image_dir, $conn);
-} elseif ($upload_type === 'audio') {
-    handleAudioUpload($property_id, $audio_dir, $conn);
-} elseif ($upload_type === 'video') {
-    handleVideoUpload($property_id, $video_dir, $conn);
+// Ensure temp dirs exist
+if (!is_dir($temp_image_dir)) {
+    mkdir($temp_image_dir, 0755, true);
+}
+if (!is_dir($temp_audio_dir)) {
+    mkdir($temp_audio_dir, 0755, true);
+}
+if (!is_dir($temp_video_dir)) {
+    mkdir($temp_video_dir, 0755, true);
 }
 
-function handleImageUpload($property_id, $upload_dir, $conn) {
+// Handle file upload
+if ($upload_type === 'image') {
+    handleImageUpload($property_id, $image_dir, $conn, $temp_image_dir);
+} elseif ($upload_type === 'audio') {
+    handleAudioUpload($property_id, $audio_dir, $conn, $temp_audio_dir);
+} elseif ($upload_type === 'video') {
+    handleVideoUpload($property_id, $video_dir, $conn, $temp_video_dir);
+}
+
+function handleImageUpload($property_id, $upload_dir, $conn, $temp_dir) {
     if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'No image file uploaded or upload error']);
@@ -92,49 +107,65 @@ function handleImageUpload($property_id, $upload_dir, $conn) {
 
     // Generate unique filename
     $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = 'property_' . $property_id . '_' . uniqid() . '.' . $extension;
-    $file_path = $upload_dir . $filename;
-    $relative_path = 'uploads/images/' . $filename;
+    $filename = 'property_' . max(0, $property_id) . '_' . uniqid() . '.' . $extension;
+    // If property_id > 0 store in final folder, otherwise store in session temp
+    if ($property_id > 0) {
+        $file_path = $upload_dir . $filename;
+        $relative_path = 'uploads/images/' . $filename;
+    } else {
+        $file_path = rtrim($temp_dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $filename;
+        $relative_path = 'uploads/temp/' . session_id() . '/images/' . $filename;
+    }
 
     // Move uploaded file
     if (move_uploaded_file($file['tmp_name'], $file_path)) {
-        // Check if this is the first image (set as primary)
-        $is_primary = false;
-        $check_sql = "SELECT COUNT(*) as count FROM property_images WHERE property_id = ?";
-        if ($stmt = $conn->prepare($check_sql)) {
-            $stmt->bind_param("i", $property_id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $row = $result->fetch_assoc();
-            $is_primary = ($row['count'] == 0); // First image is primary
-            $stmt->close();
-        }
+        if ($property_id > 0) {
+            // Check if this is the first image (set as primary)
+            $is_primary = false;
+            $check_sql = "SELECT COUNT(*) as count FROM property_images WHERE property_id = ?";
+            if ($stmt = $conn->prepare($check_sql)) {
+                $stmt->bind_param("i", $property_id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $row = $result->fetch_assoc();
+                $is_primary = ($row['count'] == 0); // First image is primary
+                $stmt->close();
+            }
 
-        // Insert into database
-        $sql = "INSERT INTO property_images (property_id, file_path, is_primary) VALUES (?, ?, ?)";
-        if ($stmt = $conn->prepare($sql)) {
-            $stmt->bind_param("isi", $property_id, $relative_path, $is_primary);
-            if ($stmt->execute()) {
-                $image_id = $conn->insert_id;
-                echo json_encode([
-                    'success' => true, 
-                    'message' => 'Image uploaded successfully',
-                    'image_id' => $image_id,
-                    'file_path' => $relative_path,
-                    'is_primary' => $is_primary
-                ]);
+            // Insert into database
+            $sql = "INSERT INTO property_images (property_id, file_path, is_primary) VALUES (?, ?, ?)";
+            if ($stmt = $conn->prepare($sql)) {
+                $stmt->bind_param("isi", $property_id, $relative_path, $is_primary);
+                if ($stmt->execute()) {
+                    $image_id = $conn->insert_id;
+                    echo json_encode([
+                        'success' => true, 
+                        'message' => 'Image uploaded successfully',
+                        'image_id' => $image_id,
+                        'file_path' => $relative_path,
+                        'is_primary' => $is_primary
+                    ]);
+                } else {
+                    // Delete uploaded file if database insert fails
+                    unlink($file_path);
+                    http_response_code(500);
+                    echo json_encode(['success' => false, 'message' => 'Database error: ' . $stmt->error]);
+                }
+                $stmt->close();
             } else {
-                // Delete uploaded file if database insert fails
+                // Delete uploaded file if prepare fails
                 unlink($file_path);
                 http_response_code(500);
-                echo json_encode(['success' => false, 'message' => 'Database error: ' . $stmt->error]);
+                echo json_encode(['success' => false, 'message' => 'Database prepare error: ' . $conn->error]);
             }
-            $stmt->close();
         } else {
-            // Delete uploaded file if prepare fails
-            unlink($file_path);
-            http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Database prepare error: ' . $conn->error]);
+            // Temporary upload saved; return temp info so caller can move files later
+            echo json_encode([
+                'success' => true,
+                'message' => 'Image uploaded to temporary storage',
+                'temp_path' => $relative_path,
+                'temp_name' => $filename
+            ]);
         }
     } else {
         http_response_code(500);
@@ -142,7 +173,7 @@ function handleImageUpload($property_id, $upload_dir, $conn) {
     }
 }
 
-function handleAudioUpload($property_id, $upload_dir, $conn) {
+function handleAudioUpload($property_id, $upload_dir, $conn, $temp_dir) {
     if (!isset($_FILES['audio']) || $_FILES['audio']['error'] !== UPLOAD_ERR_OK) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'No audio file uploaded or upload error']);
@@ -150,8 +181,8 @@ function handleAudioUpload($property_id, $upload_dir, $conn) {
     }
 
     $file = $_FILES['audio'];
-    // MODIFIED: Added M4A and MP4 MIME types
-    $allowed_types = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/mp4', 'video/mp4'];
+    // Accept common audio mime types including webm and x-m4a variants
+    $allowed_types = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/mp4', 'audio/webm', 'audio/x-m4a', 'video/mp4'];
     $max_size = 10 * 1024 * 1024; // 10MB
 
     // Validate file type
@@ -175,40 +206,55 @@ function handleAudioUpload($property_id, $upload_dir, $conn) {
 
     // Generate unique filename
     $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = 'property_' . $property_id . '_audio_' . uniqid() . '.' . $extension;
-    $file_path = $upload_dir . $filename;
-    $relative_path = 'uploads/audio/' . $filename;
+    $filename = 'property_' . max(0, $property_id) . '_audio_' . uniqid() . '.' . $extension;
+    if ($property_id > 0) {
+        $file_path = $upload_dir . $filename;
+        $relative_path = 'uploads/audio/' . $filename;
+    } else {
+        $file_path = rtrim($temp_dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $filename;
+        $relative_path = 'uploads/temp/' . session_id() . '/audio/' . $filename;
+    }
 
     // Move uploaded file
     if (move_uploaded_file($file['tmp_name'], $file_path)) {
-        // Get audio duration (optional, requires getID3 library or similar)
-        $duration = null; // You can implement duration detection here if needed
+        // Get audio duration (optional)
+        $duration = null; // Optionally compute duration
 
-        // Insert into database
-        $sql = "INSERT INTO property_audio_notes (property_id, file_path, duration) VALUES (?, ?, ?)";
-        if ($stmt = $conn->prepare($sql)) {
-            $stmt->bind_param("isi", $property_id, $relative_path, $duration);
-            if ($stmt->execute()) {
-                $note_id = $conn->insert_id;
-                echo json_encode([
-                    'success' => true, 
-                    'message' => 'Audio uploaded successfully',
-                    'note_id' => $note_id,
-                    'file_path' => $relative_path,
-                    'duration' => $duration
-                ]);
+        if ($property_id > 0) {
+            // Insert into database
+            $sql = "INSERT INTO property_audio_notes (property_id, file_path, duration) VALUES (?, ?, ?)";
+            if ($stmt = $conn->prepare($sql)) {
+                $stmt->bind_param("isi", $property_id, $relative_path, $duration);
+                if ($stmt->execute()) {
+                    $note_id = $conn->insert_id;
+                    echo json_encode([
+                        'success' => true, 
+                        'message' => 'Audio uploaded successfully',
+                        'note_id' => $note_id,
+                        'file_path' => $relative_path,
+                        'duration' => $duration
+                    ]);
+                } else {
+                    // Delete uploaded file if database insert fails
+                    unlink($file_path);
+                    http_response_code(500);
+                    echo json_encode(['success' => false, 'message' => 'Database error: ' . $stmt->error]);
+                }
+                $stmt->close();
             } else {
-                // Delete uploaded file if database insert fails
+                // Delete uploaded file if prepare fails
                 unlink($file_path);
                 http_response_code(500);
-                echo json_encode(['success' => false, 'message' => 'Database error: ' . $stmt->error]);
+                echo json_encode(['success' => false, 'message' => 'Database prepare error: ' . $conn->error]);
             }
-            $stmt->close();
         } else {
-            // Delete uploaded file if prepare fails
-            unlink($file_path);
-            http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Database prepare error: ' . $conn->error]);
+            // Temporary upload saved; return temp info
+            echo json_encode([
+                'success' => true,
+                'message' => 'Audio uploaded to temporary storage',
+                'temp_path' => $relative_path,
+                'temp_name' => $filename
+            ]);
         }
     } else {
         http_response_code(500);
@@ -216,7 +262,7 @@ function handleAudioUpload($property_id, $upload_dir, $conn) {
     }
 }
 
-function handleVideoUpload($property_id, $upload_dir, $conn) {
+function handleVideoUpload($property_id, $upload_dir, $conn, $temp_dir) {
     if (!isset($_FILES['video']) || $_FILES['video']['error'] !== UPLOAD_ERR_OK) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'No video file uploaded or upload error']);
@@ -224,8 +270,8 @@ function handleVideoUpload($property_id, $upload_dir, $conn) {
     }
 
     $file = $_FILES['video'];
-    $allowed_types = ['video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/flv', 'video/webm'];
-    $max_size = 100 * 1024 * 1024; // 100MB for videos
+    $allowed_types = ['video/mp4', 'video/avi', 'video/quicktime', 'video/x-ms-wmv', 'video/x-flv', 'video/webm', 'video/ogg', 'video/mpeg'];
+    $max_size = 250 * 1024 * 1024; // 250MB for videos
 
     // Validate file type
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -241,47 +287,64 @@ function handleVideoUpload($property_id, $upload_dir, $conn) {
     // Validate file size
     if ($file['size'] > $max_size) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Video file size exceeds 100MB limit.']);
+        echo json_encode(['success' => false, 'message' => 'Video file size exceeds 250MB limit.']);
         return;
     }
 
     // Generate unique filename
     $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = 'property_' . $property_id . '_video_' . uniqid() . '.' . $extension;
-    $file_path = $upload_dir . $filename;
-    $relative_path = 'uploads/videos/' . $filename;
+    $filename = 'property_' . max(0, $property_id) . '_video_' . uniqid() . '.' . $extension;
+    if ($property_id > 0) {
+        $file_path = $upload_dir . $filename;
+        $relative_path = 'uploads/videos/' . $filename;
+    } else {
+        $file_path = rtrim($temp_dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $filename;
+        $relative_path = 'uploads/temp/' . session_id() . '/videos/' . $filename;
+    }
 
     // Move uploaded file
     if (move_uploaded_file($file['tmp_name'], $file_path)) {
         // Get employee ID from session
         $employee_id = $_SESSION['employee_id'] ?? null;
 
-        // Insert into database
-        $sql = "INSERT INTO property_videos (PropertyID, VideoPath, VideoName, VideoSize, EmployeeID) VALUES (?, ?, ?, ?, ?)";
-        if ($stmt = $conn->prepare($sql)) {
-            $stmt->bind_param("issii", $property_id, $relative_path, $file['name'], $file['size'], $employee_id);
-            if ($stmt->execute()) {
-                $video_id = $conn->insert_id;
-                echo json_encode([
-                    'success' => true, 
-                    'message' => 'Video uploaded successfully',
-                    'video_id' => $video_id,
-                    'file_path' => $relative_path,
-                    'video_name' => $file['name'],
-                    'video_size' => $file['size']
-                ]);
+        if ($property_id > 0) {
+            // Insert into database
+            $sql = "INSERT INTO property_videos (PropertyID, VideoPath, VideoName, VideoSize, EmployeeID) VALUES (?, ?, ?, ?, ?)";
+            if ($stmt = $conn->prepare($sql)) {
+                $stmt->bind_param("issii", $property_id, $relative_path, $file['name'], $file['size'], $employee_id);
+                if ($stmt->execute()) {
+                    $video_id = $conn->insert_id;
+                    echo json_encode([
+                        'success' => true, 
+                        'message' => 'Video uploaded successfully',
+                        'video_id' => $video_id,
+                        'file_path' => $relative_path,
+                        'video_name' => $file['name'],
+                        'video_size' => $file['size']
+                    ]);
+                } else {
+                    // Delete uploaded file if database insert fails
+                    unlink($file_path);
+                    http_response_code(500);
+                    echo json_encode(['success' => false, 'message' => 'Database error: ' . $stmt->error]);
+                }
+                $stmt->close();
             } else {
-                // Delete uploaded file if database insert fails
+                // Delete uploaded file if prepare fails
                 unlink($file_path);
                 http_response_code(500);
-                echo json_encode(['success' => false, 'message' => 'Database error: ' . $stmt->error]);
+                echo json_encode(['success' => false, 'message' => 'Database prepare error: ' . $conn->error]);
             }
-            $stmt->close();
         } else {
-            // Delete uploaded file if prepare fails
-            unlink($file_path);
-            http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Database prepare error: ' . $conn->error]);
+            // Temporary upload saved; return temp info
+            echo json_encode([
+                'success' => true,
+                'message' => 'Video uploaded to temporary storage',
+                'temp_path' => $relative_path,
+                'temp_name' => $filename,
+                'video_name' => $file['name'],
+                'video_size' => $file['size']
+            ]);
         }
     } else {
         http_response_code(500);
