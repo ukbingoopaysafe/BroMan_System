@@ -358,6 +358,17 @@ function getPropertyTypeBadge($typeId, $typeName) {
 <?php require_once __DIR__ . '/navbar.php'; // Include the navigation bar?>
 
 <div class="container">
+    <?php
+    // Display success or error messages from session if they exist
+    if (isset($_SESSION["success_message"])) {
+        echo "<div class='message message-success'>" . htmlspecialchars($_SESSION["success_message"]) . "</div>";
+        unset($_SESSION["success_message"]);
+    }
+    if (isset($_SESSION["error_message"])) {
+        echo "<div class='message message-error'>" . htmlspecialchars($_SESSION["error_message"]) . "</div>";
+        unset($_SESSION["error_message"]);
+    }
+    ?>
     <!-- Page Header and Property Type Tabs -->
     <?php require_once __DIR__ . '/property_header_tabs.php'; ?>
 

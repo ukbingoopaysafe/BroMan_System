@@ -80,14 +80,17 @@ $conn->close(); // Close connection after fetching data
             </form>
         </div>
 
-        <?php if (isset($_SESSION['error_message'])): ?>
-            <p class="error-message"><?php echo htmlspecialchars($_SESSION['error_message']);
-            unset($_SESSION['error_message']); ?></p>
-        <?php endif; ?>
-        <?php if (isset($_SESSION['success_message'])): ?>
-            <p class="success-message"><?php echo htmlspecialchars($_SESSION['success_message']);
-            unset($_SESSION['success_message']); ?></p>
-        <?php endif; ?>
+        <?php
+        // Display success or error messages from session if they exist
+        if (isset($_SESSION["success_message"])) {
+            echo "<div class='message message-success'>" . htmlspecialchars($_SESSION["success_message"]) . "</div>";
+            unset($_SESSION["success_message"]);
+        }
+        if (isset($_SESSION["error_message"])) {
+            echo "<div class='message message-error'>" . htmlspecialchars($_SESSION["error_message"]) . "</div>";
+            unset($_SESSION["error_message"]);
+        }
+        ?>
 
         <?php if (!empty($employees)): ?>
             <div class="table-responsive">

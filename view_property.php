@@ -377,6 +377,13 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
     <?php include 'navbar.php'; ?>
 
     <div class="container">
+        <?php
+        // Display success message from session if it exists
+        if (isset($_SESSION["success_message"])) {
+            echo "<div class='message message-success'>" . htmlspecialchars($_SESSION["success_message"]) . "</div>";
+            unset($_SESSION["success_message"]);
+        }
+        ?>
         <div class="page-header">
             <h1><?php echo $page_title; ?></h1>
             <div class="actions">

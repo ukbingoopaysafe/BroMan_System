@@ -1,9 +1,8 @@
 <?php
-// navbar.php (v4 - Updated for new role system)
-require_once __DIR__ .
-'/lang/translate.php'; // Include translation handler
-require_once 'session_check.php'; // Include session timeout check
-require_once 'permissions.php'; // Include permissions system
+// Clean navbar.php
+require_once __DIR__ . '/lang/translate.php';
+require_once 'session_check.php';
+require_once 'permissions.php';
 
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
@@ -13,32 +12,16 @@ $is_logged_in = isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true;
 $user_role = isset($_SESSION["role"]) ? $_SESSION["role"] : null;
 $user_full_name = isset($_SESSION["full_name"]) ? htmlspecialchars($_SESSION["full_name"]) : "Guest";
 
-// Determine active page for styling
 $active_page = basename($_SERVER["PHP_SELF"]);
+$logo_path = "images/broman_logo.png";
 
-$logo_path = "images/broman_logo.png"; // Relative path to the logo
-
-// Get current language for the switcher link
 $current_lang = get_lang_code();
 $switch_lang = ($current_lang == 'ar') ? 'en' : 'ar';
 $switch_lang_text = ($current_lang == 'ar') ? t('switch_language_en') : t('switch_language_ar');
 
-// Build the URL for the language switcher, preserving existing query parameters
 $query_params = $_GET;
-$query_params['lang'] = $switch_lang; // Add/overwrite the lang parameter
+$query_params['lang'] = $switch_lang;
 $switch_lang_url = basename($_SERVER['PHP_SELF']) . '?' . http_build_query($query_params);
-
-// Define property pages for active state check (including new add pages)
-$property_pages = [
-    "index_properties.php",
-    "residential_properties.php",
-    "coastal_properties.php",
-    "commercial_properties.php",
-    "add_residential_property.php", // New
-    "add_coastal_property.php",     // New
-    "add_other_property.php",       // New
-    "edit_property.php"
-];
 
 ?>
 <nav class="navbar">
@@ -50,8 +33,6 @@ $property_pages = [
     <ul>
         <?php if ($is_logged_in): ?>
             <li><a href="dashboard.php" class="<?php echo ($active_page == "dashboard.php") ? "active" : ""; ?>"><?php echo t('dashboard'); ?></a></li>
-            
-            <!-- Properties Dropdown - Only show if mode is selected -->
             <?php if (isset($_SESSION['listing_context'])): ?>
             <li class="dropdown <?php echo (in_array($active_page, ["index_properties.php", "residential_properties.php", "coastal_properties.php", "commercial_properties.php", "edit_property.php"])) ? "active" : ""; ?>">
                 <a href="javascript:void(0)" class="dropbtn"><?php echo t('properties'); ?> <span class="arrow">&#9662;</span></a>
@@ -62,8 +43,6 @@ $property_pages = [
                     <a href="commercial_properties.php" class="<?php echo ($active_page == "commercial_properties.php") ? "active-sub" : ""; ?>"><?php echo t('commercial_administrative_medical_hotel'); ?></a>
                 </div>
             </li>
-
-            <!-- Add Property Dropdown - Only for Manager and Admin, and only if mode is selected -->
             <?php if (can_manage_properties()): ?>
             <li class="dropdown <?php echo (in_array($active_page, ["add_residential_property.php", "add_coastal_property.php", "add_other_property.php"])) ? "active" : ""; ?>">
                  <a href="javascript:void(0)" class="dropbtn"><?php echo t('add_new_property'); ?> <span class="arrow">&#9662;</span></a>
@@ -76,8 +55,6 @@ $property_pages = [
             <?php endif; ?>
             <?php endif; ?>
 
-
-            <!-- Employees - Only for Manager -->
             <?php if (can_manage_employees()): ?>
                 <li><a href="employees_list.php" class="<?php echo ($active_page == "employees_list.php" || $active_page == "add_employee.php" || $active_page == "edit_employee.php") ? "active" : ""; ?>"><?php echo t('employees'); ?></a></li>
             <?php endif; ?>
@@ -93,30 +70,6 @@ $property_pages = [
     </ul>
 </nav>
 
-<?php
-// Display success or error messages from session using new styles
-if (isset($_SESSION["success_message"])) {
-    echo
-    "<div class=\"container\">
-        <div class=\"message message-success\">"
-        . htmlspecialchars($_SESSION["success_message"]) .
-        "</div>
-    </div>";
-    unset($_SESSION["success_message"]);
-}
-
-if (isset($_SESSION["error_message"])) {
-    echo
-    "<div class=\"container\">
-        <div class=\"message message-error\">"
-        . htmlspecialchars($_SESSION["error_message"]) .
-        "</div>
-    </div>";
-    unset($_SESSION["error_message"]);
-}
-?>
-
-<!-- Add CSS for Dropdown -->
 <style>
 .navbar ul li.dropdown {
   position: relative;
@@ -185,5 +138,6 @@ html[dir="rtl"] .navbar ul li.dropdown a.dropbtn .arrow {
   margin-right: 5px;
 }
 
+</style>
 </style>
 

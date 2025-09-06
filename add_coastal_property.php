@@ -267,7 +267,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
 
             $_SESSION["success_message"] = t('property_added_success');
-            header("Location: coastal_properties.php");
+            header("Location: view_property.php?id=" . $new_property_id);
             exit();
         } else {
             error_log("DB Error (add_coastal_property): " . $stmt->error);
@@ -407,7 +407,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <?php endif; ?>
 
     <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" class="form-container" enctype="multipart/form-data" data-property-id="0" data-csrf-token="<?php echo $csrf_token; ?>">
-        <?php echo csrf_input(); ?>
+        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
 
         <!-- Property Type (Hidden/Fixed for this page) -->
         <input type="hidden" name="property_type_id" value="2">
