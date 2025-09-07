@@ -281,7 +281,7 @@ function formatPaymentTerms($row)
     }
     
     if (!empty($row['payment_years']) && is_numeric($row['payment_years'])) {
-        $terms[] = $row['payment_years'] . ' ' . t('years');
+        $terms[] = number_format((float)$row['payment_years'], 1) . ' ' . t('years');
     }
     
     return !empty($terms) ? implode(' + ', $terms) : t('undefined');
@@ -354,6 +354,10 @@ function getPropertyTypeBadge($typeId, $typeName) {
     if (isset($_SESSION["success_message"])) {
         echo "<div class='message message-success'>" . htmlspecialchars($_SESSION["success_message"]) . "</div>";
         unset($_SESSION["success_message"]);
+    } else {
+        require_once __DIR__ . '/flash.php';
+        $fs = get_flash_messages();
+        if (!empty($fs)) { echo "<div class='message message-success'>" . htmlspecialchars(reset($fs)) . "</div>"; }
     }
     if (isset($_SESSION["error_message"])) {
         echo "<div class='message message-error'>" . htmlspecialchars($_SESSION["error_message"]) . "</div>";

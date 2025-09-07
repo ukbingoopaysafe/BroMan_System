@@ -85,6 +85,10 @@ $conn->close(); // Close connection after fetching data
         if (isset($_SESSION["success_message"])) {
             echo "<div class='message message-success'>" . htmlspecialchars($_SESSION["success_message"]) . "</div>";
             unset($_SESSION["success_message"]);
+        } else {
+            require_once __DIR__ . '/flash.php';
+            $fs = get_flash_messages();
+            if (!empty($fs)) { echo "<div class='message message-success'>" . htmlspecialchars(reset($fs)) . "</div>"; }
         }
         if (isset($_SESSION["error_message"])) {
             echo "<div class='message message-error'>" . htmlspecialchars($_SESSION["error_message"]) . "</div>";

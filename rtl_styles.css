@@ -180,3 +180,103 @@ body {
     margin-right: 5px !important;
 }
 
+/* Owner info inline grid: ensure inline columns are right-aligned in RTL */
+html[dir="rtl"] .detail-grid--inline {
+    /* Stronger specificity and !important to override base theme rules if necessary */
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(150px, 1fr)) !important;
+    gap: 16px 24px !important;
+    direction: rtl !important;
+    align-items: start !important;
+    justify-items: end !important; /* align each grid cell to the right */
+    text-align: right !important;
+}
+
+html[dir="rtl"] .detail-grid--inline .detail-item {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    align-items: flex-end !important; /* force label/value stack to the right */
+    text-align: right !important;
+}
+
+html[dir="rtl"] .detail-grid--inline .detail-label {
+    margin-bottom: 6px !important;
+    text-align: right !important;
+}
+
+html[dir="rtl"] .detail-grid--inline .detail-value {
+    text-align: right !important;
+}
+
+html[dir="rtl"] .detail-grid--inline .detail-value a {
+    direction: rtl !important;
+    /* Make links behave like block-level cells so text-align applies reliably */
+    display: inline-block !important;
+    width: 100% !important;
+    text-align: right !important;
+}
+
+/* Extra high-specificity rules for phone/name/value links inside owner info */
+html[dir="rtl"] .property-section .detail-grid--inline .detail-item.detail-phone .detail-value,
+html[dir="rtl"] .property-section .detail-grid--inline .detail-item.detail-phone .detail-value a,
+html[dir="rtl"] .property-section .detail-grid--inline .detail-item.detail-name .detail-value,
+html[dir="rtl"] .property-section .detail-grid--inline .detail-item.detail-name .detail-value a {
+    display: block !important;
+    width: 100% !important;
+    text-align: right !important;
+    align-self: flex-end !important;
+}
+
+/* Ensure any anchor inside these detail-value cells cannot inherit left alignment */
+html[dir="rtl"] .property-section .detail-grid--inline .detail-value a[href] {
+    display: block !important;
+    width: 100% !important;
+    text-align: right !important;
+}
+
+/* Final override: force anchors inside owner info to the right using float as a fallback */
+/* Final override: ensure anchors inside owner info are block-level, right-aligned, and render numbers correctly
+   Remove float-based layout (can conflict with grid/flex) and instead set direction:ltr on anchors
+   so phone numbers and digits keep their natural LTR order while the element aligns to the right. */
+html[dir="rtl"] .property-section .detail-grid--inline .detail-item .detail-value a {
+    display: block !important;
+    width: 100% !important;
+    text-align: right !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    direction: ltr !important; /* keep digits readable left-to-right inside RTL context */
+    unicode-bidi: isolate !important; /* isolate the anchor's bidi handling */
+}
+
+html[dir="rtl"] .detail-grid--inline {
+    display: flex !important; /* غير إلى flex بدلاً من grid لتحكم أفضل في RTL */
+    flex-direction: row !important; /* ترتيب الأعمدة من اليمين إلى اليسار */
+    justify-content: flex-start !important; /* في RTL، flex-start يعني بداية من اليمين */
+    align-items: flex-start !important;
+    gap: 24px !important; /* مسافة بين الحقول */
+    text-align: right !important;
+    width: 100% !important;
+}
+
+html[dir="rtl"] .detail-grid--inline .detail-item {
+    flex: 1 !important; /* كل حقل يأخذ مساحة متساوية */
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important; /* محاذاة المحتوى داخل الحقل إلى اليمين */
+    text-align: right !important;
+}
+
+html[dir="rtl"] .detail-grid--inline .detail-label,
+html[dir="rtl"] .detail-grid--inline .detail-value {
+    width: 100% !important;
+    text-align: right !important; /* محاذاة النصوص إلى اليمين بشكل قسري */
+}
+
+html[dir="rtl"] .detail-grid--inline .detail-value a {
+    display: block !important;
+    width: 100% !important;
+    text-align: right !important; /* محاذاة رابط الهاتف إلى اليمين */
+    direction: ltr !important; /* الحفاظ على ترتيب الأرقام LTR */
+    unicode-bidi: plaintext !important; /* يجعل النص يعامل كـ نص عادي، يحافظ على الأرقام */
+}

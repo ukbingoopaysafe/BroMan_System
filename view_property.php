@@ -98,21 +98,53 @@ function formatArea($property)
     return t('area_not_specified');
 }
 
+// Smart number formatter: trims unnecessary trailing zeros (e.g. 1.50 -> 1.5, 15.00 -> 15)
+function formatSmartNumber($value, $maxDecimals = 2)
+{
+    if ($value === null || $value === '') {
+        return '';
+    }
+    if (!is_numeric($value)) {
+        return htmlspecialchars((string)$value);
+    }
+    $float = floatval($value);
+    // Format with fixed decimals then trim trailing zeros and dot
+    $formatted = number_format($float, $maxDecimals, '.', '');
+    $formatted = rtrim(rtrim($formatted, '0'), '.');
+    return $formatted;
+}
+
 // Format payment terms
 function formatPaymentTerms($property)
 {
     $terms = [];
     
     if (!empty($property['down_payment_percentage']) && is_numeric($property['down_payment_percentage'])) {
-        $terms[] = number_format($property['down_payment_percentage'], 0) . '% ' . t('down_payment_percentage');
+        $terms[] = formatSmartNumber($property['down_payment_percentage'], 2) . '% ' . t('down_payment_percentage');
     }
-    
+
     if (!empty($property['payment_years']) && is_numeric($property['payment_years'])) {
-        $terms[] = $property['payment_years'] . ' ' . t('years');
+        // تحويل القيمة إلى عدد عشري
+        $years = floatval($property['payment_years']);
+
+        // تحديد عدد الخانات العشرية بناءً على وجود كسور
+        $decimal_places = fmod($years, 1) !== 0.0 ? 1 : 0;
+
+        // تنسيق الرقم مع إظهار الكسور إذا وجدت
+        $years_formatted = formatSmartNumber($years, $decimal_places);
+
+        // تحديد كلمة "سنة" أو "سنوات" بناءً على القيمة
+        $year_word = (abs($years - 1.0) < 0.00001) ? 'سنة' : 'سنوات';
+
+        $terms[] = $years_formatted . ' ' . $year_word;
     }
     
     return !empty($terms) ? implode(' + ', $terms) : t('undefined');
 }
+
+// Read flash messages using helper (robust short-lived flashes)
+require_once __DIR__ . '/flash.php';
+$flashes = get_flash_messages();
 
 // Page title
 $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['Title'] ?: $property['ProjectName'] ?: t('undefined')));
@@ -378,10 +410,28 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
 
     <div class="container">
         <?php
-        // Display success message from session if it exists
-        if (isset($_SESSION["success_message"])) {
-            echo "<div class='message message-success'>" . htmlspecialchars($_SESSION["success_message"]) . "</div>";
-            unset($_SESSION["success_message"]);
+        // Display success message from session or short-lived flash (render once then remove)
+        // Display any flash messages collected; clear the shown flash immediately so it
+        // does not appear on subsequent pages. Also clear legacy session key if present.
+        if (!empty($flashes) && is_array($flashes)) {
+            // show the first flash only to keep UI similar to previous behavior
+            $first_id = array_key_first($flashes);
+            $first = $flashes[$first_id];
+            $flash = htmlspecialchars((string)$first);
+            echo "<div id='flash-message' class='message message-success' role='status' aria-live='polite' tabindex='-1'>" . $flash . "</div>";
+            // Clear the flash we just displayed so it won't show on later pages
+            if (function_exists('clear_flash')) {
+                clear_flash($first_id);
+            }
+            // Also remove any legacy session success key to avoid duplicate messages
+            if (!empty($_SESSION) && isset($_SESSION['success_message'])) {
+                unset($_SESSION['success_message']);
+            }
+        } elseif (!empty($_SESSION) && isset($_SESSION['success_message'])) {
+            // Fallback: if for some reason a legacy success_message exists, show it once and then clear it
+            $flash = htmlspecialchars((string)$_SESSION['success_message']);
+            echo "<div id='flash-message' class='message message-success' role='status' aria-live='polite' tabindex='-1'>" . $flash . "</div>";
+            unset($_SESSION['success_message']);
         }
         ?>
         <div class="page-header">
@@ -563,44 +613,44 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                     <?php if (!empty($property['Area'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('unit_area_sqm'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['Area'], 2, '.', ','); ?> <?php echo t('sqm'); ?></span>
+                        <span class="detail-value"><?php echo formatSmartNumber($property['Area'], 2); ?> <?php echo t('sqm'); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['min_area'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('min_area'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['min_area'], 2, '.', ','); ?> <?php echo t('sqm'); ?></span>
+                        <span class="detail-value"><?php echo formatSmartNumber($property['min_area'], 2); ?> <?php echo t('sqm'); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['max_area'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('max_area'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['max_area'], 2, '.', ','); ?> <?php echo t('sqm'); ?></span>
+                        <span class="detail-value"><?php echo formatSmartNumber($property['max_area'], 2); ?> <?php echo t('sqm'); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['avg_area'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('avg_area_sqm'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['avg_area'], 2, '.', ','); ?> <?php echo t('sqm'); ?></span>
+                        <span class="detail-value"><?php echo formatSmartNumber($property['avg_area'], 2); ?> <?php echo t('sqm'); ?></span>
                     </div>
                     <?php endif; ?>
 
                     <?php if (!empty($property['compound_area'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('compound_area_faddan'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['compound_area']); ?> <?php echo t('faddan'); ?></span>
+                        <span class="detail-value"><?php echo formatSmartNumber($property['compound_area'], 2); ?> <?php echo t('faddan'); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['net_area'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('net_area'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['net_area'], 2, '.', ','); ?> <?php echo t('sqm'); ?></span>
+                        <span class="detail-value"><?php echo formatSmartNumber($property['net_area'], 2); ?> <?php echo t('sqm'); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['loading_percentage'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('loading_percentage'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['loading_percentage'], 2, '.', ','); ?>%</span>
+                        <span class="detail-value"><?php echo formatSmartNumber($property['loading_percentage'], 2); ?>%</span>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -674,13 +724,13 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                     <?php if (!empty($property['down_payment_percentage'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('down_payment_percentage'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['down_payment_percentage']); ?>%</span>
+                        <span class="detail-value"><?php echo formatSmartNumber($property['down_payment_percentage'], 2); ?>%</span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['payment_years'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('payment_years'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['payment_years']); ?></span>
+                        <span class="detail-value"><?php echo formatSmartNumber($property['payment_years'], 2); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['down_payment_percentage']) || !empty($property['payment_years'])): ?>
@@ -768,7 +818,12 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                 if (!empty($seller_phone_raw)) {
                     $phone_display = htmlspecialchars(trim($seller_phone_raw));
                     $tel = preg_replace('/[^+0-9]/', '', $seller_phone_raw);
-                    $seller_phone_html = '<a href="tel:' . $tel . '">' . $phone_display . '</a>';
+                    // Force RTL inline styling for links to avoid stylesheet specificity/order conflicts
+                    if (function_exists('get_direction') && get_direction() === 'rtl') {
+                        $seller_phone_html = '<a href="tel:' . $tel . '" style="display:inline-block;width:100%;text-align:right;direction:rtl;">' . $phone_display . '</a>';
+                    } else {
+                        $seller_phone_html = '<a href="tel:' . $tel . '">' . $phone_display . '</a>';
+                    }
                 }
                 ?>
                     <div class="detail-item">
@@ -841,5 +896,27 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
         });
     </script>
     <?php endif; ?>
+    <script>
+    // Improve flash message visibility: focus and add a short animation then auto-hide after 6s
+    document.addEventListener('DOMContentLoaded', function() {
+        const flash = document.getElementById('flash-message');
+        if (flash) {
+            // Focus for screen-readers and keyboard users
+            flash.focus();
+            // Slight highlight animation
+            flash.style.transition = 'box-shadow 0.25s ease, transform 0.25s ease';
+            flash.style.boxShadow = '0 0 0 4px rgba(40,167,69,0.12)';
+            flash.style.transform = 'translateY(-4px)';
+            setTimeout(() => {
+                flash.style.boxShadow = '';
+                flash.style.transform = '';
+            }, 400);
+            // Auto-hide after 6 seconds (keeps DOM message removal behavior intact)
+            setTimeout(() => {
+                try { flash.remove(); } catch(e) {}
+            }, 6000);
+        }
+    });
+    </script>
 </body>
 </html>

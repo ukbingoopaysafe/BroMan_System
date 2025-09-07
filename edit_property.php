@@ -18,6 +18,8 @@ $current_mode = $_SESSION['listing_context'];
 
 require_once 'db.php'; // Database connection
 require_once 'media_functions.php'; // Media helper functions
+// Flash helper (used by view_property.php to show short-lived messages)
+require_once __DIR__ . '/flash.php';
 
 // Generate CSRF token
 $csrf_token = generateCSRFToken();
@@ -267,7 +269,7 @@ $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
     if ($down_payment_percentage_posted !== null && (!is_numeric($down_payment_percentage_posted) || $down_payment_percentage_posted < 0 || $down_payment_percentage_posted > 100)) {
         $errors['down_payment_percentage'] = t('invalid_down_payment_percentage');
     }
-    if ($payment_years_posted !== null && !filter_var($payment_years_posted, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]])) {
+    if ($payment_years_posted !== null && (!is_numeric($payment_years_posted) || $payment_years_posted < 0.5)) {
         $errors['payment_years'] = t('invalid_payment_years');
     }
     // Price validation removed - columns no longer exist
@@ -323,7 +325,8 @@ $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
             // temporary debug logging removed
 
             $stmt_update->bind_param(
-                "isssdssiddissdddsssissssssddddddsssddi",
+                // types: ensure payment_years is 'd' (double) and counts match the 38 parameters
+                "isssdssidddssdddsssissssisddddddsssddi",
                 $property_type_id_posted,
                 $title_posted,
                 $description_posted,
@@ -370,6 +373,12 @@ $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
             // Log normalized seller_type right before executing the UPDATE so we can verify what is being written
             error_log("DEBUG edit_property BEFORE EXECUTE: normalized_seller_type=" . var_export($seller_type_posted, true));
             if ($stmt_update->execute()) {
+                // Use the project's flash helper so view_property.php (which reads get_flash_messages())
+                // can show the success message immediately after redirect. Also set the legacy
+                // session key for backward compatibility with other pages.
+                if (function_exists('add_flash')) {
+                    add_flash(t('property_updated_success'), 5);
+                }
                 $_SESSION["success_message"] = t('property_updated_success');
                 // Move any temporary uploads (from unified uploader during edit) into this property
                 if (function_exists('moveTempUploadsToProperty')) {
@@ -595,6 +604,10 @@ $conn->close();
         if (isset($_SESSION['success_message'])) {
             echo "<div class='alert alert-success'>" . $_SESSION['success_message'] . "</div>";
             unset($_SESSION['success_message']);
+        } else {
+            require_once __DIR__ . '/flash.php';
+            $fs = get_flash_messages();
+            if (!empty($fs)) { echo "<div class='alert alert-success'>" . htmlspecialchars(reset($fs)) . "</div>"; }
         }
         if (isset($_SESSION['error_message'])) {
             echo "<div class='alert alert-danger'>" . $_SESSION['error_message'] . "</div>";
@@ -875,7 +888,7 @@ $conn->close();
                     </div>
                     <div class="form-group">
                         <label for="payment_years"><?php echo t('payment_years'); ?>:</label>
-                        <input type="number" id="payment_years" name="payment_years" class="form-input" value="<?php echo htmlspecialchars($payment_years); ?>">
+                        <input type="number" id="payment_years" name="payment_years" class="form-input" step="0.1" min="0.5" value="<?php echo number_format((float)$payment_years, 2, '.', ''); ?>" placeholder="مثال: 1.5 للسنة والنصف">
                         <?php if (isset($errors['payment_years'])) {
                             echo "<span class='error-message'>" . $errors['payment_years'] . "</span>";
                         } ?>

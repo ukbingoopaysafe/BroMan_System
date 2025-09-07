@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 06, 2025 at 01:05 AM
+-- Generation Time: Sep 07, 2025 at 01:16 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -67,7 +67,7 @@ CREATE TABLE `properties` (
   `finishing_type_id` int(11) DEFAULT NULL COMMENT 'FK to PropertyFinishingTypes',
   `compound_area` decimal(12,2) DEFAULT NULL,
   `down_payment_percentage` decimal(5,2) DEFAULT NULL,
-  `payment_years` int(11) DEFAULT NULL,
+  `payment_years` decimal(5,2) NOT NULL,
   `delivery_date` date DEFAULT NULL,
   `ProjectName` varchar(255) DEFAULT NULL,
   `min_area` decimal(10,2) DEFAULT NULL,
@@ -101,41 +101,19 @@ CREATE TABLE `properties` (
 --
 
 INSERT INTO `properties` (`PropertyID`, `PropertyTypeID`, `Title`, `Description`, `Location`, `Area`, `Bedrooms`, `Status`, `listing_type`, `DateAdded`, `EmployeeID`, `unit_design`, `finishing_type_id`, `compound_area`, `down_payment_percentage`, `payment_years`, `delivery_date`, `ProjectName`, `min_area`, `max_area`, `avg_area`, `district`, `governorate`, `company_name`, `FloorsCount`, `year_built`, `unit_floor`, `net_area`, `loading_percentage`, `price_cash`, `price_installments`, `meter_price_cash`, `meter_price_installments`, `seller_type`, `seller_name`, `seller_phone`, `sales_manager_name`, `sales_manager_phone`, `salesperson_name`, `salesperson_phone`, `latitude`, `longitude`) VALUES
-(1, 1, 'شقة فاخرة بإطلالة مميزة', 'شقة 3 غرف نوم مع تشطيب كامل وإطلالة على الحديقة المركزية', 'التجمع الخامس, القاهرة الجديدة', 180.00, 3, 'available', 'Primary', '2025-08-24 13:10:44', 1, 'استوديو', 3, 50000.00, 10.00, 7, '2025-12-31', 'كمبوند ماونتن فيو', 160.00, 200.00, 180.00, 'التجمع الخامس', 'القاهرة', 'إعمار مصر', 5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'أحمد محمود', '01012345678', 'سارة أحمد', '01087654321', NULL, NULL),
-(2, 1, 'فيلا مستقلة بحديقة خاصة', 'فيلا 5 غرف نوم مع حديقة خاصة وحمام سباحة', 'الشيخ زايد, الجيزة', 450.00, 5, 'available', 'Primary', '2025-08-24 13:10:44', 1, 'غرفة', 3, 100000.00, 15.00, 10, '2026-06-30', 'زايد ديونز', 400.00, 500.00, 450.00, 'الشيخ زايد', 'الجيزة', 'سوديك', 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'محمد علي', '01023456789', 'فاطمة حسن', '01076543210', NULL, NULL),
-(3, 1, 'دوبلكس أنيق في كمبوند راقي', 'دوبلكس 4 غرف نوم مع تشطيب فاخر', 'مدينة نصر, القاهرة', 280.00, 4, 'available', 'Primary', '2025-08-24 13:10:44', 2, 'غرفتين', 3, 75000.00, 12.00, 8, '2025-09-15', 'جرين هيلز', 250.00, 300.00, 280.00, 'مدينة نصر', 'القاهرة', 'مجموعة طلعت مصطفى', 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'علي محمد', '01034567890', 'نورا سعيد', '01065432109', NULL, NULL),
-(4, 1, 'شقة مميزة في برج سكني', 'شقة 2 غرف نوم مع إطلالة على النيل', 'المعادي, القاهرة', 120.00, 2, 'sold', 'Primary', '2025-08-24 13:10:44', 1, 'استوديو', 2, NULL, 20.00, 5, '2024-08-01', 'ريفر فيو تاورز', 110.00, 130.00, 120.00, 'المعادي', 'القاهرة', 'إعمار مصر', 12, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'كريم أحمد', '01045678901', 'ليلى محمود', '01054321098', NULL, NULL),
-(5, 1, 'فيلا كلاسيكية في ضاحية هادئة', 'فيلا 6 غرف نوم مع حديقة واسعة', '6 أكتوبر, الجيزة', 550.00, 6, 'available', 'Resale', '2025-08-24 13:10:44', 2, 'غرفة', 5, 120000.00, 5.00, 18, NULL, 'أكتوبر بارك', NULL, NULL, NULL, '6 أكتوبر', 'الجيزة', 'سوديك', 2, NULL, '', NULL, NULL, 5555.00, 6666.00, 55.00, 66.00, 'بواب', 'محمد', '778778', 'حسن علي', '01056789012', 'رانيا أحمد', '01043210987', 30.04872352, 31.24969351),
-(6, 2, 'شاليه يرى البحر مباشرة', 'شاليه 2 غرف نوم مع إطلالة مباشرة على البحر', 'الغردقة, البحر الأحمر', 120.00, 2, 'available', 'Primary', '2025-08-24 13:10:44', 1, '3 غرف', 3, NULL, 20.00, 5, '2024-08-01', 'بورتو السخنة', 110.00, 130.00, 120.00, 'الغردقة', 'البحر الأحمر', 'مجموعة طلعت مصطفى', 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'أحمد سعيد', '01067890123', 'سلمى محمد', '01032109876', NULL, NULL),
-(7, 2, 'فيلا ساحلية فاخرة', 'فيلا 4 غرف نوم مع شاطئ خاص', 'مرسى علم, البحر الأحمر', 300.00, 4, 'available', 'Primary', '2025-08-24 13:10:44', 2, 'غرفة', 3, 80000.00, 25.00, 7, '2025-03-15', 'مرسى علم ريزورت', 280.00, 320.00, 300.00, 'مرسى علم', 'البحر الأحمر', 'إعمار مصر', 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'محمد كريم', '01078901234', 'نادية علي', '01021098765', NULL, NULL),
-(8, 2, 'شقة استوديو في منتجع سياحي', 'استوديو أنيق مع إطلالة على البحر', 'شرم الشيخ, جنوب سيناء', 65.00, 1, 'rented', 'Resale', '2025-08-24 13:10:44', 1, 'استوديو', 2, NULL, NULL, NULL, NULL, 'شرم الشيخ ريزورت', NULL, NULL, NULL, 'شرم الشيخ', 'جنوب سيناء', 'سوديك', 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'كريم حسن', '01089012345', 'هبة أحمد', '01010987654', NULL, NULL),
-(9, 2, 'فيلا عائلية على البحر', 'فيلا 5 غرف نوم مع حديقة وبركة سباحة', 'العين السخنة, السويس', 220.00, 5, 'available', 'Primary', '2025-08-24 13:10:44', 2, 'غرفتين', 3, 60000.00, 15.00, 8, '2025-05-20', 'العين السخنة بارك', 200.00, 240.00, 220.00, 'العين السخنة', 'السويس', 'مجموعة طلعت مصطفى', 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'علي سعيد', '01090123456', 'مريم محمد', '01009876543', NULL, NULL),
-(10, 4, 'محل تجاري بموقع متميز', 'محل تجاري بموقع استراتيجي في مول شهير', 'مول العرب, 6 أكتوبر', 80.00, NULL, 'available', 'Primary', '2025-08-24 13:10:44', 1, NULL, 1, NULL, 25.00, 5, NULL, 'مول العرب', NULL, NULL, 80.00, 'الحي المتميز', 'الجيزة', 'مجموعة الفطيم', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'أحمد علي', '01001234567', 'فاطمة كريم', '01098765432', NULL, NULL),
-(11, 4, 'مكتب إداري متشطب بالكامل', 'مكتب إداري متشطب بالتكييفات في برج متميز', 'الحي المالي, العاصمة الإدارية', 95.00, NULL, 'available', 'Primary', '2025-08-24 13:10:44', 2, 'استوديو', 3, NULL, 10.00, 8, '2025-01-15', 'برج الأعمال', 90.00, 100.00, 95.00, 'الحي المالي', 'القاهرة', 'شركة العاصمة', 15, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'محمد أحمد', '01012345678', 'سارة علي', '01087654321', NULL, NULL),
-(12, 4, 'مستودع صناعي مجهز', 'مستودع صناعي مجهز بالكامل مع رافعة', 'مدينة بدر, القاهرة', 500.00, NULL, 'sold', 'Resale', '2025-08-24 13:10:44', 1, NULL, 2, NULL, NULL, NULL, NULL, 'مدينة بدر الصناعية', NULL, NULL, NULL, 'مدينة بدر', 'القاهرة', 'سوديك', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'كريم محمد', '01023456789', 'ليلى أحمد', '01076543210', NULL, NULL),
-(13, 4, 'عيادة طبية مجهزة', 'عيادة طبية مجهزة بالكامل في مركز طبي شهير', 'شارع الطيران, مدينة نصر', 70.00, NULL, 'rented', 'Primary', '2025-08-24 13:10:44', 2, 'غرفتين', 3, NULL, NULL, NULL, NULL, 'المركز الطبي الدولي', NULL, NULL, NULL, 'مدينة نصر شرق', 'القاهرة', 'إعمار مصر', 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'علي كريم', '01034567890', 'نورا محمد', '01065432109', NULL, NULL),
-(14, 3, 'مكتب محاماة فاخر', 'مكتب محاماة متشطب بالكامل مع قاعة اجتماعات', 'وسط البلد, القاهرة', 120.00, NULL, 'available', 'Primary', '2025-08-24 13:10:44', 1, 'استوديو', 3, NULL, 15.00, 6, '2025-02-28', 'برج المحامين', 100.00, 140.00, 120.00, 'وسط البلد', 'القاهرة', 'مجموعة طلعت مصطفى', 12, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'أحمد علي', '01045678901', 'سلمى كريم', '01054321098', NULL, NULL),
-(15, 3, 'مكتب استشارات هندسية', 'مكتب استشارات هندسية مع معمل مجهز', 'المعادي, القاهرة', 85.00, NULL, 'available', 'Resale', '2025-08-24 13:10:44', 2, 'غرفة', 2, NULL, NULL, NULL, NULL, 'برج المهندسين', NULL, NULL, NULL, 'المعادي', 'القاهرة', 'سوديك', 10, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'محمد أحمد', '01056789012', 'رانيا علي', '01043210987', NULL, NULL),
-(16, 3, 'مكتب شركة تأمين', 'مكتب شركة تأمين متشطب بالكامل', 'مدينة نصر, القاهرة', 75.00, NULL, 'sold', 'Primary', '2025-08-24 13:10:44', 1, 'استوديو', 3, NULL, 12.00, 7, '2024-11-30', 'برج التأمين', 70.00, 80.00, 75.00, 'مدينة نصر', 'القاهرة', 'إعمار مصر', 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'كريم محمد', '01067890123', 'هبة أحمد', '01032109876', NULL, NULL),
-(17, 6, 'عيادة أسنان متخصصة', 'عيادة أسنان مجهزة بأحدث الأجهزة', 'المعادي, القاهرة', 90.00, NULL, 'available', 'Primary', '2025-08-24 13:10:44', 2, 'غرفتين', 3, NULL, 20.00, 5, '2025-04-15', 'مركز طب الأسنان', 85.00, 95.00, 90.00, 'المعادي', 'القاهرة', 'مجموعة طلعت مصطفى', 6, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'علي أحمد', '01078901234', 'مريم محمد', '01021098765', NULL, NULL),
-(18, 6, 'مختبر تحاليل طبية', 'مختبر تحاليل طبية مجهز بالكامل', 'مدينة نصر, القاهرة', 65.00, NULL, 'available', 'Resale', '2025-08-24 13:10:44', 1, 'غرفة', 2, NULL, NULL, NULL, NULL, 'مختبرات المدينة الطبية', NULL, NULL, NULL, 'مدينة نصر', 'القاهرة', 'سوديك', 4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'أحمد علي', '01089012345', 'نادية كريم', '01010987654', NULL, NULL),
-(19, 6, 'صيدلية حديثة', 'صيدلية حديثة مع مخزن مجهز', 'التجمع الخامس, القاهرة', 45.00, NULL, 'rented', 'Primary', '2025-08-24 13:10:44', 2, 'استوديو', 3, NULL, 15.00, 6, '2025-01-10', 'صيدليات التجمع', 40.00, 50.00, 45.00, 'التجمع الخامس', 'القاهرة', 'إعمار مصر', 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'محمد كريم', '01090123456', 'سارة أحمد', '01009876543', NULL, NULL),
-(20, 5, 'جناح فندقي فاخر', 'جناح فندقي فاخر مع إطلالة على النيل', 'وسط البلد, القاهرة', 150.00, NULL, 'available', 'Primary', '2025-08-24 13:10:44', 1, '3 غرف', 3, NULL, 30.00, 4, '2025-06-01', 'جراند أوتيل القاهرة', 140.00, 160.00, 150.00, 'وسط البلد', 'القاهرة', 'مجموعة طلعت مصطفى', 25, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'كريم علي', '01001234567', 'ليلى محمد', '01098765432', NULL, NULL),
-(21, 5, 'شقة فندقية مميزة', 'شقة فندقية مع خدمات فاخرة', 'المعادي, القاهرة', 110.00, NULL, 'sold', 'Resale', '2025-08-24 13:10:44', 2, 'غرفة', 2, NULL, NULL, NULL, NULL, 'ريزيدنس المعادي', NULL, NULL, NULL, 'المعادي', 'القاهرة', 'سوديك', 15, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'علي أحمد', '01012345678', 'رانيا كريم', '01087654321', NULL, NULL),
-(22, 5, 'جناح تنفيذي في فندق 5 نجوم', 'جناح تنفيذي مع إطلالة على الأهرامات', 'الجيزة, الجيزة', 180.00, NULL, 'available', 'Primary', '2025-08-24 13:10:44', 1, 'غرفتين', 3, NULL, 25.00, 5, '2025-03-20', 'فندق الأهرامات', 170.00, 190.00, 180.00, 'الجيزة', 'الجيزة', 'إعمار مصر', 20, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'أحمد محمد', '01023456789', 'نورا علي', '01076543210', NULL, NULL),
-(23, 1, 'شقة عائلية في كمبوند آمن', 'شقة 4 غرف نوم مع تشطيب كامل', 'مدينة الرحاب, القاهرة', 200.00, 4, 'available', 'Primary', '2025-08-24 13:10:44', 2, 'استوديو', 3, 60000.00, 12.00, 8, '2025-08-15', 'كمبوند الرحاب', 180.00, 220.00, 200.00, 'مدينة الرحاب', 'القاهرة', 'سوديك', 4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'محمد علي', '01034567890', 'فاطمة أحمد', '01065432109', NULL, NULL),
-(24, 1, 'فيلا كلاسيكية في ضاحية راقية', 'فيلا 5 غرف نوم مع حديقة إنجليزية', 'المعادي, القاهرة', 400.00, 5, 'rented', 'Resale', '2025-08-24 13:10:44', 1, 'غرفة', 1, 90000.00, NULL, NULL, NULL, 'المعادي جاردنز', NULL, NULL, NULL, 'المعادي', 'القاهرة', 'مجموعة طلعت مصطفى', 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'كريم محمد', '01045678901', 'سلمى علي', '01054321098', NULL, NULL),
-(25, 1, 'شقة مميزة في برج سكني فاخر', 'شقة 3 غرف نوم مع إطلالة على النيل', 'زمالك, القاهرة', 160.00, 3, 'available', 'Primary', '2025-08-24 13:10:44', 2, 'استوديو', 3, NULL, 15.00, 7, '2025-05-10', 'زمالك تاورز', 150.00, 170.00, 160.00, 'زمالك', 'القاهرة', 'إعمار مصر', 18, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'علي كريم', '01056789012', 'مريم أحمد', '01043210987', NULL, NULL),
-(26, 1, 'دوبلكس فاخر في كمبوند مغلق', 'دوبلكس 6 غرف نوم مع تشطيب فاخر', 'التجمع الأول, القاهرة', 350.00, 6, 'sold', 'Primary', '2025-08-24 13:10:44', 1, 'غرفتين', 3, 80000.00, 18.00, 9, '2024-12-20', 'كمبوند التجمع الأول', 330.00, 370.00, 350.00, 'التجمع الأول', 'القاهرة', 'سوديك', 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'أحمد علي', '01067890123', 'رانيا محمد', '01032109876', NULL, NULL),
-(27, 1, 'شقة أنيقة في حي سكني هادئ', 'شقة 2 غرف نوم مع تشطيب كامل', 'مدينة نصر, القاهرة', 100.00, 2, 'available', 'Resale', '2025-08-24 13:10:44', 2, 'استوديو', 2, NULL, NULL, NULL, NULL, 'مدينة نصر بارك', NULL, NULL, NULL, 'مدينة نصر', 'القاهرة', 'مجموعة طلعت مصطفى', 6, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'محمد أحمد', '01078901234', 'هبة علي', '01021098765', NULL, NULL),
-(28, 1, 'فيلا مستقلة في ضاحية خضراء', 'فيلا 4 غرف نوم مع حديقة خاصة', '6 أكتوبر, الجيزة', 280.00, 4, 'available', 'Primary', '2025-08-24 13:10:44', 1, 'غرفة', 3, 70000.00, 14.00, 8, '2025-07-01', 'أكتوبر جاردنز', 260.00, 300.00, 280.00, '6 أكتوبر', 'الجيزة', 'إعمار مصر', 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'كريم محمد', '01089012345', 'نورا أحمد', '01010987654', NULL, NULL),
-(29, 1, 'شقة فاخرة في برج سكني مميز', 'شقة 3 غرف نوم مع إطلالة على المدينة', 'مدينة نصر, القاهرة', 140.00, 3, 'available', 'Primary', '2025-08-24 13:10:44', 2, 'استوديو', 3, NULL, 16.00, 6, '2025-04-05', 'مدينة نصر تاورز', 130.00, 150.00, 140.00, 'مدينة نصر', 'القاهرة', 'سوديك', 12, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'علي كريم', '01090123456', 'سارة محمد', '01009876543', NULL, NULL),
-(30, 1, 'فيلا كلاسيكية في حي راقي', 'فيلا 5 غرف نوم مع حديقة إنجليزية', 'المعادي, القاهرة', 450.00, 5, 'rented', 'Resale', '2025-08-24 13:10:44', 1, 'غرفة', 1, 100000.00, NULL, NULL, NULL, 'المعادي كلاسيك', NULL, NULL, NULL, 'المعادي', 'القاهرة', 'مجموعة طلعت مصطفى', 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'أحمد علي', '01001234567', 'ليلى كريم', '01098765432', NULL, NULL),
-(34, 1, 'alskal', '', '', 200.00, NULL, 'available', 'Resale', '2025-09-05 16:18:23', 3, 'ففغفغفغ 67676', 4, NULL, 5.00, 18, NULL, '', NULL, NULL, NULL, 'مدينة نصر شرق', 'ghhgh', '', 12, '2000', 'روف', 100.00, 50.00, 200.00, 300.00, 2.00, 3.00, NULL, 'vccv', '01029292929', '', '', '', '', 30.03387575, 31.23870266),
-(35, 1, 'kjhkj', '', '', 200.00, NULL, 'available', 'Resale', '2025-09-05 16:21:42', 3, 'ففغفغفغ 67676', 5, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, 'kjhj', 'ihihh', '', NULL, NULL, '', NULL, NULL, 22222.00, NULL, NULL, NULL, NULL, '', '', '', '', '', '', NULL, NULL),
-(36, 1, 'lijlilj', '', '', 2222.00, NULL, 'available', 'Resale', '2025-09-05 16:22:45', 3, 'uhuhkjhjk', 3, NULL, 4.00, 44, NULL, '', NULL, NULL, NULL, 'kjhkjh', 'lkjlkkl', '', NULL, '0000', 'روف', 60.00, 22.00, 22222.00, 3234.00, 34.00, 3434.00, NULL, 'محمد', '778778', '', '', '', '', NULL, NULL),
-(37, 1, 'عغنان', '', '', 233.00, NULL, 'available', 'Resale', '2025-09-05 21:23:22', 3, 'ففغفغفغ 67676', 7, NULL, 33.00, 33, NULL, '', NULL, NULL, NULL, 'غنغن', 'غعنعغن', '', 6, '1907', 'الدور 12', 333.00, 33.00, 2333333.00, 33333333.00, 33.00, 33.00, 'شركة تشطيب', 'vccv', '33333', '', '', '', '', 30.02674803, 31.26617978),
-(38, 1, 'اتتللتل', '', '', 777.00, NULL, 'available', 'Resale', '2025-09-05 22:59:42', 3, 'استوديو', 6, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, 'لتلت', 'لتالال', '', NULL, '1972', 'روف', 77.00, 7.00, 777777.00, 7777777.00, NULL, NULL, NULL, '', '', '', '', '', '', NULL, NULL);
+(69, 1, 'شقة 3 غرف في مصر الجديدة', 'شقة واسعة بالبرج الرابع قريب من الخدمات والمدارس.', 'شارع عثمان بن عفان، مصر الجديدة', 120.00, NULL, 'available', 'Resale', '2025-09-06 12:38:11', 1, 'Classic', 1, NULL, NULL, 0.00, NULL, 'مبنى الحرية', NULL, NULL, NULL, 'مصر الجديدة', 'القاهرة', NULL, 10, '2010', '4', 118.00, NULL, 2500000.00, NULL, 20833.33, NULL, 'مالك', 'محمود علي', '01001234567', NULL, NULL, NULL, NULL, 30.06263000, 31.31248000),
+(70, 2, 'فيلا على البحر في الساحل الشمالي', 'فيلا فاخرة على البحر بإطلالة مباشرة ومسبح خاص.', 'الساحل الشمالي - كورنيش البحر', 450.00, NULL, 'available', 'Primary', '2025-09-06 12:38:11', 1, 'Modern', 2, 1000.00, 10.00, 5.00, NULL, 'لازوردي', NULL, NULL, NULL, 'الساحل الشمالي', 'الإسكندرية', 'شركة البحر الأزرق', 2, '2023', NULL, 440.00, 5.00, 18000000.00, 20000000.00, 40000.00, 45454.54, 'شركة مطورة', 'شركة البحر الأزرق', '01209990000', 'مريم', '01205551234', 'أحمد', '01119998877', 31.20010000, 29.91870000),
+(71, 3, 'محل تجاري في مول بالقاهرة الجديدة', 'محل واجهة رئيسية في مول تجاري، مناسب للمتاجر والمطاعم.', 'القاهرة الجديدة - التسعين', 60.00, NULL, 'available', 'Resale', '2025-09-06 12:38:11', 1, 'Retail', 1, NULL, NULL, 0.00, NULL, NULL, NULL, NULL, NULL, 'التسعين', 'القاهرة', NULL, 1, '2015', 'Ground', 60.00, NULL, 1200000.00, NULL, 20000.00, NULL, 'وسيط', 'شركة تسويق', '01002223344', NULL, NULL, NULL, NULL, 30.04440000, 31.23570000),
+(72, 4, 'مبنى إداري للإيجار بالعاصمة الإدارية', 'مكاتب حديثة بمساحات مرنة في منطقة الأعمال بالعاصمة الإدارية.', 'العاصمة الإدارية - المنطقة المالية', 300.00, NULL, 'available', 'Primary', '2025-09-06 12:38:11', 1, 'Office Suite', 2, NULL, NULL, 0.00, NULL, NULL, NULL, NULL, NULL, 'المنطقة المالية', 'القاهرة', NULL, 8, '2020', NULL, 300.00, NULL, 12000000.00, NULL, 40000.00, NULL, 'مالك', 'مطور محلي', '01005556677', NULL, NULL, NULL, NULL, 30.01310000, 31.21060000),
+(73, 5, 'عيادة طبية للبيع في المهندسين', 'عيادة مجهزة بالقرب من المستشفيات ومراكز التشخيص.', 'المهندسين - شارع السودان', 80.00, NULL, 'available', 'Resale', '2025-09-06 12:38:11', 1, 'Clinic', 1, NULL, NULL, 0.00, NULL, NULL, NULL, NULL, NULL, 'المهندسين', 'القاهرة', NULL, 1, '2005', '2', 78.00, NULL, 2200000.00, NULL, 27500.00, NULL, 'وكيل', 'مكتب العقار', '01112223344', NULL, NULL, NULL, NULL, 30.04420000, 31.22330000),
+(74, 1, 'شقة 3 غرف في مصر الجديدة', 'شقة واسعة بالبرج الرابع قريب من الخدمات والمدارس.', 'شارع عثمان بن عفان، مصر الجديدة', 120.00, NULL, 'available', 'Resale', '2025-09-06 12:38:32', 1, 'Classic', 1, NULL, NULL, 0.00, NULL, 'مبنى الحرية', NULL, NULL, NULL, 'مصر الجديدة', 'القاهرة', NULL, 10, '2010', '4', 118.00, NULL, 2500000.00, NULL, 20833.33, NULL, 'مالك', 'محمود علي', '01001234567', NULL, NULL, NULL, NULL, 30.06263000, 31.31248000),
+(75, 2, 'فيلا على البحر في الساحل الشمالي', 'فيلا فاخرة على البحر بإطلالة مباشرة ومسبح خاص.', 'الساحل الشمالي - كورنيش البحر', 450.00, NULL, 'available', 'Primary', '2025-09-06 12:38:32', 1, 'Modern', 2, 1000.00, 10.00, 5.00, NULL, 'لازوردي', NULL, NULL, NULL, 'الساحل الشمالي', 'الإسكندرية', 'شركة البحر الأزرق', 2, '2023', NULL, 440.00, 5.00, 18000000.00, 20000000.00, 40000.00, 45454.54, 'شركة مطورة', 'شركة البحر الأزرق', '01209990000', 'مريم', '01205551234', 'أحمد', '01119998877', 31.20010000, 29.91870000),
+(76, 3, 'محل تجاري في مول بالقاهرة الجديدة', 'محل واجهة رئيسية في مول تجاري، مناسب للمتاجر والمطاعم.', 'القاهرة الجديدة - التسعين', 60.00, NULL, 'available', 'Resale', '2025-09-06 12:38:32', 1, 'Retail', 1, NULL, NULL, 0.00, NULL, NULL, NULL, NULL, NULL, 'التسعين', 'القاهرة', NULL, 1, '2015', 'Ground', 60.00, NULL, 1200000.00, NULL, 20000.00, NULL, 'وسيط', 'شركة تسويق', '01002223344', NULL, NULL, NULL, NULL, 30.04440000, 31.23570000),
+(78, 5, 'عيادة طبية للبيع في المهندسين', 'عيادة مجهزة بالقرب من المستشفيات ومراكز التشخيص.', 'المهندسين - شارع السودان', 80.00, NULL, 'available', 'Resale', '2025-09-06 12:38:33', 1, 'Clinic', 1, NULL, NULL, 0.00, NULL, NULL, NULL, NULL, NULL, 'المهندسين', 'القاهرة', NULL, 1, '2005', '2', 78.00, NULL, 2200000.00, NULL, 27500.00, NULL, 'وكيل', 'مكتب العقار', '01112223344', NULL, NULL, NULL, NULL, 30.04420000, 31.22330000),
+(98, 4, '', '', '', NULL, NULL, 'available', 'Primary', '2025-09-06 16:44:59', 3, '', NULL, NULL, NULL, 0.00, NULL, '', NULL, NULL, NULL, 'مدينة نصر شرق', 'ghhgh', '', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', '', '', '', '', '', NULL, NULL),
+(99, 4, '', '', '', NULL, NULL, 'available', 'Primary', '2025-09-06 16:46:09', 3, '', NULL, NULL, NULL, 0.00, NULL, '', NULL, NULL, NULL, 'ghhghg', 'cddc', '', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', '', '', '', '', '', NULL, NULL),
+(100, 4, '', '', '', NULL, NULL, 'available', 'Primary', '2025-09-06 17:05:18', 3, '', NULL, NULL, NULL, 0.00, NULL, '', NULL, NULL, NULL, '6 أكتوبر', 'ghhgh', '', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', '', '', '', '', '', NULL, NULL),
+(102, 1, 'شقة فاخرة في فيصل', 'شقة فاخرة في فيصل', 'العشريني', 200.00, NULL, 'available', 'Resale', '2025-09-07 09:05:04', 1, '3 غرف + 2 حمام', 5, NULL, 15.00, 5.00, '2025-10-01', '', NULL, NULL, NULL, 'فيصل', 'الجيزة', '', 20, '2020', 'الدور 12', 180.00, 90.00, 5000000.00, 6000000.00, 50000.00, 60000.00, 'وسيط', 'محمد علي', '01029292929', '', '', '', '', 29.98028874, 31.20997766);
 
 -- --------------------------------------------------------
 
@@ -201,6 +179,22 @@ CREATE TABLE `property_audio_notes` (
   `duration` int(11) DEFAULT NULL COMMENT 'Duration in seconds'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data for table `property_audio_notes`
+--
+
+INSERT INTO `property_audio_notes` (`note_id`, `property_id`, `file_path`, `upload_date`, `duration`) VALUES
+(27, 69, 'uploads/audio/property_69_placeholder.mp3', '2025-09-06 12:38:11', NULL),
+(28, 70, 'uploads/audio/property_70_placeholder.mp3', '2025-09-06 12:38:11', NULL),
+(29, 71, 'uploads/audio/property_71_placeholder.mp3', '2025-09-06 12:38:11', NULL),
+(30, 72, 'uploads/audio/property_72_placeholder.mp3', '2025-09-06 12:38:11', NULL),
+(31, 73, 'uploads/audio/property_73_placeholder.mp3', '2025-09-06 12:38:11', NULL),
+(32, 74, 'uploads/audio/property_74_placeholder.mp3', '2025-09-06 12:38:32', NULL),
+(33, 75, 'uploads/audio/property_75_placeholder.mp3', '2025-09-06 12:38:32', NULL),
+(34, 76, 'uploads/audio/property_76_placeholder.mp3', '2025-09-06 12:38:32', NULL),
+(36, 78, 'uploads/audio/property_78_placeholder.mp3', '2025-09-06 12:38:33', NULL),
+(38, 102, 'uploads/audio/property_102_audio_41865cb8c8e6dd14.ogg', '2025-09-07 09:05:05', NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -220,12 +214,17 @@ CREATE TABLE `property_images` (
 --
 
 INSERT INTO `property_images` (`image_id`, `property_id`, `file_path`, `upload_date`, `is_primary`) VALUES
-(1, 1, 'uploads/images/property_1_68ab10b12bece.jpg', '2025-08-24 13:16:33', 1),
-(2, 2, 'uploads/images/property_2_68ab10fd42489.jpg', '2025-08-24 13:17:49', 1),
-(3, 3, 'uploads/images/property_3_68ab113586ba9.webp', '2025-08-24 13:18:45', 1),
-(4, 18, 'uploads/images/property_18_68ab1171c22f6.jpg', '2025-08-24 13:19:45', 1),
-(5, 1, 'uploads/images/property_1_68ab13289e6a5.webp', '2025-08-24 13:27:04', 0),
-(7, 5, 'uploads/images/property_5_68bb6ac391764.webp', '2025-09-05 22:57:07', 1);
+(41, 69, 'uploads/images/property_69_placeholder.jpg', '2025-09-06 12:38:11', 1),
+(42, 70, 'uploads/images/property_70_placeholder.jpg', '2025-09-06 12:38:11', 1),
+(43, 71, 'uploads/images/property_71_placeholder.jpg', '2025-09-06 12:38:11', 1),
+(44, 72, 'uploads/images/property_72_placeholder.jpg', '2025-09-06 12:38:11', 1),
+(45, 73, 'uploads/images/property_73_placeholder.jpg', '2025-09-06 12:38:11', 1),
+(46, 74, 'uploads/images/property_74_placeholder.jpg', '2025-09-06 12:38:32', 1),
+(47, 75, 'uploads/images/property_75_placeholder.jpg', '2025-09-06 12:38:32', 1),
+(48, 76, 'uploads/images/property_76_placeholder.jpg', '2025-09-06 12:38:32', 1),
+(50, 78, 'uploads/images/property_78_placeholder.jpg', '2025-09-06 12:38:33', 1),
+(52, 102, 'uploads/images/property_102_f3f2d90a97a3da4b.jpg', '2025-09-07 09:05:05', 1),
+(53, 102, 'uploads/images/property_102_953cf8f2a4b18022.jpg', '2025-09-07 09:05:05', 0);
 
 -- --------------------------------------------------------
 
@@ -242,6 +241,22 @@ CREATE TABLE `property_videos` (
   `UploadDate` timestamp NOT NULL DEFAULT current_timestamp(),
   `EmployeeID` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `property_videos`
+--
+
+INSERT INTO `property_videos` (`VideoID`, `PropertyID`, `VideoPath`, `VideoName`, `VideoSize`, `UploadDate`, `EmployeeID`) VALUES
+(20, 69, 'uploads/videos/property_69_placeholder.mp4', 'property_69_placeholder.mp4', 11, '2025-09-06 12:38:11', 1),
+(21, 70, 'uploads/videos/property_70_placeholder.mp4', 'property_70_placeholder.mp4', 11, '2025-09-06 12:38:11', 1),
+(22, 71, 'uploads/videos/property_71_placeholder.mp4', 'property_71_placeholder.mp4', 11, '2025-09-06 12:38:11', 1),
+(23, 72, 'uploads/videos/property_72_placeholder.mp4', 'property_72_placeholder.mp4', 11, '2025-09-06 12:38:11', 1),
+(24, 73, 'uploads/videos/property_73_placeholder.mp4', 'property_73_placeholder.mp4', 11, '2025-09-06 12:38:11', 1),
+(25, 74, 'uploads/videos/property_74_placeholder.mp4', 'property_74_placeholder.mp4', 11, '2025-09-06 12:38:32', 1),
+(26, 75, 'uploads/videos/property_75_placeholder.mp4', 'property_75_placeholder.mp4', 11, '2025-09-06 12:38:32', 1),
+(27, 76, 'uploads/videos/property_76_placeholder.mp4', 'property_76_placeholder.mp4', 11, '2025-09-06 12:38:32', 1),
+(29, 78, 'uploads/videos/property_78_placeholder.mp4', 'property_78_placeholder.mp4', 11, '2025-09-06 12:38:33', 1),
+(31, 102, 'uploads/videos/property_102_video_e4d0329ce029f1b7.mp4', 'Zack Fox - dummy_2.mp4', 8240590, '2025-09-07 09:05:05', 1);
 
 --
 -- Indexes for dumped tables
@@ -313,7 +328,7 @@ ALTER TABLE `employees`
 -- AUTO_INCREMENT for table `properties`
 --
 ALTER TABLE `properties`
-  MODIFY `PropertyID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `PropertyID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=103;
 
 --
 -- AUTO_INCREMENT for table `propertyfinishingtypes`
@@ -331,19 +346,19 @@ ALTER TABLE `propertytypes`
 -- AUTO_INCREMENT for table `property_audio_notes`
 --
 ALTER TABLE `property_audio_notes`
-  MODIFY `note_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `note_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT for table `property_images`
 --
 ALTER TABLE `property_images`
-  MODIFY `image_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `image_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
 
 --
 -- AUTO_INCREMENT for table `property_videos`
 --
 ALTER TABLE `property_videos`
-  MODIFY `VideoID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `VideoID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- Constraints for dumped tables
