@@ -67,7 +67,7 @@ CREATE TABLE `properties` (
   `finishing_type_id` int(11) DEFAULT NULL COMMENT 'FK to PropertyFinishingTypes',
   `compound_area` decimal(12,2) DEFAULT NULL,
   `down_payment_percentage` decimal(5,2) DEFAULT NULL,
-  `payment_years` decimal(5,2) NOT NULL,
+  `payment_years` decimal(5,2) DEFAULT NULL,
   `delivery_date` date DEFAULT NULL,
   `ProjectName` varchar(255) DEFAULT NULL,
   `min_area` decimal(10,2) DEFAULT NULL,

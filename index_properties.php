@@ -281,7 +281,7 @@ function formatPaymentTerms($row)
     }
     
     if (!empty($row['payment_years']) && is_numeric($row['payment_years'])) {
-        $terms[] = number_format((float)$row['payment_years'], 1) . ' ' . t('years');
+        $terms[] = $row['payment_years'] . ' ' . t('years');
     }
     
     return !empty($terms) ? implode(' + ', $terms) : t('undefined');
@@ -350,14 +350,13 @@ function getPropertyTypeBadge($typeId, $typeName) {
 
 <div class="container">
     <?php
-    // Display success or error messages from session if they exist
-    if (isset($_SESSION["success_message"])) {
-        echo "<div class='message message-success'>" . htmlspecialchars($_SESSION["success_message"]) . "</div>";
-        unset($_SESSION["success_message"]);
-    } else {
-        require_once __DIR__ . '/flash.php';
-        $fs = get_flash_messages();
-        if (!empty($fs)) { echo "<div class='message message-success'>" . htmlspecialchars(reset($fs)) . "</div>"; }
+    // Display success messages via the flash helper (preferred) and keep error_message behavior
+    require_once __DIR__ . '/flash.php';
+    $fs = get_flash_messages();
+    if (!empty($fs)) {
+        $first_id = array_key_first($fs);
+        echo "<div class='message message-success'>" . htmlspecialchars($fs[$first_id]) . "</div>";
+        if (function_exists('clear_flash')) { clear_flash($first_id); }
     }
     if (isset($_SESSION["error_message"])) {
         echo "<div class='message message-error'>" . htmlspecialchars($_SESSION["error_message"]) . "</div>";

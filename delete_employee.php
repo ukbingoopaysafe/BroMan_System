@@ -50,7 +50,8 @@ if (isset($_POST["id"]) && !empty(trim($_POST["id"]))) {
 
         if ($stmt->execute()) {
             if ($stmt->affected_rows > 0) {
-                $_SESSION["success_message"] = "Employee deleted successfully.";
+                require_once __DIR__ . '/flash.php';
+                if (function_exists('add_flash')) { add_flash("Employee deleted successfully.", 6); }
             } else {
                 $_SESSION["error_message"] = "Employee not found or already deleted.";
             }

@@ -92,7 +92,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $finishing_type_id = filter_input(INPUT_POST, 'finishing_type_id', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     // Price columns removed from schema
     $down_payment_percentage = filter_input(INPUT_POST, 'down_payment_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $payment_years = filter_input(INPUT_POST, 'payment_years', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    // Allow fractional years (e.g. 1.5). Use float validation and keep NULL when not provided
+    $payment_years = null;
+    if (isset($_POST['payment_years']) && trim($_POST['payment_years']) !== '') {
+        $payment_years = filter_var($_POST['payment_years'], FILTER_VALIDATE_FLOAT);
+    }
     $delivery_date_str = trim($_POST['delivery_date'] ?? '');
     $status = trim($_POST['status'] ?? 'available');
     $employee_id = $_SESSION['employee_id'] ?? null;
@@ -135,7 +139,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($stmt = $conn->prepare($sql)) {
         safe_bind_param(
             $stmt,
-            "isssdissisidddssdddsssississddddddsss",
+            "isssdissisiddissdddsssissssisddddddsss",
             $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $year_built, $unit_floor, $net_area, $loading_percentage, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $seller_type, $seller_name, $seller_phone
         );
 
@@ -266,12 +270,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 error_log('Moved temp uploads for session ' . session_id() . ': ' . json_encode($moved));
             }
 
-            // Use robust flash helper instead of direct session key
+            // Use robust flash helper and set legacy session key for compatibility (mirror edit behavior)
             require_once __DIR__ . '/flash.php';
-            add_flash(t('property_added_success'), 6);
+            if (function_exists('add_flash')) { add_flash(t('property_added_success'), 6); }
             // session is written before redirect
             session_write_close(); // Force session data to be saved now
-            header("Location: view_property.php?id=" . $new_property_id);
+            header("Location: view_property.php?id=" . $new_property_id . "&added=1");
             exit();
         } else {
             error_log("DB Error (add_coastal_property): " . $stmt->error);
@@ -578,7 +582,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
                 <div class="form-group">
                     <label for="payment_years"><?php echo t('payment_years'); ?>:</label>
-                    <input type="number" id="payment_years" name="payment_years" class="form-input" step="0.1" min="0" value="<?php echo htmlspecialchars($_POST['payment_years'] ?? ''); ?>">
+                    <input type="number" step="0.1" min="0.5" id="payment_years" name="payment_years" class="form-input" value="<?php echo isset($_POST['payment_years']) ? htmlspecialchars($_POST['payment_years']) : ''; ?>" placeholder="مثال: 1.5 للسنة والنصف">
                 </div>
                 <div class="form-group">
                     <label for="delivery_date"><?php echo t('delivery_date'); ?>:</label>

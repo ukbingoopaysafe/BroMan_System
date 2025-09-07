@@ -88,7 +88,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $param_role = $role;
             
             if ($stmt->execute()) {
-                $_SESSION["success_message"] = "Employee added successfully!";
+                require_once __DIR__ . '/flash.php';
+                if (function_exists('add_flash')) { add_flash("Employee added successfully!", 6); }
                 header("Location: employees_list.php"); // Redirect to employees list or dashboard
                 exit();
             } else {

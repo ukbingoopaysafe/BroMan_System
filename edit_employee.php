@@ -155,7 +155,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $param_employee_id_update = $employee_id;
             
             if ($stmt_update->execute()) {
-                $_SESSION["success_message"] = "Employee details updated successfully!";
+                require_once __DIR__ . '/flash.php';
+                if (function_exists('add_flash')) { add_flash("Employee details updated successfully!", 6); }
                 // If admin edited their own role and demoted themselves, log them out or redirect to login
                 if ($is_editing_self && $role === 'admin' && $role_posted === 'user') {
                     // Destroy session and redirect to login

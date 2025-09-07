@@ -1,5 +1,9 @@
 <?php
 session_start();
+// Debug: log session id and any flash messages or legacy success message at the start of the page load
+error_log("FLASH-DEBUG view_property ON LOAD session=" . session_id() . " name=" . session_name() . " save_path=" . session_save_path() . " flash=" . var_export(
+    		session_status() === PHP_SESSION_ACTIVE ? ($_SESSION['flash_messages'] ?? null) : null, true
+    ) . " legacy=" . var_export($_SESSION['success_message'] ?? null, true));
 require_once __DIR__ . 
 '/lang/translate.php'; // Include translation handler
 require_once 'session_check.php'; // Include session timeout check
@@ -432,6 +436,12 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
             $flash = htmlspecialchars((string)$_SESSION['success_message']);
             echo "<div id='flash-message' class='message message-success' role='status' aria-live='polite' tabindex='-1'>" . $flash . "</div>";
             unset($_SESSION['success_message']);
+        }
+        // If the add flow used an alternate mechanism (query param) show success message as a reliable fallback
+        elseif (isset($_GET['added']) && $_GET['added'] == '1') {
+            // Use the localized string if available
+            $flash = htmlspecialchars(t('property_added_success'));
+            echo "<div id='flash-message' class='message message-success' role='status' aria-live='polite' tabindex='-1'>" . $flash . "</div>";
         }
         ?>
         <div class="page-header">

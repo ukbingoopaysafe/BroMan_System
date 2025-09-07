@@ -379,7 +379,8 @@ $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
                 if (function_exists('add_flash')) {
                     add_flash(t('property_updated_success'), 5);
                 }
-                $_SESSION["success_message"] = t('property_updated_success');
+                require_once __DIR__ . '/flash.php';
+                if (function_exists('add_flash')) { add_flash(t('property_updated_success'), 6); }
                 // Move any temporary uploads (from unified uploader during edit) into this property
                 if (function_exists('moveTempUploadsToProperty')) {
                     $moved = moveTempUploadsToProperty($property_id, session_id(), $conn);
@@ -582,6 +583,72 @@ $conn->close();
         .media-messages {
             margin-bottom: 20px;
         }
+        /* Compact thumbnails for existing media in edit view */
+        .existing-media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            align-items: start;
+        }
+        .existing-media-item {
+            position: relative;
+            background: #fff;
+            border: 1px solid #e6e6e6;
+            border-radius: 6px;
+            overflow: hidden;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 90px;
+        }
+        .existing-media-item img,
+        .existing-media-item video,
+        .existing-media-item audio {
+            max-width: 100%;
+            max-height: 120px;
+            object-fit: cover;
+            display: block;
+            border-radius: 4px;
+        }
+        /* Overlay action bar */
+        .existing-media-actions {
+            position: absolute;
+            left: 6px;
+            right: 6px;
+            bottom: 6px;
+            display: flex;
+            gap: 6px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .existing-media-actions button, .existing-media-actions .badge {
+            font-size: 12px;
+            padding: 5px 8px;
+            opacity: 0.98;
+            border: none;
+            cursor: pointer;
+        }
+        .existing-media-actions .left-actions { display: flex; gap:6px; align-items:center; }
+        .existing-media-actions .right-actions { display: flex; gap:6px; align-items:center; }
+        .existing-media-item .badge-primary {
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 3px;
+            padding: 4px 6px;
+        }
+        .existing-media-item .set-primary-btn {
+            background: rgba(0,123,255,0.95);
+            color: #fff;
+            border-radius: 3px;
+        }
+        .existing-media-item .delete-media-btn {
+            background: rgba(220,53,69,0.95);
+            color: #fff;
+            border-radius: 3px;
+        }
+        /* On hover slightly raise the item */
+        .existing-media-item:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.06); transform: translateY(-2px); transition: all 120ms ease; }
     </style>
 </head>
 <body>
@@ -591,6 +658,74 @@ $conn->close();
         <h2><?php echo t('edit_property_title'); ?></h2>
 
         <div class="media-messages"></div>
+
+        <?php
+        // Show existing media for the property so the user can manage (delete / set primary)
+        $existing_images = [];
+        $existing_videos = [];
+        $existing_audio = [];
+        if (!empty($property_id) && intval($property_id) > 0) {
+            // media_functions.php is already required earlier
+            $existing_images = getPropertyImages($property_id, $conn);
+            $existing_videos = getPropertyVideos($property_id, $conn);
+            $existing_audio = getPropertyAudioNotes($property_id, $conn);
+        }
+        ?>
+
+        <?php if (!empty($existing_images) || !empty($existing_videos) || !empty($existing_audio)): ?>
+        <div class="form-section" id="existing-media-section">
+            <h3><?php echo t('current_media'); ?></h3>
+            <?php if (!empty($existing_images)): ?>
+                <div class="existing-media-grid" id="existingImages">
+                    <?php foreach ($existing_images as $img): ?>
+                        <div class="existing-media-item" data-id="<?php echo $img['image_id']; ?>">
+                            <img src="<?php echo htmlspecialchars($img['file_path']); ?>" alt="" loading="lazy" />
+                            <div class="existing-media-actions">
+                                <div>
+                                <?php if (!empty($img['is_primary'])): ?>
+                                    <span class="badge badge-primary"><?php echo t('main_image'); ?></span>
+                                <?php else: ?>
+                                    <button type="button" class="set-primary-btn" data-id="<?php echo $img['image_id']; ?>"><?php echo t('set_as_primary'); ?></button>
+                                <?php endif; ?>
+                                </div>
+                                <div>
+                                    <button type="button" class="delete-media-btn" data-id="<?php echo $img['image_id']; ?>" data-type="image"><?php echo t('delete'); ?></button>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if (!empty($existing_videos)): ?>
+                <h4><?php echo t('videos'); ?></h4>
+                <div class="existing-media-grid" id="existingVideos">
+                    <?php foreach ($existing_videos as $v): ?>
+                        <div class="existing-media-item" data-id="<?php echo $v['VideoID']; ?>">
+                            <video src="<?php echo htmlspecialchars($v['VideoPath']); ?>" controls></video>
+                            <div class="existing-media-actions">
+                                <button type="button" class="btn btn-sm btn-danger delete-media-btn" data-id="<?php echo $v['VideoID']; ?>" data-type="video"><?php echo t('delete'); ?></button>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if (!empty($existing_audio)): ?>
+                <h4><?php echo t('audio_notes'); ?></h4>
+                <div class="existing-media-grid" id="existingAudio">
+                    <?php foreach ($existing_audio as $a): ?>
+                        <div class="existing-media-item" data-id="<?php echo $a['note_id']; ?>">
+                            <audio src="<?php echo htmlspecialchars($a['file_path']); ?>" controls></audio>
+                            <div class="existing-media-actions">
+                                <button type="button" class="btn btn-sm btn-danger delete-media-btn" data-id="<?php echo $a['note_id']; ?>" data-type="audio"><?php echo t('delete'); ?></button>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
 
         <?php
         if (!empty($errors)) {
@@ -969,6 +1104,68 @@ $conn->close();
             </div>
         </form>
     </div>
+
+    <script>
+    (function(){
+        function postForm(url, fields) {
+            const fd = new FormData();
+            for (const k in fields) {
+                if (!Object.prototype.hasOwnProperty.call(fields, k)) continue;
+                fd.append(k, fields[k]);
+            }
+            return fetch(url, { method: 'POST', body: fd, credentials: 'same-origin' }).then(r => r.json());
+        }
+
+        document.addEventListener('click', function(e){
+            const target = e.target;
+            if (target.classList.contains('delete-media-btn')) {
+                const id = target.dataset.id;
+                const type = target.dataset.type || 'image';
+                if (!confirm('<?php echo t('confirm_delete_media'); ?>')) return;
+                // CSRF token from container
+                const container = document.querySelector('.container');
+                const csrf = container ? container.getAttribute('data-csrf-token') : '';
+                postForm('delete_media.php', { media_type: type, media_id: id, csrf_token: csrf })
+                    .then(res => {
+                        if (res.success) {
+                            const el = target.closest('.existing-media-item');
+                            if (el) el.remove();
+                        } else {
+                            alert(res.message || '<?php echo t('delete_failed'); ?>');
+                        }
+                    }).catch(err => alert(err.message || '<?php echo t('delete_failed'); ?>'));
+            } else if (target.classList.contains('set-primary-btn')) {
+                const id = target.dataset.id;
+                if (!confirm('<?php echo t('confirm_set_primary'); ?>')) return;
+                const container = document.querySelector('.container');
+                const csrf = container ? container.getAttribute('data-csrf-token') : '';
+                postForm('set_primary_image.php', { image_id: id, csrf_token: csrf, property_id: <?php echo intval($property_id); ?> })
+                    .then(res => {
+                        if (res.success) {
+                            // update badges in-place: remove existing main badge and add to this one
+                            document.querySelectorAll('.existing-media-item .badge-primary').forEach(b => b.remove());
+                            // replace any set-primary buttons into badges for others
+                            document.querySelectorAll('.existing-media-item .set-primary-btn').forEach(btn => {
+                                btn.style.display = '';
+                            });
+                            // hide the clicked button and add badge
+                            const parentItem = target.closest('.existing-media-item');
+                            if (parentItem) {
+                                // hide this button
+                                target.style.display = 'none';
+                                const span = document.createElement('span');
+                                span.className = 'badge badge-primary';
+                                span.textContent = '<?php echo t('main_image'); ?>';
+                                parentItem.querySelector('.existing-media-actions .left-actions')?.prepend(span);
+                            }
+                        } else {
+                            alert(res.message || '<?php echo t('operation_failed'); ?>');
+                        }
+                    }).catch(err => alert(err.message || '<?php echo t('operation_failed'); ?>'));
+            }
+        });
+    })();
+    </script>
 
     <script src="lightbox.js"></script>
     <script>

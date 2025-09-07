@@ -2,10 +2,75 @@
 // Media helper functions for property images and audio notes
 
 /**
+ * Ensure $conn is a live mysqli connection. If missing or closed, re-require the
+ * project's db.php to (re)create it.
+ */
+function ensure_db_conn(&$conn)
+{
+    // Determine whether we need to (re)create the connection
+    $needCreate = true;
+
+    if (isset($conn) && ($conn instanceof mysqli)) {
+        $needCreate = false;
+
+        // Try a safe ping; ping() may throw if the object is closed, so catch any errors
+        $pingOk = false;
+        if (method_exists($conn, 'ping')) {
+            try {
+                $pingOk = $conn->ping();
+            } catch (Throwable $e) {
+                $pingOk = false;
+            }
+        } else {
+            // Fallback: check connect_errno if available
+            $pingOk = (isset($conn->connect_errno) && $conn->connect_errno === 0);
+        }
+
+        if (!$pingOk) {
+            $needCreate = true;
+        }
+    }
+
+    if ($needCreate) {
+        // If a global $conn exists and is live, reuse it
+        if (isset($GLOBALS['conn']) && ($GLOBALS['conn'] instanceof mysqli)) {
+            $globalConn = $GLOBALS['conn'];
+            try {
+                if ($globalConn->ping()) {
+                    $conn = $globalConn;
+                    return;
+                }
+            } catch (Throwable $e) {
+                // continue to attempt creating a new connection
+            }
+        }
+
+        // Create a new mysqli connection directly (avoid re-requiring db.php which
+        // defines functions and may cause redeclaration errors if included multiple times).
+        $host = getenv('DB_HOST') ?: "127.0.0.1";
+        $user = getenv('DB_USER') ?: "root";
+        $pass = getenv('DB_PASS') ?: "";
+        $dbname = getenv('DB_NAME') ?: "broman_db";
+
+        try {
+            $newConn = new mysqli($host, $user, $pass, $dbname);
+            // Try to set charset similar to db.php
+            @$newConn->set_charset("utf8mb4");
+            $conn = $newConn;
+            $GLOBALS['conn'] = $conn;
+        } catch (Exception $e) {
+            // If creating a new connection fails, log and leave $conn as-is (null/invalid)
+            error_log("ensure_db_conn: failed to create mysqli: " . $e->getMessage());
+        }
+    }
+}
+
+/**
  * Get all images for a property
  */
 function getPropertyImages($property_id, $conn) {
     $images = [];
+    ensure_db_conn($conn);
     $sql = "SELECT image_id, file_path, upload_date, is_primary FROM property_images WHERE property_id = ? ORDER BY is_primary DESC, upload_date ASC";
     
     if ($stmt = $conn->prepare($sql)) {
@@ -27,6 +92,7 @@ function getPropertyImages($property_id, $conn) {
  */
 function getPropertyAudioNotes($property_id, $conn) {
     $audio_notes = [];
+    ensure_db_conn($conn);
     $sql = "SELECT note_id, file_path, upload_date, duration FROM property_audio_notes WHERE property_id = ? ORDER BY upload_date ASC";
     
     if ($stmt = $conn->prepare($sql)) {
@@ -48,6 +114,7 @@ function getPropertyAudioNotes($property_id, $conn) {
  */
 function getPropertyVideos($property_id, $conn) {
     $videos = [];
+    ensure_db_conn($conn);
     $sql = "SELECT VideoID, VideoPath, VideoName, VideoSize, UploadDate FROM property_videos WHERE PropertyID = ? ORDER BY UploadDate ASC";
     
     if ($stmt = $conn->prepare($sql)) {
@@ -68,6 +135,7 @@ function getPropertyVideos($property_id, $conn) {
  * Get primary image for a property (for card view)
  */
 function getPropertyPrimaryImage($property_id, $conn) {
+    ensure_db_conn($conn);
     $sql = "SELECT file_path FROM property_images WHERE property_id = ? AND is_primary = 1 LIMIT 1";
     
     if ($stmt = $conn->prepare($sql)) {
@@ -106,6 +174,7 @@ function getPropertyPrimaryImage($property_id, $conn) {
  * Set an image as primary
  */
 function setImageAsPrimary($image_id, $property_id, $conn) {
+    ensure_db_conn($conn);
     // First, remove primary flag from all images of this property
     $sql1 = "UPDATE property_images SET is_primary = 0 WHERE property_id = ?";
     if ($stmt1 = $conn->prepare($sql1)) {
