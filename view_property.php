@@ -625,12 +625,14 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                             <source src="<?php echo htmlspecialchars($audio['file_path']); ?>" type="audio/mpeg">
                             Your browser does not support the audio element.
                         </audio>
+                        <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'manager'): ?>
                         <div class="audio-info">
                             <div>Uploaded: <?php echo date('Y-m-d H:i', strtotime($audio['upload_date'])); ?></div>
                             <?php if ($audio['duration']): ?>
                                 <div>Duration: <?php echo formatDuration($audio['duration']); ?></div>
                             <?php endif; ?>
                         </div>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -650,11 +652,13 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                                 Your browser does not support the video element.
                             </video>
                             <div class="video-info">
+                                <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'manager'): ?>
                                 <div class="video-name"><?php echo htmlspecialchars($video['VideoName']); ?></div>
                                 <div class="video-details">
                                     <span><?php echo t('video_size'); ?>: <?php echo formatFileSize($video['VideoSize']); ?></span>
                                     <span><?php echo t('uploaded_on'); ?>: <?php echo date('Y-m-d H:i', strtotime($video['UploadDate'])); ?></span>
                                 </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
