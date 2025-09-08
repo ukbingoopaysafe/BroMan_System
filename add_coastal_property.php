@@ -137,11 +137,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
     if ($stmt = $conn->prepare($sql)) {
-        safe_bind_param(
-            $stmt,
-            "isssdissisiddissdddsssissssisddddddsss",
+        // Build bind-vars and types dynamically (ensures floats like payment_years become 'd')
+        $bind_vars = [
             $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $year_built, $unit_floor, $net_area, $loading_percentage, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $seller_type, $seller_name, $seller_phone
-        );
+        ];
+
+        $types = '';
+        foreach ($bind_vars as $bv) {
+            if (is_int($bv)) {
+                $types .= 'i';
+            } elseif (is_float($bv)) {
+                $types .= 'd';
+            } elseif (is_numeric($bv)) {
+                $types .= (strpos((string)$bv, '.') !== false) ? 'd' : 'i';
+            } else {
+                $types .= 's';
+            }
+        }
+
+        $params = array_merge([$stmt, $types], $bind_vars);
+        call_user_func_array('safe_bind_param', $params);
 
     // Debug: log key fields before execute to help diagnose missing storage
     error_log("DEBUG add_coastal_property: year_built=" . var_export($year_built, true) . " seller_type=" . var_export($seller_type, true));
