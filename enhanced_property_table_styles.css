@@ -221,6 +221,25 @@ html[dir="rtl"] .table-actions {
     line-height: 1.2;
 }
 
+/* Ensure <strong> or other inline tags inserted by templates keep the same visual styling */
+.cell-project .project-title strong,
+.property-card .property-title strong {
+    font-weight: 600; /* match original project-title weight */
+    font-size: inherit;
+    color: inherit;
+    line-height: inherit;
+    display: inline; /* don't force block behaviour */
+}
+
+/* The small subtitle used in card view when we print Title under project name */
+.project-card-sub {
+    font-size: 0.85rem; /* slightly smaller than main title, similar to .project-subtitle */
+    color: #6c757d;
+    line-height: 1.2;
+    margin-top: 2px;
+    display: inline-block;
+}
+
 .cell-price {
     min-width: 130px;
     font-weight: 600;

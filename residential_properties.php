@@ -526,7 +526,20 @@ function getPropertyTypeBadge($typeId, $typeName) {
                     </div>
                     <div class="property-content">
                         <div class="property-title">
-                            <?php echo htmlspecialchars($property['ProjectName'] ?: $property['Title'] ?: t('undefined')); ?>
+                            <?php
+                                $proj = trim((string)($property['ProjectName'] ?? ''));
+                                $ttl = trim((string)($property['Title'] ?? ''));
+                                if ($proj !== '') {
+                                    echo '<strong>' . htmlspecialchars($proj) . '</strong>';
+                                    if ($ttl !== '') {
+                                        echo '<br><span class="project-card-sub">' . htmlspecialchars($ttl) . '</span>';
+                                    }
+                                } elseif ($ttl !== '') {
+                                    echo '<strong>' . htmlspecialchars($ttl) . '</strong>';
+                                } else {
+                                    echo '-';
+                                }
+                            ?>
                         </div>
                         
                         <div class="property-details">
@@ -624,12 +637,26 @@ function getPropertyTypeBadge($typeId, $typeName) {
                                 <strong><?php echo $row_number; ?></strong>
                             </td>
                             <td class="cell-project">
+                                <?php
+                                    $proj = trim((string)($property['ProjectName'] ?? ''));
+                                    $ttl = trim((string)($property['Title'] ?? ''));
+                                ?>
                                 <div class="project-title">
-                                    <?php echo htmlspecialchars($property["ProjectName"] ?: t("undefined")); ?>
+                                    <?php
+                                        if ($proj !== '') {
+                                            echo '<strong>' . htmlspecialchars($proj) . '</strong>';
+                                        } elseif ($ttl !== '') {
+                                            echo '<strong>' . htmlspecialchars($ttl) . '</strong>';
+                                        } else {
+                                            echo '-';
+                                        }
+                                    ?>
                                 </div>
+                                <?php if ($proj !== '' && $ttl !== ''): ?>
                                 <div class="project-subtitle">
-                                    <?php echo htmlspecialchars($property["Title"] ?: t("undefined")); ?>
+                                    <?php echo htmlspecialchars($ttl); ?>
                                 </div>
+                                <?php endif; ?>
                             </td>
                             <td class="cell-type">
                                 <?php echo getPropertyTypeBadge($property['PropertyTypeID'], $property['PropertyTypeName']); ?>
