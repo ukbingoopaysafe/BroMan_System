@@ -154,6 +154,39 @@ $flashes = get_flash_messages();
 
 // Page title
 $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['Title'] ?: $property['ProjectName'] ?: t('undefined')));
+
+// Prepare WhatsApp share link (Arabic message, includes Google Maps link when coordinates exist)
+$property_name = trim((string)($property['Title'] ?: $property['ProjectName'] ?: ''));
+$property_address = '';
+if (!empty($property['Location'])) {
+    $property_address = $property['Location'];
+} else {
+    $parts = [];
+    if (!empty($property['district'])) $parts[] = $property['district'];
+    if (!empty($property['governorate'])) $parts[] = $property['governorate'];
+    $property_address = implode('، ', $parts);
+}
+$map_link = '';
+if (!empty($property['latitude']) && !empty($property['longitude'])) {
+    $lat = $property['latitude'];
+    $lng = $property['longitude'];
+    $map_link = "https://www.google.com/maps/search/?api=1&query={$lat},{$lng}";
+}
+$wa_lines = [];
+// Keep message minimal: only the site link is shared. If coordinates missing, share the property page URL as fallback.
+$wa_lines[] = "مرحبًا، أشارك موقع هذا العقار:";
+if ($map_link !== '') {
+    $wa_lines[] = $map_link;
+} else {
+    // Build absolute URL to the current property page as a sensible fallback
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $request_base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '\\/');
+    $property_page_url = $scheme . '://' . $host . $request_base . '/view_property.php?id=' . $property_id;
+    $wa_lines[] = $property_page_url;
+}
+$wa_text = implode("\n", $wa_lines);
+$whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
 ?>
 
 <!DOCTYPE html>
@@ -275,6 +308,43 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
         .property-description p {
             margin: 0;
             color: #444;
+        }
+
+        /* WhatsApp share button */
+        .btn-whatsapp {
+            background-color: #25D366;
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+
+        .btn-whatsapp:hover, .btn-whatsapp:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(37,211,102,0.18);
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .btn-whatsapp .fab.fa-whatsapp {
+            font-size: 1.1rem;
+        }
+
+        /* Tooltip using title attribute is sufficient for most devices; enhance with visually hidden text */
+        .sr-only {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
         }
         
         /* Media Gallery Styles */
@@ -452,6 +522,11 @@ $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['T
                 <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'manager'])): ?>
                 <a href="edit_property.php?id=<?php echo $property_id; ?>" class="btn btn-primary"><i class="fas fa-edit"></i> <?php echo t('edit'); ?></a>
                 <?php endif; ?>
+                <!-- WhatsApp share button -->
+                <a href="<?php echo htmlspecialchars($whatsapp_link); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp" title="مشاركة عبر واتساب" aria-label="مشاركة عبر واتساب">
+                    <i class="fab fa-whatsapp"></i>
+                    <span class="sr-only">مشاركة عبر واتساب</span>
+                </a>
                 <a href="javascript:history.back()" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> <?php echo t('back'); ?></a>
             </div>
         </div>
