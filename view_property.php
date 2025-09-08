@@ -878,7 +878,8 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                     <?php if (!empty($property['payment_years'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('payment_years'); ?>:</span>
-                        <span class="detail-value"><?php echo formatSmartNumber($property['payment_years'], 2); ?></span>
+                        <?php $years_display = formatSmartNumber($property['payment_years'], (fmod(floatval($property['payment_years']),1) !== 0.0) ? 1 : 0); ?>
+                        <span class="detail-value"><?php echo $years_display . ' ' . (get_lang_code() === 'ar' ? t('year') : t('year')); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['down_payment_percentage']) || !empty($property['payment_years'])): ?>

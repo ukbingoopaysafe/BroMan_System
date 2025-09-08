@@ -1023,7 +1023,7 @@ $conn->close();
                     </div>
                     <div class="form-group">
                         <label for="payment_years"><?php echo t('payment_years'); ?>:</label>
-                        <input type="number" id="payment_years" name="payment_years" class="form-input" step="0.1" min="0.5" value="<?php echo number_format((float)$payment_years, 2, '.', ''); ?>" placeholder="مثال: 1.5 للسنة والنصف">
+                        <input type="number" id="payment_years" name="payment_years" class="form-input" step="0.5" min="0.5" value="<?php echo ($payment_years !== null && $payment_years !== '') ? number_format((float)$payment_years, 1, '.', '') : ''; ?>" placeholder="مثال: 1.5 للسنة والنصف">
                         <?php if (isset($errors['payment_years'])) {
                             echo "<span class='error-message'>" . $errors['payment_years'] . "</span>";
                         } ?>

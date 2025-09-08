@@ -210,7 +210,7 @@ if (!empty($down_payment_filter)) {
 if (!empty($payment_period_filter)) {
     $sql_where[] = "p.payment_years = ?";
     $params[] = $payment_period_filter;
-    $types .= "i";
+    $types .= "d"; // decimal/double
 }
 
 // Add property type filter for coastal properties
@@ -481,7 +481,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
                     </div>
                     <div class="filter-item">
                         <label for="payment_period"><?php echo t('payment_years'); ?>:</label>
-                        <input type="number" id="payment_period" name="payment_period" class="form-control" value="<?php echo htmlspecialchars($payment_period_filter); ?>" min="0">
+                        <input type="number" id="payment_period" name="payment_period" class="form-control" value="<?php echo htmlspecialchars($payment_period_filter); ?>" min="0" step="0.5">
                     </div>
                 </div>
             </div>

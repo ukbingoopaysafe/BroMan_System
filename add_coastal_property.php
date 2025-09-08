@@ -582,7 +582,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
                 <div class="form-group">
                     <label for="payment_years"><?php echo t('payment_years'); ?>:</label>
-                    <input type="number" step="0.1" min="0.5" id="payment_years" name="payment_years" class="form-input" value="<?php echo isset($_POST['payment_years']) ? htmlspecialchars($_POST['payment_years']) : ''; ?>" placeholder="مثال: 1.5 للسنة والنصف">
+                    <input type="number" step="0.5" min="0.5" id="payment_years" name="payment_years" class="form-input" value="<?php echo isset($_POST['payment_years']) ? htmlspecialchars($_POST['payment_years']) : ''; ?>" placeholder="مثال: 1.5 للسنة والنصف">
                 </div>
                 <div class="form-group">
                     <label for="delivery_date"><?php echo t('delivery_date'); ?>:</label>
