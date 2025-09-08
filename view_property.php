@@ -479,6 +479,67 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
             }
         }
     </style>
+    <?php if (get_direction() === 'ltr'): ?>
+    <style>
+    /* LTR overrides for Property Details page when English is selected */
+    /* Force left-to-right reading direction and left alignment for labels/values */
+    .property-details,
+    .property-section,
+    .detail-grid,
+    .detail-item,
+    .page-header,
+    .property-description,
+    .media-gallery {
+        direction: ltr !important;
+        text-align: left !important;
+    }
+
+    .page-header { 
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .page-header h1 {
+        text-align: left !important;
+        margin-right: 0;
+    }
+
+    .page-header .actions {
+        margin-left: auto; /* keep actions to the right in LTR */
+        justify-content: flex-end;
+    }
+
+    /* Ensure labels and values align left */
+    .detail-label, .detail-value {
+        text-align: left !important;
+    }
+
+    /* Move the primary badge to the left for LTR */
+    .image-primary-badge {
+        left: 8px !important;
+        right: auto !important;
+    }
+
+    /* Clickable phone should present LTR/left alignment */
+    .detail-item.detail-phone .detail-value a {
+        display: inline-block;
+        width: 100%;
+        text-align: left !important;
+        direction: ltr !important;
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            align-items: flex-start;
+        }
+        .page-header .actions {
+            justify-content: flex-start;
+            margin-left: 0;
+        }
+    }
+    </style>
+    <?php endif; ?>
     <script src="session_timeout.js"></script>
 </head>
 <body>

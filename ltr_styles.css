@@ -1,0 +1,212 @@
+/* ltr_styles.css - Specific styles for left-to-right languages */
+body[dir="ltr"] {
+    direction: ltr;
+    text-align: left;
+}
+
+/* Global Styles for LTR */
+body[dir="ltr"] h1, 
+body[dir="ltr"] h2, 
+body[dir="ltr"] h3, 
+body[dir="ltr"] h4, 
+body[dir="ltr"] h5, 
+body[dir="ltr"] h6, 
+body[dir="ltr"] p, 
+body[dir="ltr"] div, 
+body[dir="ltr"] span, 
+body[dir="ltr"] label {
+    text-align: left;
+}
+
+/* Property Details Page Specific Styles */
+body[dir="ltr"] .property-details .detail-label {
+    text-align: left;
+}
+
+body[dir="ltr"] .property-details .detail-value {
+    text-align: left;
+}
+
+body[dir="ltr"] .property-section h2 {
+    text-align: left;
+}
+
+body[dir="ltr"] .page-header h1 {
+    text-align: left;
+    float: left;
+}
+
+body[dir="ltr"] .page-header .actions {
+    float: right;
+}
+
+/* Table Styles */
+body[dir="ltr"] .data-table th, 
+body[dir="ltr"] .data-table td {
+    text-align: left;
+}
+
+/* Form Styles */
+body[dir="ltr"] .form-container div label {
+    text-align: left;
+}
+
+body[dir="ltr"] .form-container div input[type="submit"],
+body[dir="ltr"] .form-container div .btn {
+    float: left;
+    margin-right: 10px;
+    margin-left: 0;
+}
+
+/* Form Adjustments */
+body[dir="ltr"] form label {
+    text-align: left;
+    float: left;
+}
+
+body[dir="ltr"] form input,
+body[dir="ltr"] form select,
+body[dir="ltr"] form textarea {
+    text-align: left;
+}
+
+body[dir="ltr"] .form-group {
+    flex-direction: row;
+    text-align: left;
+}
+
+body[dir="ltr"] .form-group label {
+    margin-right: 10px;
+    margin-left: 0;
+}
+
+body[dir="ltr"] .form-control {
+    text-align: left;
+}
+
+body[dir="ltr"] .input-group-addon {
+    border-right: none;
+    border-left: 1px solid #ccc;
+}
+
+/* Navigation */
+body[dir="ltr"] .navbar ul {
+    padding-left: 0;
+}
+
+body[dir="ltr"] .navbar ul li {
+    float: left;
+    margin-right: 15px;
+    margin-left: 0;
+}
+
+body[dir="ltr"] .navbar .logo-container {
+    float: left;
+}
+
+body[dir="ltr"] .navbar .lang-switch {
+    float: right;
+    margin-right: 0;
+    margin-left: 15px;
+}
+
+/* Property Details Specific Adjustments */
+body[dir="ltr"] .detail-grid {
+    text-align: left;
+}
+
+body[dir="ltr"] .property-section .detail-item {
+    align-items: flex-start;
+}
+
+body[dir="ltr"] .page-header {
+    flex-direction: row;
+}
+
+body[dir="ltr"] .property-details .page-header h1 {
+    text-align: left;
+    margin-right: auto;
+}
+
+body[dir="ltr"] .property-details .actions {
+    margin-left: auto;
+}
+
+body[dir="ltr"] .property-section h2 {
+    text-align: left;
+    padding-left: 20px;
+}
+
+body[dir="ltr"] .detail-label {
+    text-align: left;
+    padding-left: 0;
+}
+
+body[dir="ltr"] .detail-value {
+    text-align: left;
+    padding-left: 0;
+}
+
+/* Fix for action buttons */
+body[dir="ltr"] .actions a {
+    margin-right: 10px;
+    margin-left: 0;
+}
+
+body[dir="ltr"] .btn,
+body[dir="ltr"] .button {
+    text-align: center;
+}
+
+body[dir="ltr"] .property-details .btn-group {
+    justify-content: flex-start;
+}
+
+body[dir="ltr"] .property-details .btn-group .btn {
+    margin-right: 10px;
+    margin-left: 0;
+}
+
+/* Fix for search form */
+body[dir="ltr"] .search-form input[type="text"] {
+    float: left;
+    margin-right: 10px;
+    margin-left: 0;
+}
+
+body[dir="ltr"] .search-form input[type="submit"] {
+    float: left;
+}
+
+/* Additional Property Details Styling */
+body[dir="ltr"] .property-media-section .media-tabs .tab {
+    float: left;
+    margin-right: 5px;
+    margin-left: 0;
+}
+
+body[dir="ltr"] .property-media-section .media-content {
+    text-align: left;
+}
+
+body[dir="ltr"] .property-features ul li {
+    text-align: left;
+    padding-left: 25px;
+    padding-right: 0;
+}
+
+body[dir="ltr"] .property-features ul li i {
+    margin-right: 10px;
+    margin-left: 0;
+}
+
+/* Table Styling */
+body[dir="ltr"] table.data-table th,
+body[dir="ltr"] table.data-table td {
+    text-align: left;
+}
+
+body[dir="ltr"] .sort-icon {
+    margin-left: 5px;
+    margin-right: 0;
+}
