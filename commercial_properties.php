@@ -36,7 +36,7 @@ $sort_direction = isset($_GET['direction']) && $_GET['direction'] === 'desc' ? '
 $allowed_sort_columns = [
     'PropertyID' => 'p.PropertyID',
     'DateAdded' => 'p.DateAdded',
-    'Price' => 'COALESCE(p.Price, p.min_price)',
+    'Price' => 'COALESCE(p.price_cash, p.price_installments, (p.meter_price_cash * p.Area), (p.meter_price_installments * p.Area))',
     'Area' => 'COALESCE(p.Area, p.avg_area)',
     'ProjectName' => 'p.ProjectName',
     'Title' => 'p.Title',
@@ -183,12 +183,12 @@ if (!empty($status_filter)) {
 
 // Add advanced filters
 if (!empty($min_price_filter)) {
-    $sql_where[] = "COALESCE(p.Price, p.min_price) >= ?";
+    $sql_where[] = "COALESCE(p.price_cash, p.price_installments, (p.meter_price_cash * p.Area), (p.meter_price_installments * p.Area)) >= ?";
     $params[] = $min_price_filter;
     $types .= "d";
 }
 if (!empty($max_price_filter)) {
-    $sql_where[] = "COALESCE(p.Price, p.max_price) <= ?";
+    $sql_where[] = "COALESCE(p.price_cash, p.price_installments, (p.meter_price_cash * p.Area), (p.meter_price_installments * p.Area)) <= ?";
     $params[] = $max_price_filter;
     $types .= "d";
 }
@@ -255,14 +255,16 @@ if ($stmt = $conn->prepare($sql)) {
 // Function to format price for display
 function formatDisplayPrice($row)
 {
-    if (!empty($row['Price']) && is_numeric($row['Price'])) {
-        return number_format(floatval($row['Price']), 0, '.', ',') . ' ' . t('currency');
-    } elseif (!empty($row['min_price']) && is_numeric($row['min_price']) && !empty($row['max_price']) && is_numeric($row['max_price'])) {
-        return number_format(floatval($row['min_price']), 0, '.', ',') . ' - ' . number_format(floatval($row['max_price']), 0, '.', ',') . ' ' . t('currency');
-    } elseif (!empty($row['min_price']) && is_numeric($row['min_price'])) {
-        return t('starts_from') . ' ' . number_format(floatval($row['min_price']), 0, '.', ',') . ' ' . t('currency');
-    } elseif (!empty($row['max_price']) && is_numeric($row['max_price'])) {
-        return t('up_to') . ' ' . number_format(floatval($row['max_price']), 0, '.', ',') . ' ' . t('currency');
+    if (!empty($row['price_cash']) && is_numeric($row['price_cash'])) {
+        return number_format(floatval($row['price_cash']), 0, '.', ',') . ' ' . t('currency');
+    } elseif (!empty($row['price_installments']) && is_numeric($row['price_installments'])) {
+        return number_format(floatval($row['price_installments']), 0, '.', ',') . ' ' . t('currency');
+    } elseif (!empty($row['meter_price_cash']) && is_numeric($row['meter_price_cash']) && !empty($row['Area']) && is_numeric($row['Area'])) {
+        $est = floatval($row['meter_price_cash']) * floatval($row['Area']);
+        return t('estimated') . ': ' . number_format($est, 0, '.', ',') . ' ' . t('currency');
+    } elseif (!empty($row['meter_price_installments']) && is_numeric($row['meter_price_installments']) && !empty($row['Area']) && is_numeric($row['Area'])) {
+        $est = floatval($row['meter_price_installments']) * floatval($row['Area']);
+        return t('estimated') . ': ' . number_format($est, 0, '.', ',') . ' ' . t('currency');
     }
     return t('price_not_specified');
 }

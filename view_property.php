@@ -71,8 +71,10 @@ $property_videos = getPropertyVideos($property_id, $conn);
 // Format price for display
 function formatPrice($property)
 {
-    if (!empty($property['Price']) && is_numeric($property['Price'])) {
-        return number_format(floatval($property['Price']), 0, '.', ',') . ' ' . t('currency');
+    if (!empty($property['price_cash']) && is_numeric($property['price_cash'])) {
+        return number_format(floatval($property['price_cash']), 0, '.', ',') . ' ' . t('currency');
+    } elseif (!empty($property['price_installments']) && is_numeric($property['price_installments'])) {
+        return number_format(floatval($property['price_installments']), 0, '.', ',') . ' ' . t('currency');
     } elseif (!empty($property['min_price']) && is_numeric($property['min_price']) && !empty($property['max_price']) && is_numeric($property['max_price'])) {
         return number_format(floatval($property['min_price']), 0, '.', ',') . ' - ' . number_format(floatval($property['max_price']), 0, '.', ',') . ' ' . t('currency');
     } elseif (!empty($property['min_price']) && is_numeric($property['min_price'])) {
