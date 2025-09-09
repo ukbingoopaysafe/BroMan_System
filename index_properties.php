@@ -18,7 +18,7 @@ if (!isset($_SESSION['listing_context']) || ($_SESSION['listing_context'] !== 'P
         $_SESSION['listing_context'] = $_COOKIE['listing_context'];
     } else {
         // Log only when neither session nor cookie is available - indicates a problem
-        error_log('index_properties: no listing_context in session or cookie for session_id=' . session_id());
+        error_log('index_properties: missing listing_context. session_id=' . session_id() . ' cookie_present=' . (isset($_COOKIE['listing_context']) ? '1' : '0') . ' cookie_value=' . ($_COOKIE['listing_context'] ?? '') . ' session_save_path=' . session_save_path());
         header('Location: dashboard.php');
         exit();
     }

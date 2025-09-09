@@ -19,6 +19,7 @@ if (!isset($_SESSION['listing_context']) || ($_SESSION['listing_context'] !== 'P
     if (isset($_COOKIE['listing_context']) && in_array($_COOKIE['listing_context'], ['Primary', 'Resale'])) {
         $_SESSION['listing_context'] = $_COOKIE['listing_context'];
     } else {
+        error_log('add_coastal_property: missing listing_context. session_id=' . session_id() . ' cookie_present=' . (isset($_COOKIE['listing_context']) ? '1' : '0') . ' cookie_value=' . ($_COOKIE['listing_context'] ?? '') . ' session_save_path=' . session_save_path());
         header('Location: dashboard.php');
         exit();
     }
