@@ -1,0 +1,1 @@
+lang|s:2:"ar";loggedin|b:1;employee_id|i:1;username|s:5:"admin";role|s:5:"admin";full_name|s:10:"Admin User";created_at|i:1757424430;last_activity|i:1757424628;idle_warning|b:0;absolute_warning|b:0;idle_time_remaining|i:1800;absolute_time_remaining|i:28602;listing_context|s:6:"Resale";csrf_token|s:64:"4dc27362bf9f5e7f67d5413456a069bac12be68e9cb4f6a4a7b26cca53cae2d1";

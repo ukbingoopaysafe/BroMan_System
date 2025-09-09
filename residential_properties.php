@@ -144,7 +144,7 @@ $types .= "s";
 
 // Add search term filter
 if (!empty($search_term)) {
-    $sql_where[] = "(p.Title LIKE ? OR p.ProjectName LIKE ? OR p.governorate LIKE ? OR p.district LIKE ? OR p.Location LIKE ? OR p.company_name LIKE ? OR pud.DesignName LIKE ?)";
+    $sql_where[] = "(p.Title LIKE ? OR p.ProjectName LIKE ? OR p.governorate LIKE ? OR p.district LIKE ? OR p.Location LIKE ? OR p.company_name LIKE ? OR p.unit_design LIKE ?)";
     $search_param = "%" . $search_term . "%";
     array_push($params, $search_param, $search_param, $search_param, $search_param, $search_param, $search_param, $search_param);
     $types .= "sssssss";
