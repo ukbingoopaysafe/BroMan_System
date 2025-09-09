@@ -11,10 +11,16 @@ require_once 'permissions.php'; // Include permissions system
 // Check permissions - all logged in users can view properties
 check_permission('view_properties');
 
-// Enforce mode selection - redirect to dashboard if no mode is set
+// Enforce mode selection - try session first, then fallback to cookie, otherwise redirect to dashboard
 if (!isset($_SESSION['listing_context']) || ($_SESSION['listing_context'] !== 'Primary' && $_SESSION['listing_context'] !== 'Resale')) {
-    header('Location: dashboard.php');
-    exit();
+    if (isset($_COOKIE['listing_context']) && in_array($_COOKIE['listing_context'], ['Primary', 'Resale'])) {
+        // restore into session for this request
+        $_SESSION['listing_context'] = $_COOKIE['listing_context'];
+        error_log("index_properties: restored listing_context from cookie: " . $_COOKIE['listing_context'] . " session_id=" . session_id());
+    } else {
+        header('Location: dashboard.php');
+        exit();
+    }
 }
 
 $current_mode = $_SESSION['listing_context'];

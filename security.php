@@ -26,6 +26,15 @@ function configure_secure_session_cookies(): void {
 // Ensure session is started with hardened cookies
 function ensure_secure_session_started(): void {
     if (session_status() === PHP_SESSION_NONE) {
+        // Ensure local session save path is writable to avoid OS temp permission issues
+        $localTmp = __DIR__ . '/tmp_sessions';
+        if (!is_dir($localTmp)) {
+            @mkdir($localTmp, 0755, true);
+        }
+        if (is_dir($localTmp) && is_writable($localTmp)) {
+            session_save_path($localTmp);
+        }
+
         configure_secure_session_cookies();
         session_start();
     }

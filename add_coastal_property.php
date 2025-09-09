@@ -14,10 +14,15 @@ check_permission('manage_properties');
 // Ensure a CSRF token variable is available for the form/uploader
 $csrf_token = generateCSRFToken();
 
-// Enforce mode selection - redirect to dashboard if no mode is set
+// Enforce mode selection - try session first, then fallback to cookie, otherwise redirect to dashboard
 if (!isset($_SESSION['listing_context']) || ($_SESSION['listing_context'] !== 'Primary' && $_SESSION['listing_context'] !== 'Resale')) {
-    header('Location: dashboard.php');
-    exit();
+    if (isset($_COOKIE['listing_context']) && in_array($_COOKIE['listing_context'], ['Primary', 'Resale'])) {
+        $_SESSION['listing_context'] = $_COOKIE['listing_context'];
+        error_log("add_coastal_property: restored listing_context from cookie: " . $_COOKIE['listing_context'] . " session_id=" . session_id());
+    } else {
+        header('Location: dashboard.php');
+        exit();
+    }
 }
 
 $current_mode = $_SESSION['listing_context'];

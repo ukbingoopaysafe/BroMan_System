@@ -1,19 +1,8 @@
 <?php
 // lang/translate.php
-// Ensure a writable session.save_path exists. On some Windows setups PHP's
-// default session cleanup can warn if C:\Windows\TEMP is not accessible.
-if (session_status() == PHP_SESSION_NONE) {
-    // Prefer an application-local temp dir under project uploads to avoid OS permission issues
-    $localTmp = __DIR__ . '/../tmp_sessions';
-    if (!is_dir($localTmp)) {
-        @mkdir($localTmp, 0755, true);
-    }
-    // If we successfully created/confirmed the dir, use it as session.save_path
-    if (is_dir($localTmp) && is_writable($localTmp)) {
-        session_save_path($localTmp);
-    }
-    session_start();
-}
+// Use the project's secure session starter to ensure consistent session_save_path and cookies
+require_once __DIR__ . '/../security.php';
+ensure_secure_session_started();
 
 // Set default language if not set
 if (!isset($_SESSION['lang'])) {
