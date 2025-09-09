@@ -368,10 +368,7 @@ $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
                 $property_id
             );
 
-            // Debug: log key fields before executing the UPDATE to diagnose persistence issues
-            error_log("DEBUG edit_property UPDATE: year_built_posted=" . var_export($year_built_posted, true) . " seller_type_posted=" . var_export($seller_type_posted, true));
-            // Log normalized seller_type right before executing the UPDATE so we can verify what is being written
-            error_log("DEBUG edit_property BEFORE EXECUTE: normalized_seller_type=" . var_export($seller_type_posted, true));
+            // (debug logs removed)
             if ($stmt_update->execute()) {
                 // Use the project's flash helper so view_property.php (which reads get_flash_messages())
                 // can show the success message immediately after redirect. Also set the legacy
@@ -393,7 +390,6 @@ $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
                 error_log("Error executing property update: " . $stmt_update->error);
             }
             // Log result so we can see whether the DB accepted the value and any mysqli error
-            error_log("DEBUG edit_property AFTER EXECUTE: affected_rows=" . $stmt_update->affected_rows . " mysqli_error=" . (isset($conn) ? $conn->error : 'conn_not_set'));
 
             $stmt_update->close();
         } else {
@@ -408,6 +404,7 @@ $conn->close();
 
 <!DOCTYPE html>
 <html lang="<?php echo get_lang_code(); ?>" dir="<?php echo get_direction(); ?>">
+    
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

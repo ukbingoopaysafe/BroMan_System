@@ -1,9 +1,5 @@
 <?php
 session_start();
-// Debug: log session id and any flash messages or legacy success message at the start of the page load
-error_log("FLASH-DEBUG view_property ON LOAD session=" . session_id() . " name=" . session_name() . " save_path=" . session_save_path() . " flash=" . var_export(
-    		session_status() === PHP_SESSION_ACTIVE ? ($_SESSION['flash_messages'] ?? null) : null, true
-    ) . " legacy=" . var_export($_SESSION['success_message'] ?? null, true));
 require_once __DIR__ . 
 '/lang/translate.php'; // Include translation handler
 require_once 'session_check.php'; // Include session timeout check

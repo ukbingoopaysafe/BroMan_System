@@ -158,8 +158,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $params = array_merge([$stmt, $types], $bind_vars);
         call_user_func_array('safe_bind_param', $params);
 
-    // Debug: log key fields before execute to help diagnose missing storage
-    error_log("DEBUG add_coastal_property: year_built=" . var_export($year_built, true) . " seller_type=" . var_export($seller_type, true));
     if ($stmt->execute()) {
             $new_property_id = $conn->insert_id;
 
