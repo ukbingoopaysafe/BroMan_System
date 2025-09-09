@@ -440,16 +440,19 @@ class UnifiedMediaUploader {
         formData.append('csrf_token', this.csrfToken);
         formData.append(type, file);
         
-        const response = await fetch('upload_media.php', {
-            method: 'POST',
-            body: formData
-        });
-        
-        const result = await response.json();
-        
-        if (!result.success) {
-            throw new Error(result.message);
-        }
+    const response = await fetch('upload_media.php', {
+        method: 'POST',
+        body: formData,
+        // ensure session cookie is sent so server-side CSRF/session checks work
+        credentials: 'same-origin'
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+        // prefer server-provided message when available
+        throw new Error(result.message || 'Upload failed');
+    }
         
         return result;
     }
