@@ -47,6 +47,23 @@ function ensure_secure_session_started(): void {
 
         // Stronger session handling
         @ini_set('session.use_strict_mode', '1');
+
+        // Ensure a writable upload_tmp_dir for PHP file uploads to avoid system temp permission issues
+        $uploadsTemp = __DIR__ . '/uploads/temp';
+        if (!is_dir($uploadsTemp)) {
+            @mkdir($uploadsTemp, 0755, true);
+        }
+        if (is_dir($uploadsTemp) && is_writable($uploadsTemp)) {
+            @ini_set('upload_tmp_dir', $uploadsTemp);
+        } else {
+            // If not writable, try PHP system temp dir as fallback and log the issue
+            $sysTmp = sys_get_temp_dir();
+            if (is_dir($sysTmp) && is_writable($sysTmp)) {
+                @ini_set('upload_tmp_dir', $sysTmp);
+            } else {
+                error_log('ensure_secure_session_started: upload_tmp_dir not writable; file uploads may fail');
+            }
+        }
         configure_secure_session_cookies();
         session_start();
     }

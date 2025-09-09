@@ -9,6 +9,18 @@ $user = getenv('DB_USER') ?: "root";
 $pass = getenv('DB_PASS') ?: "";
 $dbname = getenv('DB_NAME') ?: "broman_db";
 
+/**
+ * Return the database credentials used by this application.
+ * Other modules should call this helper instead of re-parsing environment variables.
+ */
+function get_db_credentials(): array {
+    $h = getenv('DB_HOST') ?: "127.0.0.1";
+    $u = getenv('DB_USER') ?: "root";
+    $p = getenv('DB_PASS') ?: "";
+    $d = getenv('DB_NAME') ?: "broman_db";
+    return ['host' => $h, 'user' => $u, 'pass' => $p, 'dbname' => $d];
+}
+
 // Use mysqli_report to turn errors into exceptions for better handling
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 

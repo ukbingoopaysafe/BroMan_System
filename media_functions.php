@@ -52,10 +52,19 @@ function ensure_db_conn(&$conn)
     }
 
     // Last resort: make a new mysqli connection using env vars or defaults
-    $host = getenv('DB_HOST') ?: "127.0.0.1";
-    $user = getenv('DB_USER') ?: "root";
-    $pass = getenv('DB_PASS') ?: "";
-    $dbname = getenv('DB_NAME') ?: "broman_db";
+    // Use centralized db.php helper if available to get the exact credentials
+    if (function_exists('get_db_credentials')) {
+        $creds = get_db_credentials();
+        $host = $creds['host'];
+        $user = $creds['user'];
+        $pass = $creds['pass'];
+        $dbname = $creds['dbname'];
+    } else {
+        $host = getenv('DB_HOST') ?: "127.0.0.1";
+        $user = getenv('DB_USER') ?: "root";
+        $pass = getenv('DB_PASS') ?: "";
+        $dbname = getenv('DB_NAME') ?: "broman_db";
+    }
 
     try {
         $newConn = new mysqli($host, $user, $pass, $dbname);
@@ -63,7 +72,9 @@ function ensure_db_conn(&$conn)
         $conn = $newConn;
         $GLOBALS['conn'] = $conn;
     } catch (Exception $e) {
-        error_log("ensure_db_conn: failed to create mysqli: " . $e->getMessage());
+        // Include whether a password was provided to help debug 'using password: NO' messages
+        $pwdFlag = ($pass === '') ? 'NO' : 'YES';
+        error_log("ensure_db_conn: failed to create mysqli: " . $e->getMessage() . " (using password: " . $pwdFlag . ")");
         $conn = null;
     }
 }
