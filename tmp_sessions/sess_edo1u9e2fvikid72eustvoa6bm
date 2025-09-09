@@ -1,0 +1,1 @@
+lang|s:2:"ar";loggedin|b:1;employee_id|i:3;username|s:7:"manager";role|s:7:"manager";full_name|s:21:"مدير النظام";created_at|i:1757422591;last_activity|i:1757422721;idle_warning|b:0;absolute_warning|b:0;idle_time_remaining|i:1800;absolute_time_remaining|i:28670;csrf_token|s:64:"0663074d236719c6aabc66c6372d072a05befeacd648b634bb7afc88c27604b0";
