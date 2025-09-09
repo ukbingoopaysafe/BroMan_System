@@ -12,7 +12,8 @@ function configure_secure_session_cookies(): void {
         'domain' => '',
         'secure' => $is_https, // Ensure HTTPS in production deployments
         'httponly' => true,
-        'samesite' => 'Strict'
+        // Use Lax to avoid strict navigation cases that can drop cookies during link-based navigation
+        'samesite' => 'Lax'
     ];
 
     if (PHP_VERSION_ID >= 70300) {
@@ -26,15 +27,26 @@ function configure_secure_session_cookies(): void {
 // Ensure session is started with hardened cookies
 function ensure_secure_session_started(): void {
     if (session_status() === PHP_SESSION_NONE) {
-        // Ensure local session save path is writable to avoid OS temp permission issues
+        // Prefer project-local session folder to avoid OS temp permission issues on Windows.
         $localTmp = __DIR__ . '/tmp_sessions';
         if (!is_dir($localTmp)) {
             @mkdir($localTmp, 0755, true);
         }
         if (is_dir($localTmp) && is_writable($localTmp)) {
             session_save_path($localTmp);
+        } else {
+            // Fallback to system temp dir if project directory isn't writable
+            $sysTmp = sys_get_temp_dir();
+            if (is_dir($sysTmp) && is_writable($sysTmp)) {
+                session_save_path($sysTmp);
+            } else {
+                // Last resort: leave PHP default and log the problem
+                error_log('ensure_secure_session_started: no writable session save path found.');
+            }
         }
 
+        // Stronger session handling
+        @ini_set('session.use_strict_mode', '1');
         configure_secure_session_cookies();
         session_start();
     }

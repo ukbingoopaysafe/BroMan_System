@@ -16,8 +16,9 @@ if (!isset($_SESSION['listing_context']) || ($_SESSION['listing_context'] !== 'P
     if (isset($_COOKIE['listing_context']) && in_array($_COOKIE['listing_context'], ['Primary', 'Resale'])) {
         // restore into session for this request
         $_SESSION['listing_context'] = $_COOKIE['listing_context'];
-        error_log("index_properties: restored listing_context from cookie: " . $_COOKIE['listing_context'] . " session_id=" . session_id());
     } else {
+        // Log only when neither session nor cookie is available - indicates a problem
+        error_log('index_properties: no listing_context in session or cookie for session_id=' . session_id());
         header('Location: dashboard.php');
         exit();
     }

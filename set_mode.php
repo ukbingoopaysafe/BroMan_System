@@ -27,7 +27,7 @@ setcookie('listing_context', $mode, [
 ]);
 
 // Debug: log session id and saved mode for troubleshooting (will appear in PHP error log)
-error_log("set_mode: session_id=" . session_id() . " listing_context=" . var_export($_SESSION['listing_context'], true));
+// No verbose debug logging in production. If needed, enable verbose logging via config.
 
 // Redirect to the main properties page
 header('Location: index_properties.php');

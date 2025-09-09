@@ -15,7 +15,6 @@ check_permission('view_properties');
 if (!isset($_SESSION['listing_context']) || ($_SESSION['listing_context'] !== 'Primary' && $_SESSION['listing_context'] !== 'Resale')) {
     if (isset($_COOKIE['listing_context']) && in_array($_COOKIE['listing_context'], ['Primary', 'Resale'])) {
         $_SESSION['listing_context'] = $_COOKIE['listing_context'];
-        error_log("residential_properties: restored listing_context from cookie: " . $_COOKIE['listing_context'] . " session_id=" . session_id());
     } else {
         header('Location: dashboard.php');
         exit();
