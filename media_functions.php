@@ -2,66 +2,69 @@
 // Media helper functions for property images and audio notes
 
 /**
- * Ensure $conn is a live mysqli connection. If missing or closed, re-require the
- * project's db.php to (re)create it.
+ * Ensure $conn is a live mysqli connection. If missing or closed, attempt to
+ * reuse $GLOBALS['conn'], require the project's db.php to pick up configured
+ * credentials, or create a new mysqli connection from env/defaults.
  */
 function ensure_db_conn(&$conn)
 {
-    // Determine whether we need to (re)create the connection
-    $needCreate = true;
-
+    // If caller passed a mysqli instance, check it first
     if (isset($conn) && ($conn instanceof mysqli)) {
-        $needCreate = false;
-
-        // Try a safe ping; ping() may throw if the object is closed, so catch any errors
-        $pingOk = false;
-        if (method_exists($conn, 'ping')) {
-            try {
-                $pingOk = $conn->ping();
-            } catch (Throwable $e) {
-                $pingOk = false;
+        try {
+            if ($conn->ping()) {
+                return; // existing connection is fine
             }
-        } else {
-            // Fallback: check connect_errno if available
-            $pingOk = (isset($conn->connect_errno) && $conn->connect_errno === 0);
-        }
-
-        if (!$pingOk) {
-            $needCreate = true;
+        } catch (Throwable $e) {
+            // fallthrough to recreate
         }
     }
 
-    if ($needCreate) {
-        // If a global $conn exists and is live, reuse it
-        if (isset($GLOBALS['conn']) && ($GLOBALS['conn'] instanceof mysqli)) {
-            $globalConn = $GLOBALS['conn'];
-            try {
-                if ($globalConn->ping()) {
-                    $conn = $globalConn;
-                    return;
-                }
-            } catch (Throwable $e) {
-                // continue to attempt creating a new connection
-            }
-        }
-
-        // Create a new mysqli connection directly (avoid re-requiring db.php which
-        // defines functions and may cause redeclaration errors if included multiple times).
-        $host = getenv('DB_HOST') ?: "127.0.0.1";
-        $user = getenv('DB_USER') ?: "root";
-        $pass = getenv('DB_PASS') ?: "";
-        $dbname = getenv('DB_NAME') ?: "broman_db";
-
+    // Try global connection (set by db.php)
+    if (isset($GLOBALS['conn']) && ($GLOBALS['conn'] instanceof mysqli)) {
         try {
-            $newConn = new mysqli($host, $user, $pass, $dbname);
-            // Try to set charset similar to db.php
-            @$newConn->set_charset("utf8mb4");
-            $conn = $newConn;
-            $GLOBALS['conn'] = $conn;
-        } catch (Exception $e) {
-            // If creating a new connection fails, log and leave $conn as-is (null/invalid)
-            error_log("ensure_db_conn: failed to create mysqli: " . $e->getMessage());
+            if ($GLOBALS['conn']->ping()) {
+                $conn = $GLOBALS['conn'];
+                return;
+            }
+        } catch (Throwable $e) {
+            // continue to attempt creating a new connection
         }
+    }
+
+    // If project db.php exists, require it to pick up explicit credentials
+    $dbPath = __DIR__ . '/db.php';
+    if (file_exists($dbPath)) {
+        try {
+            require_once $dbPath;
+            if (isset($GLOBALS['conn']) && ($GLOBALS['conn'] instanceof mysqli)) {
+                try {
+                    if ($GLOBALS['conn']->ping()) {
+                        $conn = $GLOBALS['conn'];
+                        return;
+                    }
+                } catch (Throwable $e) {
+                    // fallback to direct creation
+                }
+            }
+        } catch (Throwable $e) {
+            // ignore and continue
+        }
+    }
+
+    // Last resort: make a new mysqli connection using env vars or defaults
+    $host = getenv('DB_HOST') ?: "127.0.0.1";
+    $user = getenv('DB_USER') ?: "root";
+    $pass = getenv('DB_PASS') ?: "";
+    $dbname = getenv('DB_NAME') ?: "broman_db";
+
+    try {
+        $newConn = new mysqli($host, $user, $pass, $dbname);
+        @ $newConn->set_charset("utf8mb4");
+        $conn = $newConn;
+        $GLOBALS['conn'] = $conn;
+    } catch (Exception $e) {
+        error_log("ensure_db_conn: failed to create mysqli: " . $e->getMessage());
+        $conn = null;
     }
 }
 
@@ -71,19 +74,18 @@ function ensure_db_conn(&$conn)
 function getPropertyImages($property_id, $conn) {
     $images = [];
     ensure_db_conn($conn);
+    if (!($conn instanceof mysqli)) return $images;
+
     $sql = "SELECT image_id, file_path, upload_date, is_primary FROM property_images WHERE property_id = ? ORDER BY is_primary DESC, upload_date ASC";
-    
     if ($stmt = $conn->prepare($sql)) {
         $stmt->bind_param("i", $property_id);
         $stmt->execute();
         $result = $stmt->get_result();
-        
         while ($row = $result->fetch_assoc()) {
             $images[] = $row;
         }
         $stmt->close();
     }
-    
     return $images;
 }
 
@@ -93,6 +95,7 @@ function getPropertyImages($property_id, $conn) {
 function getPropertyAudioNotes($property_id, $conn) {
     $audio_notes = [];
     ensure_db_conn($conn);
+    if (!($conn instanceof mysqli)) return $audio_notes;
     $sql = "SELECT note_id, file_path, upload_date, duration FROM property_audio_notes WHERE property_id = ? ORDER BY upload_date ASC";
     
     if ($stmt = $conn->prepare($sql)) {
@@ -115,6 +118,7 @@ function getPropertyAudioNotes($property_id, $conn) {
 function getPropertyVideos($property_id, $conn) {
     $videos = [];
     ensure_db_conn($conn);
+    if (!($conn instanceof mysqli)) return $videos;
     $sql = "SELECT VideoID, VideoPath, VideoName, VideoSize, UploadDate FROM property_videos WHERE PropertyID = ? ORDER BY UploadDate ASC";
     
     if ($stmt = $conn->prepare($sql)) {
@@ -136,6 +140,7 @@ function getPropertyVideos($property_id, $conn) {
  */
 function getPropertyPrimaryImage($property_id, $conn) {
     ensure_db_conn($conn);
+    if (!($conn instanceof mysqli)) return null;
     $sql = "SELECT file_path FROM property_images WHERE property_id = ? AND is_primary = 1 LIMIT 1";
     
     if ($stmt = $conn->prepare($sql)) {
@@ -175,6 +180,7 @@ function getPropertyPrimaryImage($property_id, $conn) {
  */
 function setImageAsPrimary($image_id, $property_id, $conn) {
     ensure_db_conn($conn);
+    if (!($conn instanceof mysqli)) return false;
     // First, remove primary flag from all images of this property
     $sql1 = "UPDATE property_images SET is_primary = 0 WHERE property_id = ?";
     if ($stmt1 = $conn->prepare($sql1)) {
@@ -231,6 +237,8 @@ function formatDuration($seconds) {
  */
 function moveTempUploadsToProperty($property_id, $session_id, $conn) {
     $base = __DIR__ . '/uploads/';
+    ensure_db_conn($conn);
+    if (!($conn instanceof mysqli)) return false;
     $tempDir = $base . 'temp/' . $session_id . '/';
     if (!is_dir($tempDir)) return false;
 
