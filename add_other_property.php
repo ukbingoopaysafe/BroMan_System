@@ -525,6 +525,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <label for="unit_floor"><?php echo t('unit_floor'); ?>:</label>
                     <input type="text" id="unit_floor" name="unit_floor" class="form-input" value="<?php echo htmlspecialchars($_POST['unit_floor'] ?? ''); ?>">
                 </div>
+                <!-- Add Unit Design input (was missing in this form) -->
+                <div class="form-group">
+                    <label for="unit_design"><?php echo t('unit_design'); ?>:</label>
+                    <input type="text" id="unit_design" name="unit_design" class="form-input" value="<?php echo htmlspecialchars($_POST['unit_design'] ?? ''); ?>">
+                </div>
                  <!-- Removed Unit Design, Bedrooms, Bathrooms -->
             </div>
         </div>
