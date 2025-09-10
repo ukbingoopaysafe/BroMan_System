@@ -311,9 +311,10 @@ class UnifiedMediaUploader {
         });
         
         this.updatePreview();
-        // If property exists, upload immediately
+        // If property exists, upload immediately.
+        // Small delay to avoid racing with server-side session write after page render on some clients.
         if (this.propertyId && this.propertyId > 0) {
-            this.uploadFiles();
+            setTimeout(() => this.uploadFiles(), 250);
         }
     }
     
@@ -554,8 +555,32 @@ document.addEventListener('DOMContentLoaded', function() {
         container.appendChild(note);
     }
 
-    // Initialize uploader for an existing property
-    window.mediaUploader = new UnifiedMediaUploader(propertyId, csrfToken);
+    // Initialize uploader for an existing property, but wait until server session/CSRF are ready
+    function initUploaderWhenReady(retries = 8) {
+        if (!propertyId || propertyId <= 0) {
+            window.mediaUploader = new UnifiedMediaUploader(propertyId, csrfToken);
+            return;
+        }
+
+        fetch('session_ready.php', { method: 'GET', credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.ready) {
+                    const tokenToUse = data.csrf_token || csrfToken;
+                    window.mediaUploader = new UnifiedMediaUploader(propertyId, tokenToUse);
+                } else if (retries > 0) {
+                    setTimeout(() => initUploaderWhenReady(retries - 1), 250);
+                } else {
+                    // fallback to avoid UI lock
+                    window.mediaUploader = new UnifiedMediaUploader(propertyId, csrfToken);
+                }
+            }).catch(err => {
+                if (retries > 0) setTimeout(() => initUploaderWhenReady(retries - 1), 250);
+                else window.mediaUploader = new UnifiedMediaUploader(propertyId, csrfToken);
+            });
+    }
+
+    initUploaderWhenReady();
 
     // No separate upload button.
     // If this is an add page (propertyId <= 0), intercept form submission and append queued files

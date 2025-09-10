@@ -2,6 +2,38 @@
 session_start();
 require_once 'db.php';
 
+// Debug logging to help track 401 from domain-joined clients:
+// Logs session id, incoming cookies, posted csrf token and session csrf token, and remote addr
+error_log(json_encode([
+    'upload_media_debug' => true,
+    'remote_addr' => $_SERVER['REMOTE_ADDR'] ?? null,
+    'request_method' => $_SERVER['REQUEST_METHOD'] ?? null,
+    'cookies' => $_COOKIE ?? null,
+    'post_csrf' => $_POST['csrf_token'] ?? null,
+    'session_id' => session_id(),
+    'session_csrf' => isset($_SESSION['csrf_token']) ? '(present)' : '(missing)',
+    'session_loggedin' => isset($_SESSION['loggedin']) ? $_SESSION['loggedin'] : '(missing)'
+]));
+
+// Extra diagnostics: where PHP expects session files and whether the session file exists/readable
+$sess_save_path = ini_get('session.save_path');
+if (empty($sess_save_path)) { $sess_save_path = sys_get_temp_dir(); }
+$sess_file = rtrim($sess_save_path, "\/\\") . DIRECTORY_SEPARATOR . 'sess_' . session_id();
+$sess_exists = file_exists($sess_file);
+$sess_readable = is_readable($sess_file);
+$sess_size = $sess_exists ? @filesize($sess_file) : null;
+
+error_log(json_encode([
+    'upload_media_session_info' => true,
+    'session_save_path' => $sess_save_path,
+    'session_name' => ini_get('session.name'),
+    'session_save_handler' => ini_get('session.save_handler'),
+    'session_file' => $sess_file,
+    'session_file_exists' => $sess_exists,
+    'session_file_readable' => $sess_readable,
+    'session_file_size' => $sess_size
+]));
+
 // Check if user is logged in
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     http_response_code(401);

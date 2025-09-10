@@ -16,6 +16,12 @@ function configure_secure_session_cookies(): void {
         'samesite' => 'Lax'
     ];
 
+    // If headers were already sent, we cannot change cookie params: log and return
+    if (headers_sent($file, $line)) {
+        error_log("configure_secure_session_cookies: headers already sent (" . ($file ?? '') . ":" . ($line ?? '') . ") - cannot set session cookie parameters");
+        return;
+    }
+
     if (PHP_VERSION_ID >= 70300) {
         session_set_cookie_params($params);
     } else {
@@ -26,6 +32,16 @@ function configure_secure_session_cookies(): void {
 
 // Ensure session is started with hardened cookies
 function ensure_secure_session_started(): void {
+    // If headers were already sent, we cannot reliably change save_path or cookie params.
+    if (headers_sent($file, $line)) {
+        error_log("ensure_secure_session_started: headers already sent (" . ($file ?? '') . ":" . ($line ?? '') . ") - attempting to resume session without changing parameters");
+        if (session_status() === PHP_SESSION_NONE) {
+            // Try to resume session quietly; suppress warnings so we don't display them to users
+            @session_start();
+        }
+        return;
+    }
+
     if (session_status() === PHP_SESSION_NONE) {
         // Prefer project-local session folder to avoid OS temp permission issues on Windows.
         $localTmp = __DIR__ . '/tmp_sessions';

@@ -1,1 +1,0 @@
-lang|s:2:"ar";loggedin|b:1;employee_id|i:8;username|s:5:"fatma";role|s:5:"admin";full_name|s:5:"Fatma";created_at|i:1757422950;last_activity|i:1757424078;idle_warning|b:0;absolute_warning|b:0;idle_time_remaining|i:1800;absolute_time_remaining|i:27672;listing_context|s:6:"Resale";csrf_token|s:64:"ed7ef7a7f57ff4067c2dc56274a511dc7188d7b641b66c66f6909ac8ff4c0535";

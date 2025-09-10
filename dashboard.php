@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . 
 '/lang/translate.php'; // Include translation handler
+require_once __DIR__ . '/bootstrap.php';
 require_once 'session_check.php'; // Include session timeout check
 require_once 'permissions.php'; // Include permissions system
 

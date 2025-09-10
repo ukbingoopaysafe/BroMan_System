@@ -1,0 +1,1 @@
+lang|s:2:"ar";loggedin|b:1;employee_id|i:7;username|s:6:"hassan";role|s:7:"manager";full_name|s:14:"Hassan Alkhiat";created_at|i:1757426275;last_activity|i:1757427785;idle_warning|b:0;absolute_warning|b:0;idle_time_remaining|i:1800;absolute_time_remaining|i:27290;listing_context|s:6:"Resale";csrf_token|s:64:"e0e71aecb0a1a5945e16dbb0d03d73fdd0e981fc264a4c489ac2504bdb2df063";

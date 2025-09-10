@@ -1,11 +1,9 @@
 <?php
-require_once __DIR__ . '/security.php';
-ensure_secure_session_started();
+require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/lang/translate.php'; // Include translation handler
 require_once __DIR__ . '/db.php'; // Database connection
 require_once __DIR__ . '/sorting_helpers.php'; // Include sorting helper functions
 require_once __DIR__ . '/property_image_helper.php'; // Include image helper functions
-require_once __DIR__ . '/security.php';
 require_once 'permissions.php'; // Include permissions system
 
 // Check permissions - all logged in users can view properties

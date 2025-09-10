@@ -1,12 +1,10 @@
 <?php
 // Clean navbar.php
+require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/lang/translate.php';
-require_once 'session_check.php';
 require_once 'permissions.php';
 
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+// session is started by bootstrap.php (ensure_secure_session_started())
 
 $is_logged_in = isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true;
 $user_role = isset($_SESSION["role"]) ? $_SESSION["role"] : null;

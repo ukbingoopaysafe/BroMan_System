@@ -1,8 +1,7 @@
 <?php
 // Corrected include path for translation handler
+require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/lang/translate.php';
-require_once __DIR__ . '/security.php';
-ensure_secure_session_started();
 require_once 'permissions.php'; // Include permissions system
 
 // Check permissions - only manager and admin can edit properties
@@ -28,6 +27,8 @@ require_once __DIR__ . '/flash.php';
 
 // Generate CSRF token
 $csrf_token = generateCSRFToken();
+// Ensure session data (csrf token, login flags) are written before allowing async requests
+session_write_close();
 
 // Define Property Type IDs
 const RESIDENTIAL_PROPERTY_TYPE_ID = 1;

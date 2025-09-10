@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
 
-// Include session check
+require_once __DIR__ . '/bootstrap.php';
 require_once 'session_check.php';
 
 // Update last activity to extend idle timeout

@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__ . '/security.php';
-ensure_secure_session_started();
+require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/lang/translate.php'; // Include translation handler
+// session_check.php still applies session timeout checks and redirects when needed
 require_once 'session_check.php'; // Include session timeout check
 
 // Check if the user is logged in, if not then redirect to login page

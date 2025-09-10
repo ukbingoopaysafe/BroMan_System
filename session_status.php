@@ -1,7 +1,8 @@
 <?php
 header('Content-Type: application/json');
 
-// Include session check
+// Ensure sessions are started early
+require_once __DIR__ . '/bootstrap.php';
 require_once 'session_check.php';
 
 $current_time = time();
