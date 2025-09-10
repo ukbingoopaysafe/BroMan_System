@@ -792,7 +792,7 @@ $conn->close();
                 </div>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="title"><?php echo t('property_title'); ?></label>
+                        <label for="title"><?php echo t('unit_title_optional'); ?></label>
                         <input type="text" id="title" name="title" class="form-input" value="<?php echo htmlspecialchars($title); ?>">
                         <?php if (isset($errors['title'])) {
                             echo "<span class='error-message'>" . $errors['title'] . "</span>";
@@ -933,14 +933,27 @@ $conn->close();
                                 echo "<span class='error-message'>" . $errors['floors_count'] . "</span>";
                             } ?>
                         </div>
+                        <!-- إضافة خانة نموذج الوحدة -->
                         <div class="form-group">
-                            <label for="finishing_type_id_commercial"><?php echo t('finishing_type'); ?>: *</label>
-                            <select id="finishing_type_id_commercial" name="finishing_type_id" class="form-input" required>
+                            <label for="unit_design_commercial"><?php echo t('unit_design'); ?>:</label>
+                            <input type="text" id="unit_design_commercial" name="unit_design" class="form-input" value="<?php echo htmlspecialchars($unit_design); ?>">
+                            <?php if (isset($errors['unit_design'])) {
+                                echo "<span class='error-message'>" . $errors['unit_design'] . "</span>";
+                            } ?>
+                        </div>
+                        <div class="form-group">
+                            <label for="finishing_type_id_commercial"><?php echo t('finishing_type'); ?>:</label>
+                            <select id="finishing_type_id_commercial" name="finishing_type_id" class="form-input">
                                 <option value=""><?php echo t('select_finishing_type'); ?></option>
                                 <?php foreach ($finishing_types_list as $finish): ?>
-                                    <option value="<?php echo $finish['FinishingID']; ?>"
-                                        <?php echo ($finishing_type_id == $finish['FinishingID']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($finish['FinishingName']); ?>
+                                    <option value="<?php echo $finish['FinishingID']; ?>" <?php echo ($finishing_type_id == $finish['FinishingID']) ? 'selected' : ''; ?>>
+                                        <?php
+                                        if (get_lang_code() === 'ar' && !empty($finish['FinishingName_ar'])) {
+                                            echo htmlspecialchars($finish['FinishingName_ar']);
+                                        } else {
+                                            echo htmlspecialchars($finish['FinishingName']);
+                                        }
+                                        ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
