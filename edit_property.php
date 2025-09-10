@@ -839,9 +839,17 @@ $conn->close();
                 <!-- Interactive Map Section -->
                 <div class="form-group" style="grid-column: 1 / -1;">
                     <label><?php echo t('select_location_on_map'); ?>:</label>
+
+                    <!-- Google Maps link input -->
+                    <div style="margin:8px 0; display:flex; gap:8px; align-items:center;">
+                        <input type="text" id="google_map_link" class="form-input" style="flex:1;" placeholder="https://www.google.com/maps/..." value="<?php echo htmlspecialchars($google_map_link ?? ''); ?>">
+                        <button type="button" id="parse_google_link" class="btn">تحديد من الرابط</button>
+                    </div>
+                    <small>لصق رابط خرائط جوجل ثم اضغط "تحديد من الرابط"</small>
+
                     <div id="map" style="height: 400px; width: 100%; border: 1px solid #ddd; border-radius: 4px;"></div>
                     <small><?php echo t('click_map_to_set_location'); ?></small>
-                    
+
                     <!-- Hidden inputs for coordinates -->
                     <input type="hidden" id="latitude" name="latitude" value="<?php echo htmlspecialchars($latitude ?? ''); ?>">
                     <input type="hidden" id="longitude" name="longitude" value="<?php echo htmlspecialchars($longitude ?? ''); ?>">
@@ -1301,6 +1309,54 @@ $conn->close();
                     if (marker) { map.removeLayer(marker); }
                     marker = L.marker([clickedLat, clickedLng]).addTo(map);
                 });
+
+                // Helper: extract lat/lng from common Google Maps link formats
+                function extractLatLngFromGoogleUrl(url) {
+                    try {
+                        if (!url || typeof url !== 'string') return null;
+
+                        // Try to find @lat,lng pattern (maps.google.com/@30.0,31.0,17z)
+                        const atMatch = url.match(/@([0-9.+-]+),([0-9.+-]+)/);
+                        if (atMatch) {
+                            return {lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2])};
+                        }
+
+                        // Try query param 'query=lat,lng' or 'q=lat,lng'
+                        const qMatch = url.match(/[?&](?:query|q)=\s*([0-9.+-]+),\s*([0-9.+-]+)/);
+                        if (qMatch) {
+                            return {lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2])};
+                        }
+
+                        // Try place? or /place/.../data=!3m1!4b1!4m5!3m4!1s0x...:0x...!8m2!3dLAT!4dLNG
+                        const dMatch = url.match(/!3d([0-9.+-]+)!4d([0-9.+-]+)/);
+                        if (dMatch) {
+                            return {lat: parseFloat(dMatch[1]), lng: parseFloat(dMatch[2])};
+                        }
+
+                        return null;
+                    } catch (e) {
+                        return null;
+                    }
+                }
+
+                // Wire up "تحديد من الرابط" button
+                const parseBtn = document.getElementById('parse_google_link');
+                if (parseBtn) {
+                    parseBtn.addEventListener('click', function() {
+                        const input = document.getElementById('google_map_link');
+                        const val = input ? input.value.trim() : '';
+                        const coords = extractLatLngFromGoogleUrl(val);
+                        if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
+                            latInput.value = coords.lat;
+                            lngInput.value = coords.lng;
+                            if (marker) { map.removeLayer(marker); }
+                            marker = L.marker([coords.lat, coords.lng]).addTo(map);
+                            map.setView([coords.lat, coords.lng], 15);
+                        } else {
+                            alert('لم يتم العثور على إحداثيات في الرابط. الرجاء التحقق من أن الرابط من خرائط جوجل ويتضمن إحداثيات.');
+                        }
+                    });
+                }
             }
 
             window.addEventListener('load', function() { initMap(); });
