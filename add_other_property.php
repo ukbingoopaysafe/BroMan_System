@@ -103,16 +103,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $delivery_date = !empty($delivery_date_str) ? $delivery_date_str : null;
     
     // New Phase 2 fields
-    $year_built = filter_input(INPUT_POST, 'year_built', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
-    if ($year_built !== null) {
-        $year_int = intval($year_built);
-        $current_year = intval(date('Y'));
-        if ($year_int < 1900 || $year_int > ($current_year + 1)) {
-            $year_built = null;
-        } else {
-            $year_built = $year_int;
-        }
-    }
+    $year_built = trim($_POST['year_built'] ?? null);
     $unit_floor = trim($_POST['unit_floor'] ?? null);
     $net_area = filter_input(INPUT_POST, 'net_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $loading_percentage = filter_input(INPUT_POST, 'loading_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
@@ -519,7 +510,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
                 <div class="form-group">
                     <label for="year_built"><?php echo t('year_built'); ?>:</label>
-                    <input type="number" id="year_built" name="year_built" class="form-input" min="1900" max="2030" value="<?php echo htmlspecialchars($_POST['year_built'] ?? ''); ?>">
+                    <input type="text" id="year_built" name="year_built" class="form-input" value="<?php echo htmlspecialchars($_POST['year_built'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
                     <label for="unit_floor"><?php echo t('unit_floor'); ?>:</label>

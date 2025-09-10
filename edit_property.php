@@ -202,16 +202,7 @@ $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
     $longitude_posted = isset($_POST['longitude']) && trim($_POST['longitude']) !== '' ? filter_input(INPUT_POST, 'longitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     
     // New Phase 2 fields
-    $year_built_posted = isset($_POST['year_built']) && trim($_POST['year_built']) !== '' ? filter_input(INPUT_POST, 'year_built', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) : null;
-    if ($year_built_posted !== null) {
-        $year_int = intval($year_built_posted);
-        $current_year = intval(date('Y'));
-        if ($year_int < 1900 || $year_int > ($current_year + 1)) {
-            $year_built_posted = null;
-        } else {
-            $year_built_posted = $year_int;
-        }
-    }
+    $year_built_posted = isset($_POST['year_built']) ? trim($_POST['year_built']) : null;
     $seller_type_posted = isset($_POST['seller_type']) ? trim($_POST['seller_type']) : null;
     if ($seller_type_posted !== null && $seller_type_posted === '') { $seller_type_posted = null; }
     // Validate against allowed UI list; normalize to DB value if needed
@@ -910,7 +901,10 @@ $conn->close();
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="year_built"><?php echo t('year_built'); ?>:</label>
-                            <input type="number" id="year_built" name="year_built" class="form-input" min="1900" max="2030" value="<?php echo htmlspecialchars($year_built); ?>">
+                            <input type="text" id="year_built" name="year_built" class="form-input" value="<?php echo htmlspecialchars($year_built); ?>">
+                            <?php if (isset($errors['year_built'])) {
+                                echo "<span class='error-message'>" . $errors['year_built'] . "</span>";
+                            } ?>
                         </div>
                         <div class="form-group">
                             <label for="unit_floor"><?php echo t('unit_floor'); ?>:</label>
