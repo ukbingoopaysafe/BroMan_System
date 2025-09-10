@@ -27,6 +27,44 @@ $property_id_to_delete = null;
 if (isset($_POST["id"]) && !empty(trim($_POST["id"]))) {
     $property_id_to_delete = (int) trim($_POST["id"]);
 
+    // Delete all related media files before deleting the property
+    // Images
+    $sql_images = "SELECT file_path FROM property_images WHERE property_id = ?";
+    if ($stmt_img = $conn->prepare($sql_images)) {
+        $stmt_img->bind_param("i", $property_id_to_delete);
+        $stmt_img->execute();
+        $result_img = $stmt_img->get_result();
+        while ($row = $result_img->fetch_assoc()) {
+            $img_path = __DIR__ . '/' . $row['file_path'];
+            if (file_exists($img_path)) { @unlink($img_path); }
+        }
+        $stmt_img->close();
+    }
+    // Audio
+    $sql_audio = "SELECT file_path FROM property_audio_notes WHERE property_id = ?";
+    if ($stmt_audio = $conn->prepare($sql_audio)) {
+        $stmt_audio->bind_param("i", $property_id_to_delete);
+        $stmt_audio->execute();
+        $result_audio = $stmt_audio->get_result();
+        while ($row = $result_audio->fetch_assoc()) {
+            $audio_path = __DIR__ . '/' . $row['file_path'];
+            if (file_exists($audio_path)) { @unlink($audio_path); }
+        }
+        $stmt_audio->close();
+    }
+    // Videos
+    $sql_videos = "SELECT VideoPath FROM property_videos WHERE PropertyID = ?";
+    if ($stmt_vid = $conn->prepare($sql_videos)) {
+        $stmt_vid->bind_param("i", $property_id_to_delete);
+        $stmt_vid->execute();
+        $result_vid = $stmt_vid->get_result();
+        while ($row = $result_vid->fetch_assoc()) {
+            $vid_path = __DIR__ . '/' . $row['VideoPath'];
+            if (file_exists($vid_path)) { @unlink($vid_path); }
+        }
+        $stmt_vid->close();
+    }
+
     // In a production system, a POST request with a CSRF token is safer for delete actions.
     // For this project, we are keeping the GET request for simplicity but adding admin check.
 
