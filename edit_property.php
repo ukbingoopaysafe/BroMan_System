@@ -961,6 +961,13 @@ $conn->close();
                                 echo "<span class='error-message'>" . $errors['finishing_type_id'] . "</span>";
                             } ?>
                         </div>
+                        <div class="form-group">
+                            <label for="unit_floor_commercial"><?php echo t('unit_floor'); ?>:</label>
+                            <input type="text" id="unit_floor_commercial" name="unit_floor" class="form-input" value="<?php echo htmlspecialchars($unit_floor); ?>">
+                            <?php if (isset($errors['unit_floor'])) {
+                                echo "<span class='error-message'>" . $errors['unit_floor'] . "</span>";
+                            } ?>
+                        </div>
                     </div>
                 </div>
             </div>
