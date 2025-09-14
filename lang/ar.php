@@ -378,6 +378,8 @@ return [
     'seller_type_developer_company' => 'شركة مطورة',
     'seller_type_finishing_company' => 'شركة تشطيب',
     'seller_type_marketing_company' => 'شركة تسويق',
+    'all_seller_types' => 'جميع أنواع البائعين',
+    'all_designs' => 'جميع التصاميم',
 
     // Client List
     'manage_clients_title' => 'إدارة العملاء',

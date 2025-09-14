@@ -23,7 +23,7 @@ $current_mode = $_SESSION['listing_context'];
 const CURRENT_PROPERTY_TYPE_ID = 1;
 
 // Initialize search and filter variables
-$search_term = $governorate_filter = $company_filter = $status_filter = $property_type_filter = "";
+$search_term = $governorate_filter = $company_filter = $status_filter = $property_type_filter = $seller_type_filter = "";
 $min_price_filter = $max_price_filter = $min_area_filter = $max_area_filter = $down_payment_filter = $payment_period_filter = "";
 $unit_design_filter = "";
 $view_mode = isset($_GET['view']) && $_GET['view'] === 'card' ? 'card' : 'table';
@@ -56,6 +56,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     $unit_design_filter = isset($_GET['unit_design']) ? trim($_GET['unit_design']) : '';
     $status_filter = isset($_GET['status']) ? trim($_GET['status']) : '';
     $property_type_filter = isset($_GET['property_type']) ? trim($_GET['property_type']) : '';
+    $seller_type_filter = isset($_GET['seller_type']) ? trim($_GET['seller_type']) : '';
 
     // Advanced filters
     $min_price_filter = isset($_GET['min_price']) && is_numeric($_GET['min_price']) ? trim($_GET['min_price']) : '';
@@ -158,6 +159,13 @@ if (!empty($property_type_filter)) {
 if (!empty($governorate_filter)) {
     $sql_where[] = "p.governorate = ?";
     $params[] = $governorate_filter;
+    $types .= "s";
+}
+
+// Add seller_type filter
+if (!empty($seller_type_filter)) {
+    $sql_where[] = "p.seller_type = ?";
+    $params[] = $seller_type_filter;
     $types .= "s";
 }
 
@@ -432,6 +440,15 @@ function getPropertyTypeBadge($typeId, $typeName) {
                             <option value="<?php echo htmlspecialchars($company); ?>" <?php echo $company_filter === $company ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($company); ?>
                             </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label for="seller_type"><?php echo t('seller_type'); ?>:</label>
+                    <select id="seller_type" name="seller_type" class="form-control">
+                        <option value=""><?php echo t('all_seller_types') ?? t('select_seller_type'); ?></option>
+                        <?php foreach (allowed_seller_types() as $st): ?>
+                            <option value="<?php echo htmlspecialchars($st); ?>" <?php echo $seller_type_filter === $st ? 'selected' : ''; ?>><?php echo htmlspecialchars($st); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>

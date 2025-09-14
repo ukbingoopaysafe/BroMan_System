@@ -372,6 +372,7 @@ return [
     'seller_type_real_estate_office' => 'Real Estate Office',
     'seller_type_developer' => 'Developer',
     'select_seller_type' => 'Select Seller Type',
+    'all_seller_types' => 'All Seller Types',
     // New seller type labels
     'seller_type_owner' => 'Owner',
     'seller_type_broker' => 'Broker',
@@ -379,6 +380,7 @@ return [
     'seller_type_developer_company' => 'Developer Company',
     'seller_type_finishing_company' => 'Finishing Company',
     'seller_type_marketing_company' => 'Marketing Company',
+    'all_designs' => 'All Designs',
 
     // Client List (index.php)
     'manage_clients_title' => 'Manage Clients',
