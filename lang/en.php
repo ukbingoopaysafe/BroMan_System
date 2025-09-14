@@ -378,6 +378,7 @@ return [
     'seller_type_doorman' => 'Doorman',
     'seller_type_developer_company' => 'Developer Company',
     'seller_type_finishing_company' => 'Finishing Company',
+    'seller_type_marketing_company' => 'Marketing Company',
 
     // Client List (index.php)
     'manage_clients_title' => 'Manage Clients',

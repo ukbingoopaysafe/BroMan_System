@@ -644,6 +644,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <option value="بواب" <?php echo (($_POST['seller_type'] ?? '') == 'بواب') ? 'selected' : ''; ?>><?php echo t('seller_type_doorman'); ?></option>
                         <option value="شركة مطورة" <?php echo (($_POST['seller_type'] ?? '') == 'شركة مطورة') ? 'selected' : ''; ?>><?php echo t('seller_type_developer_company'); ?></option>
                         <option value="شركة تشطيب" <?php echo (($_POST['seller_type'] ?? '') == 'شركة تشطيب') ? 'selected' : ''; ?>><?php echo t('seller_type_finishing_company'); ?></option>
+                        <option value="شركة تسويق" <?php echo (($_POST['seller_type'] ?? '') == 'شركة تسويق') ? 'selected' : ''; ?>><?php echo t('seller_type_marketing_company'); ?></option>
                     </select>
                 </div>
                 <div class="form-group">

@@ -146,6 +146,7 @@ function allowed_seller_types(): array
         'بواب',
         'شركة مطورة',
         'شركة تشطيب',
+        'شركة تسويق',
     ];
 }
 

@@ -973,6 +973,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                         'بواب' => 'seller_type_doorman',
                         'شركة مطورة' => 'seller_type_developer_company',
                         'شركة تشطيب' => 'seller_type_finishing_company',
+                        'شركة تسويق' => 'seller_type_marketing_company',
                         // English fallbacks (in case any rows were stored in English)
                         'Owner' => 'seller_type_owner',
                         'Broker' => 'seller_type_broker',
@@ -980,6 +981,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                         'Doorman' => 'seller_type_doorman',
                         'Developer Company' => 'seller_type_developer_company',
                         'Finishing Company' => 'seller_type_finishing_company',
+                        'Marketing Company' => 'seller_type_marketing_company',
                     ];
 
                     if (isset($map[$v])) {

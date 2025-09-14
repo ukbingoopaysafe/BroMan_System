@@ -377,6 +377,7 @@ return [
     'seller_type_doorman' => 'بواب',
     'seller_type_developer_company' => 'شركة مطورة',
     'seller_type_finishing_company' => 'شركة تشطيب',
+    'seller_type_marketing_company' => 'شركة تسويق',
 
     // Client List
     'manage_clients_title' => 'إدارة العملاء',

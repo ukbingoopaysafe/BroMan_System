@@ -1107,6 +1107,7 @@ $conn->close();
                             <option value="بواب" <?php echo ($seller_type == 'بواب') ? 'selected' : ''; ?>><?php echo t('seller_type_doorman'); ?></option>
                             <option value="شركة مطورة" <?php echo ($seller_type == 'شركة مطورة') ? 'selected' : ''; ?>><?php echo t('seller_type_developer_company'); ?></option>
                             <option value="شركة تشطيب" <?php echo ($seller_type == 'شركة تشطيب') ? 'selected' : ''; ?>><?php echo t('seller_type_finishing_company'); ?></option>
+                            <option value="شركة تسويق" <?php echo ($seller_type == 'شركة تسويق') ? 'selected' : ''; ?>><?php echo t('seller_type_marketing_company'); ?></option>
                         </select>
                     </div>
                     <div class="form-group">
