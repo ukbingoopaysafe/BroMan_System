@@ -140,7 +140,8 @@ $types .= "s";
 
 // Add search term filter
 if (!empty($search_term)) {
-    $sql_where[] = "(p.Title LIKE ? OR p.ProjectName LIKE ? OR p.governorate LIKE ? OR p.district LIKE ? OR p.Location LIKE ? OR p.company_name LIKE ? OR pud.DesignName LIKE ?)";
+    // unit design stored on Properties.unit_design
+    $sql_where[] = "(p.Title LIKE ? OR p.ProjectName LIKE ? OR p.governorate LIKE ? OR p.district LIKE ? OR p.Location LIKE ? OR p.company_name LIKE ? OR p.unit_design LIKE ?)";
     $search_param = "%" . $search_term . "%";
     array_push($params, $search_param, $search_param, $search_param, $search_param, $search_param, $search_param, $search_param);
     $types .= "sssssss";
@@ -441,8 +442,8 @@ function getPropertyTypeBadge($typeId, $typeName) {
                     <label for="unit_design"><?php echo t('unit_design'); ?>:</label>
                     <select id="unit_design" name="unit_design" class="form-control">
                         <option value=""><?php echo t('all_designs'); ?></option>
-                        <?php foreach ($unit_designs as $design_id => $design_name): ?>
-                            <option value="<?php echo $design_id; ?>" <?php echo $unit_design_filter == $design_id ? 'selected' : ''; ?>>
+                        <?php foreach ($unit_designs as $design_name): ?>
+                            <option value="<?php echo htmlspecialchars($design_name); ?>" <?php echo $unit_design_filter === $design_name ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($design_name); ?>
                             </option>
                         <?php endforeach; ?>
