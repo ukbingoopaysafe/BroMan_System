@@ -960,9 +960,46 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                 $seller_name_raw = $property['seller_name'] ?? null;
                 $seller_phone_raw = $property['seller_phone'] ?? null;
 
-                // Helper to render a value or a fallback
-                function render_or_fallback($val) {
-                    if ($val !== null && trim((string)$val) !== '') return htmlspecialchars(trim((string)$val));
+                // Helper: translate seller_type stored values to localized labels
+                function translate_seller_type($val) {
+                    $v = $val === null ? '' : trim((string)$val);
+                    if ($v === '') return '';
+                    // map common stored values (Arabic and English variants) to translation keys
+                    $map = [
+                        // Arabic values (database canonical values)
+                        'مالك' => 'seller_type_owner',
+                        'وسيط' => 'seller_type_broker',
+                        'وكيل' => 'seller_type_agent',
+                        'بواب' => 'seller_type_doorman',
+                        'شركة مطورة' => 'seller_type_developer_company',
+                        'شركة تشطيب' => 'seller_type_finishing_company',
+                        // English fallbacks (in case any rows were stored in English)
+                        'Owner' => 'seller_type_owner',
+                        'Broker' => 'seller_type_broker',
+                        'Agent' => 'seller_type_agent',
+                        'Doorman' => 'seller_type_doorman',
+                        'Developer Company' => 'seller_type_developer_company',
+                        'Finishing Company' => 'seller_type_finishing_company',
+                    ];
+
+                    if (isset($map[$v])) {
+                        // Use translation helper to get localized label
+                        return t($map[$v]);
+                    }
+
+                    // Unknown value: return raw string so admin can see it
+                    return $v;
+                }
+
+                // Helper to render a value or a fallback. If $is_seller_type is true,
+                // attempt to translate the stored seller_type value.
+                function render_or_fallback($val, $is_seller_type = false) {
+                    if ($val !== null && trim((string)$val) !== '') {
+                        if ($is_seller_type) {
+                            return htmlspecialchars(translate_seller_type($val));
+                        }
+                        return htmlspecialchars(trim((string)$val));
+                    }
                     return htmlspecialchars(t('undefined'));
                 }
 
@@ -981,7 +1018,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                 ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('seller_type'); ?>:</span>
-                        <span class="detail-value"><?php echo render_or_fallback($seller_type_raw); ?></span>
+                        <span class="detail-value"><?php echo render_or_fallback($seller_type_raw, true); ?></span>
                     </div>
                     <div class="detail-item detail-name">
                         <span class="detail-label"><?php echo t('name'); ?>:</span>
