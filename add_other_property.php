@@ -267,6 +267,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 finfo_close($finfo3);
             }
 
+            // Attachments
+            if (!empty($_FILES['attachments']) && is_array($_FILES['attachments']['name'])) {
+                $attachments_dir = $base_upload_dir . 'attachments/';
+                if (!is_dir($attachments_dir)) { mkdir($attachments_dir, 0755, true); }
+                $allowed_ext = ['jpg','jpeg','png','webp','gif','pdf','doc','docx','xls','xlsx','txt','csv','odt'];
+                $max_attach_size = 10 * 1024 * 1024; // 10MB
+                $finfo4 = finfo_open(FILEINFO_MIME_TYPE);
+                foreach ($_FILES['attachments']['name'] as $idx => $name) {
+                    if ($_FILES['attachments']['error'][$idx] !== UPLOAD_ERR_OK) { continue; }
+                    if ($_FILES['attachments']['size'][$idx] > $max_attach_size) { continue; }
+                    $tmp = $_FILES['attachments']['tmp_name'][$idx];
+                    $mime = finfo_file($finfo4, $tmp);
+                    $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+                    if (!in_array($ext, $allowed_ext)) {
+                        $mime_map = ['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp','application/pdf'=>'pdf','application/msword'=>'doc','application/vnd.openxmlformats-officedocument.wordprocessingml.document'=>'docx','text/plain'=>'txt','text/csv'=>'csv'];
+                        if (isset($mime_map[$mime])) { $ext = $mime_map[$mime]; }
+                    }
+                    if (!in_array($ext, $allowed_ext)) { continue; }
+                    $filename = 'property_' . $new_property_id . '_attach_' . bin2hex(random_bytes(8)) . '.' . $ext;
+                    $dest = $attachments_dir . $filename;
+                    $relative = 'uploads/attachments/' . $filename;
+                    if (move_uploaded_file($tmp, $dest)) {
+                        $emp_id = $_SESSION['employee_id'] ?? null;
+                        $ins = "INSERT INTO property_attachments (PropertyID, FileName, FilePath, FileType, FileSize, EmployeeID) VALUES (?, ?, ?, ?, ?, ?)";
+                        if ($ast = $conn->prepare($ins)) {
+                            $size = filesize($dest);
+                            $emp_int = ($emp_id === null) ? null : (int)$emp_id;
+                            $ast->bind_param("isssii", $new_property_id, $name, $relative, $mime, $size, $emp_int);
+                            $ast->execute();
+                            $ast->close();
+                        }
+                    }
+                }
+                finfo_close($finfo4);
+            }
+
             // Move any temporary uploads into property
             if (function_exists('moveTempUploadsToProperty')) {
                 $moved = moveTempUploadsToProperty($new_property_id, session_id(), $conn);
@@ -661,6 +697,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <!-- Unified Media Upload Section -->
         <div class="form-section">
             <?php include 'unified_media_uploader.php'; ?>
+            <?php include 'unified_attachment_uploader.php'; ?>
         </div>
 
         <div class="form-actions">

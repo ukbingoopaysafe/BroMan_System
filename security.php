@@ -12,7 +12,9 @@ function configure_secure_session_cookies(): void {
         'domain' => '',
         'secure' => $is_https, // Ensure HTTPS in production deployments
         'httponly' => true,
-        'samesite' => 'Strict'
+        // Use Lax so cookies are sent for top-level navigations and most resource loads
+        // while still providing some CSRF mitigation compared to 'None'.
+        'samesite' => 'Lax'
     ];
 
     if (PHP_VERSION_ID >= 70300) {

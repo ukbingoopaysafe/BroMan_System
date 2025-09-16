@@ -530,6 +530,16 @@ return [
     'video_name' => 'Video Name',
     'video_size' => 'Video Size',
     'uploaded_on' => 'Uploaded on',
+    // Attachments
+    'attachments' => 'Attachments',
+    'manage_attachments' => 'Manage Attachments',
+    'upload_attachment' => 'Upload New Attachment',
+    'no_attachments_found' => 'No attachments found for this property.',
+    'confirm_delete_attachment' => 'Are you sure you want to delete this attachment? This action cannot be undone.',
+    'attachment_deleted_successfully' => 'Attachment deleted successfully.',
+    'error_deleting_attachment' => 'An error occurred while deleting the attachment.',
+    'attachment_upload_success' => 'Attachment uploaded successfully!',
+    'error_uploading_attachment' => 'An error occurred while uploading the attachment.',
 ];
 ?>
 

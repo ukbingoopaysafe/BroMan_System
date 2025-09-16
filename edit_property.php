@@ -163,6 +163,19 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
 // Get property media
 $property_images = getPropertyImages($property_id, $conn);
 $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
+// Fetch attachments for this property
+$property_attachments = [];
+$att_stmt = $conn->prepare("SELECT pa.*, e.FullName AS UploadedBy FROM property_attachments pa LEFT JOIN employees e ON pa.EmployeeID = e.EmployeeID WHERE pa.PropertyID = ? ORDER BY pa.UploadedAt DESC");
+if ($att_stmt) {
+    $att_stmt->bind_param('i', $property_id);
+    if ($att_stmt->execute()) {
+        $att_res = $att_stmt->get_result();
+        while ($a = $att_res->fetch_assoc()) {
+            $property_attachments[] = $a;
+        }
+    }
+    $att_stmt->close();
+}
 
 // --- Process form submission for update ---
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -1127,6 +1140,71 @@ $conn->close();
             </div>
         </form>
     </div>
+
+    <?php if (can_manage_properties()): ?>
+        <?php include __DIR__ . '/unified_attachment_uploader.php'; ?>
+
+        <div class="property-section">
+            <h2><?php echo t('attachments'); ?></h2>
+            <div class="detail-grid">
+                <div class="detail-item full-width">
+                    <div class="attachments-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;">
+                        <?php if (empty($property_attachments)): ?>
+                            <div><?php echo t('no_attachments_found'); ?></div>
+                        <?php else: ?>
+                            <?php foreach ($property_attachments as $att): 
+                                $ext = strtolower(pathinfo($att['FileName'], PATHINFO_EXTENSION));
+                                $isImage = in_array($ext, ['jpg','jpeg','png','webp','gif']);
+                                $iconClass = 'fa-file';
+                                if (in_array($ext, ['pdf'])) $iconClass = 'fa-file-pdf';
+                                if (in_array($ext, ['doc','docx'])) $iconClass = 'fa-file-word';
+                                if (in_array($ext, ['xls','xlsx','csv'])) $iconClass = 'fa-file-excel';
+                                if ($isImage) $iconClass = 'fa-file-image';
+                                $secureUrl = 'serve_attachment.php?id=' . (int)$att['AttachmentID'];
+                            ?>
+                            <div id="att-<?php echo (int)$att['AttachmentID']; ?>" class="attachment-item" style="border:1px solid #eee;padding:8px;border-radius:6px;text-align:center;">
+                                <div style="height:96px;display:flex;align-items:center;justify-content:center;">
+                                    <?php if ($isImage): ?>
+                                        <a href="<?php echo htmlspecialchars($secureUrl); ?>" class="attachment-image-clickable" data-src="<?php echo htmlspecialchars($secureUrl); ?>">
+                                            <img src="<?php echo htmlspecialchars($secureUrl); ?>" alt="<?php echo htmlspecialchars($att['FileName']); ?>" style="max-height:96px;max-width:100%;object-fit:cover;border-radius:4px;">
+                                        </a>
+                                    <?php else: ?>
+                                        <a href="<?php echo htmlspecialchars($secureUrl); ?>" target="_blank"><i class="fas <?php echo $iconClass; ?> fa-3x" aria-hidden="true"></i></a>
+                                    <?php endif; ?>
+                                </div>
+                                <div style="margin-top:8px;">
+                                    <a href="<?php echo htmlspecialchars($secureUrl); ?>" target="_blank"><?php echo htmlspecialchars($att['FileName']); ?></a>
+                                </div>
+                                <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'manager'): ?>
+                                <div style="font-size:0.9rem;color:#666;margin-top:6px;">
+                                    <?php echo htmlspecialchars(substr($att['UploadedAt'],0,19)); ?> - <?php echo htmlspecialchars($att['UploadedBy'] ?? t('unknown')); ?>
+                                </div>
+                                <?php endif; ?>
+                                <div style="margin-top:6px;">
+                                    <button class="btn btn-danger delete-attachment" data-id="<?php echo (int)$att['AttachmentID']; ?>"><?php echo t('delete'); ?></button>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        document.addEventListener('click', function(e){
+            if (e.target.classList.contains('delete-attachment')) {
+                if (!confirm('<?php echo t('confirm_delete_attachment'); ?>')) return;
+                const id = e.target.dataset.id;
+                const fd = new FormData(); fd.append('attachment_id', id); fd.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+                fetch('delete_attachment.php', { method: 'POST', body: fd, credentials: 'same-origin' }).then(r=>r.json()).then(data=>{
+                    if (data.success) { const el = document.getElementById('att-' + id); if (el) el.remove(); alert('<?php echo t('attachment_deleted_successfully'); ?>'); }
+                    else { alert('<?php echo t('error_deleting_attachment'); ?>'); }
+                }).catch(()=>{ alert('<?php echo t('error_deleting_attachment'); ?>'); });
+            }
+        });
+        </script>
+    <?php endif; ?>
 
     <script>
     (function(){

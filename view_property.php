@@ -67,6 +67,19 @@ if ($stmt = $conn->prepare($sql)) {
 $property_images = getPropertyImages($property_id, $conn);
 $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
 $property_videos = getPropertyVideos($property_id, $conn);
+// Fetch attachments for this property
+$property_attachments = [];
+$att_stmt = $conn->prepare("SELECT pa.*, e.FullName AS UploadedBy FROM property_attachments pa LEFT JOIN employees e ON pa.EmployeeID = e.EmployeeID WHERE pa.PropertyID = ? ORDER BY pa.UploadedAt DESC");
+if ($att_stmt) {
+    $att_stmt->bind_param('i', $property_id);
+    if ($att_stmt->execute()) {
+        $att_res = $att_stmt->get_result();
+        while ($a = $att_res->fetch_assoc()) {
+            $property_attachments[] = $a;
+        }
+    }
+    $att_stmt->close();
+}
 
 // Format price for display
 function formatPrice($property)
@@ -1061,6 +1074,46 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                 </div>
             </div>
             <?php endif; ?>
+
+            <?php if (!empty($property_attachments) && can_manage_properties()): ?>
+            <div class="property-section">
+                <h2>📎 <?php echo t('attachments'); ?></h2>
+                <div class="media-gallery">
+                    <div class="attachments-grid images-grid" style="margin-top:10px;">
+                        <?php foreach ($property_attachments as $att): 
+                            $ext = strtolower(pathinfo($att['FileName'], PATHINFO_EXTENSION));
+                            $isImage = in_array($ext, ['jpg','jpeg','png','webp','gif']);
+                            $iconClass = 'fa-file';
+                            if (in_array($ext, ['pdf'])) $iconClass = 'fa-file-pdf';
+                            if (in_array($ext, ['doc','docx'])) $iconClass = 'fa-file-word';
+                            if (in_array($ext, ['xls','xlsx','csv'])) $iconClass = 'fa-file-excel';
+                            $secureUrl = 'serve_attachment.php?id=' . (int)$att['AttachmentID'];
+                        ?>
+                        <div class="image-item attachment-item" id="att-<?php echo (int)$att['AttachmentID']; ?>" style="padding:14px;display:flex;flex-direction:column;align-items:center;">
+                            <div style="width:100%;height:120px;display:flex;align-items:center;justify-content:center;">
+                                <?php if ($isImage): ?>
+                                    <a href="<?php echo htmlspecialchars($secureUrl); ?>" class="attachment-image-clickable" data-src="<?php echo htmlspecialchars($secureUrl); ?>" data-alt="<?php echo htmlspecialchars($att['FileName']); ?>">
+                                        <img src="<?php echo htmlspecialchars($secureUrl); ?>" alt="<?php echo htmlspecialchars($att['FileName']); ?>" style="max-width:100%;max-height:120px;object-fit:cover;border-radius:6px;">
+                                    </a>
+                                <?php else: ?>
+                                    <a href="<?php echo htmlspecialchars($secureUrl); ?>" target="_blank">
+                                        <i class="fas <?php echo $iconClass; ?> fa-3x" aria-hidden="true" style="color:#3b3b3b"></i>
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                            <div style="margin-top:10px;text-align:center;">
+                                <a href="<?php echo htmlspecialchars($secureUrl); ?>" style="font-weight:600;color:var(--primary-color);display:block;word-break:break-word;"><?php echo htmlspecialchars($att['FileName']); ?></a>
+                                <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'manager'): ?>
+                                    <div style="font-size:0.9rem;color:#666;margin-top:6px;"><?php echo htmlspecialchars(substr($att['UploadedAt'],0,19)); ?> - <?php echo htmlspecialchars($att['UploadedBy'] ?? t('unknown')); ?></div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
         </div>
     </div>
 

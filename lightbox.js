@@ -4,13 +4,17 @@ class PropertyLightbox {
         this.currentImageIndex = 0;
         this.images = [];
         this.lightboxElement = null;
+        this.minScale = 0.5;
+        this.maxScale = 3;
+        this.currentScale = 1;
         this.init();
     }
 
     init() {
         this.createLightboxHTML();
         this.bindEvents();
-        this.collectImages();
+        // Prepare default gallery (media) so lightbox sizing/structure is ready
+        this.collectImagesForGallery('media');
     }
 
     createLightboxHTML() {
@@ -68,41 +72,80 @@ class PropertyLightbox {
             }
         });
 
-        // Image click events
+        // Image click events (support property images and attachment images)
         document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('property-image-clickable')) {
+            const target = e.target.closest('.property-image-clickable, .attachment-image-clickable');
+            if (target) {
                 e.preventDefault();
-                const imageIndex = parseInt(e.target.dataset.imageIndex);
-                this.open(imageIndex);
+                // determine gallery key
+                let gallery = 'media';
+                if (target.classList.contains('attachment-image-clickable')) gallery = 'attachments';
+                // open gallery and compute index of clicked image
+                this.collectImagesForGallery(gallery);
+                const src = (target.dataset && target.dataset.src) ? target.dataset.src : target.src;
+                const idx = this.images.findIndex(i => i.src === src);
+                this.currentImageIndex = idx >= 0 ? idx : 0;
+                this.open(this.currentImageIndex);
             }
         });
     }
 
-    collectImages() {
-        const imageElements = document.querySelectorAll('.property-image-clickable');
+    // collect images for a specific gallery key ('media' or 'attachments')
+    collectImagesForGallery(gallery) {
+        let selector = '.property-image-clickable';
+        if (gallery === 'attachments') selector = '.attachment-image-clickable';
+        const imageElements = document.querySelectorAll(selector);
         this.images = Array.from(imageElements).map(img => ({
-            src: img.src,
-            alt: img.alt || 'Property Image'
+            src: img.dataset && img.dataset.src ? img.dataset.src : img.src,
+            alt: img.alt || (img.dataset && img.dataset.alt ? img.dataset.alt : 'Image')
         }));
     }
 
     open(imageIndex = 0) {
-        this.collectImages(); // Refresh images list
-        
-        if (this.images.length === 0) return;
-        
+        // open assumes this.images has been prepared for the correct gallery
+        if (!Array.isArray(this.images) || this.images.length === 0) return;
+
         this.currentImageIndex = imageIndex;
+        // reset zoom
+        this.currentScale = 1;
         this.updateImage();
         this.updateCounter();
         this.updateNavigation();
-        
+
         this.lightboxElement.style.display = 'block';
         document.body.style.overflow = 'hidden'; // Prevent background scrolling
+
+        // attach zoom handlers
+        const img = this.lightboxElement.querySelector('.lightbox-image');
+        // wheel zoom
+        this.wheelHandler = (ev) => {
+            ev.preventDefault();
+            const delta = -ev.deltaY || ev.wheelDelta || -ev.detail;
+            const step = 0.1;
+            if (delta > 0) this.currentScale = Math.min(this.maxScale, this.currentScale + step);
+            else this.currentScale = Math.max(this.minScale, this.currentScale - step);
+            img.style.transform = `scale(${this.currentScale})`;
+        };
+        img.addEventListener('wheel', this.wheelHandler, { passive: false });
+        // double click toggle
+        this.dblHandler = () => {
+            if (this.currentScale === 1) this.currentScale = 2;
+            else this.currentScale = 1;
+            img.style.transform = `scale(${this.currentScale})`;
+        };
+        img.addEventListener('dblclick', this.dblHandler);
     }
 
     close() {
         this.lightboxElement.style.display = 'none';
         document.body.style.overflow = ''; // Restore scrolling
+        // remove zoom handlers if present
+        const img = this.lightboxElement.querySelector('.lightbox-image');
+        if (img) {
+            if (this.wheelHandler) img.removeEventListener('wheel', this.wheelHandler);
+            if (this.dblHandler) img.removeEventListener('dblclick', this.dblHandler);
+            img.style.transform = '';
+        }
     }
 
     prev() {
@@ -120,9 +163,13 @@ class PropertyLightbox {
     updateImage() {
         const img = this.lightboxElement.querySelector('.lightbox-image');
         const currentImage = this.images[this.currentImageIndex];
-        
         img.src = currentImage.src;
         img.alt = currentImage.alt;
+        // reset transform on image change
+        if (typeof this.currentScale === 'undefined') this.currentScale = 1;
+        img.style.transformOrigin = 'center center';
+        img.style.transition = 'transform 120ms ease';
+        img.style.transform = `scale(${this.currentScale})`;
     }
 
     updateCounter() {

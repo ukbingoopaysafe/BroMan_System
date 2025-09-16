@@ -65,6 +65,36 @@ if (isset($_POST["id"]) && !empty(trim($_POST["id"]))) {
         $stmt_vid->close();
     }
 
+    // Attachments - delete files and DB rows
+    $sql_attachments = "SELECT AttachmentID, FilePath FROM property_attachments WHERE PropertyID = ?";
+    if ($stmt_att = $conn->prepare($sql_attachments)) {
+        $stmt_att->bind_param("i", $property_id_to_delete);
+        $stmt_att->execute();
+        $result_att = $stmt_att->get_result();
+        $attachment_ids = [];
+        while ($row = $result_att->fetch_assoc()) {
+            $att_path = __DIR__ . '/' . $row['FilePath'];
+            if (file_exists($att_path)) { @unlink($att_path); }
+            $attachment_ids[] = (int)$row['AttachmentID'];
+        }
+        $stmt_att->close();
+        if (!empty($attachment_ids)) {
+            // Delete DB rows for attachments
+            $placeholders = implode(',', array_fill(0, count($attachment_ids), '?'));
+            $types = str_repeat('i', count($attachment_ids));
+            $del_sql = "DELETE FROM property_attachments WHERE AttachmentID IN ($placeholders)";
+            if ($del_stmt = $conn->prepare($del_sql)) {
+                // bind params dynamically
+                $refs = [];
+                foreach ($attachment_ids as $i => $aid) { $refs[$i] = &$attachment_ids[$i]; }
+                array_unshift($refs, $types);
+                call_user_func_array([$del_stmt, 'bind_param'], $refs);
+                $del_stmt->execute();
+                $del_stmt->close();
+            }
+        }
+    }
+
     // In a production system, a POST request with a CSRF token is safer for delete actions.
     // For this project, we are keeping the GET request for simplicity but adding admin check.
 

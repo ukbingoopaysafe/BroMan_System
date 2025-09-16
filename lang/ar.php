@@ -525,5 +525,15 @@ return [
     'video_name' => 'اسم الفيديو',
     'video_size' => 'حجم الفيديو',
     'uploaded_on' => 'تم الرفع في',
+    // Attachments
+    'attachments' => 'المرفقات',
+    'manage_attachments' => 'إدارة المرفقات',
+    'upload_attachment' => 'رفع مرفق جديد',
+    'no_attachments_found' => 'لا توجد مرفقات لهذا العقار.',
+    'confirm_delete_attachment' => 'هل أنت متأكد من حذف هذا المرفق؟ لا يمكن التراجع عن هذا الإجراء.',
+    'attachment_deleted_successfully' => 'تم حذف المرفق بنجاح.',
+    'error_deleting_attachment' => 'حدث خطأ أثناء حذف المرفق.',
+    'attachment_upload_success' => 'تم رفع المرفق بنجاح!',
+    'error_uploading_attachment' => 'حدث خطأ أثناء رفع المرفق.',
 ];
 
