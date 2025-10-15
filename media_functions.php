@@ -236,6 +236,9 @@ function moveTempUploadsToProperty($property_id, $session_id, $conn) {
 
     $moved = ['images' => [], 'audio' => [], 'videos' => []];
 
+    // Ensure documents key exists
+    $moved['documents'] = [];
+
     // Images
     $tempImagesDir = $tempDir . 'images/';
     if (is_dir($tempImagesDir)) {
@@ -312,6 +315,30 @@ function moveTempUploadsToProperty($property_id, $session_id, $conn) {
                     $stmt->close();
                     $moved['videos'][] = $relative;
                 }
+            }
+        }
+    }
+
+    // Documents
+    $tempDocumentsDir = $tempDir . 'documents/';
+    if (is_dir($tempDocumentsDir)) {
+        $files = scandir($tempDocumentsDir);
+        foreach ($files as $f) {
+            if (in_array($f, ['.', '..'])) continue;
+            $src = $tempDocumentsDir . $f;
+            $dst = $base . 'documents/' . $f;
+            if (rename($src, $dst)) {
+                $relative = 'uploads/documents/' . $f;
+                // Try to insert into property_documents table if it exists
+                $ins = "INSERT INTO property_documents (property_id, file_path, file_name, file_size) VALUES (?, ?, ?, ?)";
+                if ($stmt = $conn->prepare($ins)) {
+                    $fileName = $f;
+                    $fileSize = filesize($dst);
+                    $stmt->bind_param("issi", $property_id, $relative, $fileName, $fileSize);
+                    $stmt->execute();
+                    $stmt->close();
+                }
+                $moved['documents'][] = $relative;
             }
         }
     }

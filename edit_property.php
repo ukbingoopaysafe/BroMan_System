@@ -163,6 +163,19 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
 // Get property media
 $property_images = getPropertyImages($property_id, $conn);
 $property_audio_notes = getPropertyAudioNotes($property_id, $conn);
+// Fetch user-facing documents (PDFs) for this property
+$property_documents = [];
+$doc_stmt = $conn->prepare("SELECT document_id, file_path, file_name, file_size, uploaded_by, upload_date FROM property_documents WHERE property_id = ? ORDER BY upload_date DESC");
+if ($doc_stmt) {
+    $doc_stmt->bind_param('i', $property_id);
+    if ($doc_stmt->execute()) {
+        $doc_res = $doc_stmt->get_result();
+        while ($d = $doc_res->fetch_assoc()) {
+            $property_documents[] = $d;
+        }
+    }
+    $doc_stmt->close();
+}
 // Fetch attachments for this property
 $property_attachments = [];
 $att_stmt = $conn->prepare("SELECT pa.*, e.FullName AS UploadedBy FROM property_attachments pa LEFT JOIN employees e ON pa.EmployeeID = e.EmployeeID WHERE pa.PropertyID = ? ORDER BY pa.UploadedAt DESC");
@@ -723,6 +736,30 @@ $conn->close();
                             <audio src="<?php echo htmlspecialchars($a['file_path']); ?>" controls></audio>
                             <div class="existing-media-actions">
                                 <button type="button" class="btn btn-sm btn-danger delete-media-btn" data-id="<?php echo $a['note_id']; ?>" data-type="audio"><?php echo t('delete'); ?></button>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+            
+            <?php if (!empty($property_documents)): ?>
+                <h4><?php echo t('documents'); ?></h4>
+                <div class="existing-media-grid" id="existingDocuments">
+                    <?php foreach ($property_documents as $doc): ?>
+                        <div class="existing-media-item" data-id="<?php echo (int)$doc['document_id']; ?>">
+                            <div style="padding:12px; background:#fff; border-radius:6px; border:1px solid #eee; min-height:120px; display:flex; flex-direction:column;">
+                                <div style="flex:1 1 auto; overflow:hidden;">
+                                    <strong style="display:block;margin-bottom:8px; max-height:3.6em; overflow:hidden; text-overflow:ellipsis; word-break:break-word; white-space:normal;">
+                                        <?php echo htmlspecialchars($doc['file_name']); ?>
+                                    </strong>
+                                    <div style="font-size:0.9rem;color:#666;">
+                                        <?php echo htmlspecialchars(formatFileSize((int)$doc['file_size'])); ?>
+                                    </div>
+                                </div>
+                                <div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end; flex:0 0 auto;">
+                                    <a href="view_document.php?id=<?php echo (int)$doc['document_id']; ?>" target="_blank" class="btn btn-primary"><?php echo t('view'); ?></a>
+                                    <button type="button" class="btn btn-sm btn-danger delete-media-btn" data-id="<?php echo (int)$doc['document_id']; ?>" data-type="document"><?php echo t('delete'); ?></button>
+                                </div>
                             </div>
                         </div>
                     <?php endforeach; ?>

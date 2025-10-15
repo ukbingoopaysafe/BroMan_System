@@ -303,6 +303,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 finfo_close($finfo4);
             }
 
+            // Documents (PDFs uploaded as part of media)
+            if (!empty($_FILES['documents']) && is_array($_FILES['documents']['name'])) {
+                $documents_dir = $base_upload_dir . 'documents/';
+                if (!is_dir($documents_dir)) { mkdir($documents_dir, 0755, true); }
+                $allowed_doc_mime = ['application/pdf' => 'pdf'];
+                $max_doc_size = 10 * 1024 * 1024; // 10MB
+                $finfoDoc = finfo_open(FILEINFO_MIME_TYPE);
+                foreach ($_FILES['documents']['name'] as $idx => $name) {
+                    if ($_FILES['documents']['error'][$idx] !== UPLOAD_ERR_OK) { continue; }
+                    if ($_FILES['documents']['size'][$idx] > $max_doc_size) { continue; }
+                    $tmp = $_FILES['documents']['tmp_name'][$idx];
+                    $mime = finfo_file($finfoDoc, $tmp);
+                    if (!isset($allowed_doc_mime[$mime])) { continue; }
+                    $ext = $allowed_doc_mime[$mime];
+                    $filename = 'property_' . $new_property_id . '_doc_' . bin2hex(random_bytes(8)) . '.' . $ext;
+                    $dest = $documents_dir . $filename;
+                    $relative = 'uploads/documents/' . $filename;
+                    if (move_uploaded_file($tmp, $dest)) {
+                        $ins = "INSERT INTO property_documents (property_id, file_path, file_name, file_size) VALUES (?, ?, ?, ?)";
+                        if ($dstmt = $conn->prepare($ins)) {
+                            $size = filesize($dest);
+                            $dstmt->bind_param("issi", $new_property_id, $relative, $name, $size);
+                            $dstmt->execute();
+                            $dstmt->close();
+                        }
+                    }
+                }
+                finfo_close($finfoDoc);
+            }
+
             // Move any temporary uploads into property
             if (function_exists('moveTempUploadsToProperty')) {
                 $moved = moveTempUploadsToProperty($new_property_id, session_id(), $conn);

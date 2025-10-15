@@ -14,12 +14,12 @@ require_once __DIR__ . '/media_functions.php';
         <div class="upload-content">
             <i class="fas fa-cloud-upload-alt upload-icon"></i>
             <p class="upload-text"><?php echo t('drag_drop_files_here'); ?></p>
-            <p class="upload-subtext"><?php echo t('supported_formats'); ?>: JPG, PNG, WEBP, MP4, AVI, MOV, WMV, FLV, WEBM (videos up to 250MB)</p>
+            <p class="upload-subtext"><?php echo t('supported_formats'); ?>: JPG, PNG, WEBP, MP4, AVI, MOV, WMV, FLV, WEBM, PDF (videos up to 250MB)</p>
             <button type="button" class="btn btn-secondary" id="selectFilesBtn">
                 <i class="fas fa-folder-open"></i> <?php echo t('select_files'); ?>
             </button>
         </div>
-    <input type="file" id="fileInput" multiple accept="image/*,video/*,audio/*" style="display: none;">
+    <input type="file" id="fileInput" multiple accept="image/*,video/*,audio/*,application/pdf" style="display: none;">
     </div>
     
     <!-- File Preview Area -->
@@ -321,14 +321,16 @@ class UnifiedMediaUploader {
         const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         const allowedVideoTypes = ['video/mp4', 'video/avi', 'video/quicktime', 'video/x-ms-wmv', 'video/x-flv', 'video/webm', 'video/ogg', 'video/mpeg'];
         const allowedAudioTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/mp4', 'audio/webm', 'audio/x-m4a'];
-        const allowedTypes = [...allowedImageTypes, ...allowedVideoTypes, ...allowedAudioTypes];
+    const allowedDocumentTypes = ['application/pdf'];
+    const allowedTypes = [...allowedImageTypes, ...allowedVideoTypes, ...allowedAudioTypes, ...allowedDocumentTypes];
 
         if (!allowedTypes.includes(file.type)) {
             alert(`File ${file.name} has an unsupported format.`);
             return false;
         }
 
-        const maxSize = file.type.startsWith('video/') ? 250 * 1024 * 1024 : (file.type.startsWith('audio/') ? 10 * 1024 * 1024 : 10 * 1024 * 1024); // 250MB for videos, 10MB for audio/images
+    // 250MB for videos, 10MB for audio/images/documents
+    const maxSize = file.type.startsWith('video/') ? 250 * 1024 * 1024 : 10 * 1024 * 1024;
         
         if (file.size > maxSize) {
             alert(`File ${file.name} is too large. Maximum size is ${this.formatFileSize(maxSize)}.`);
@@ -353,8 +355,9 @@ class UnifiedMediaUploader {
         const preview = document.createElement('div');
         preview.className = 'file-preview';
         
-        const isVideo = file.type.startsWith('video/');
-        const isAudio = file.type.startsWith('audio/');
+    const isVideo = file.type.startsWith('video/');
+    const isAudio = file.type.startsWith('audio/');
+    const isPdf = file.type === 'application/pdf';
         let mediaElement;
         if (isVideo) {
             mediaElement = document.createElement('video');
@@ -367,6 +370,24 @@ class UnifiedMediaUploader {
             mediaElement.style.width = '100%';
             mediaElement.style.height = '48px';
             mediaElement.style.objectFit = 'cover';
+        } else if (isPdf) {
+            mediaElement = document.createElement('div');
+            mediaElement.className = 'pdf-preview';
+            mediaElement.style.display = 'flex';
+            mediaElement.style.alignItems = 'center';
+            mediaElement.style.justifyContent = 'center';
+            mediaElement.style.width = '100%';
+            mediaElement.style.height = '150px';
+            mediaElement.style.background = '#fafafa';
+            mediaElement.style.color = '#d9534f';
+            mediaElement.style.fontSize = '48px';
+            mediaElement.style.fontWeight = '700';
+            mediaElement.textContent = 'PDF';
+            // allow opening the selected PDF in a new tab
+            mediaElement.addEventListener('click', () => {
+                const url = URL.createObjectURL(file);
+                window.open(url, '_blank');
+            });
         } else {
             mediaElement = document.createElement('img');
             mediaElement.src = URL.createObjectURL(file);
@@ -374,10 +395,10 @@ class UnifiedMediaUploader {
         
         const fileInfo = document.createElement('div');
         fileInfo.className = 'file-info';
-        fileInfo.innerHTML = `
+            fileInfo.innerHTML = `
             <div class="file-name">${file.name}</div>
             <div class="file-size">${this.formatFileSize(file.size)}</div>
-            <div class="file-type">${isVideo ? 'Video' : (isAudio ? 'Audio' : 'Image')}</div>
+            <div class="file-type">${isVideo ? 'Video' : (isAudio ? 'Audio' : (isPdf ? 'PDF' : 'Image'))}</div>
         `;
         
         const removeBtn = document.createElement('button');
@@ -413,6 +434,7 @@ class UnifiedMediaUploader {
             let type;
             if (file.type.startsWith('video/')) type = 'video';
             else if (file.type.startsWith('audio/')) type = 'audio';
+            else if (file.type === 'application/pdf') type = 'document';
             else type = 'image';
             
             try {
@@ -438,19 +460,42 @@ class UnifiedMediaUploader {
         formData.append('property_id', this.propertyId);
         formData.append('upload_type', type);
         formData.append('csrf_token', this.csrfToken);
-        formData.append(type, file);
+        // Use the actual field name expected by the server
+        if (type === 'document') {
+            formData.append('document', file, file.name);
+        } else if (type === 'image') {
+            formData.append('image', file, file.name);
+        } else if (type === 'audio') {
+            formData.append('audio', file, file.name);
+        } else if (type === 'video') {
+            formData.append('video', file, file.name);
+        }
         
         const response = await fetch('upload_media.php', {
             method: 'POST',
-            body: formData
+            body: formData,
+            credentials: 'same-origin'
         });
-        
-        const result = await response.json();
-        
-        if (!result.success) {
-            throw new Error(result.message);
+
+        // If server returned non-2xx, capture full response text for debugging
+        if (!response.ok) {
+            const txt = await response.text();
+            throw new Error('Server error: ' + response.status + ' ' + txt);
         }
-        
+
+        // Try parse JSON; if parsing fails include raw text
+        let result;
+        try {
+            result = await response.json();
+        } catch (e) {
+            const txt = await response.text();
+            throw new Error('Invalid server response: ' + txt);
+        }
+
+        if (!result.success) {
+            throw new Error(result.message || 'Upload failed');
+        }
+
         return result;
     }
     
@@ -569,6 +614,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (f.type.startsWith('image/')) fm.append('images[]', f, f.name);
                         else if (f.type.startsWith('audio/')) fm.append('audio[]', f, f.name);
                         else if (f.type.startsWith('video/')) fm.append('videos[]', f, f.name);
+                        else if (f.type === 'application/pdf') fm.append('documents[]', f, f.name);
                     });
                 }
 

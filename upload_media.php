@@ -19,10 +19,10 @@ if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_tok
 // Property ID may be omitted or 0 for temporary uploads. We'll accept that and
 // store files under uploads/temp/{session_id}/ until the property is created.
 $property_id = intval($_POST['property_id'] ?? 0);
-$upload_type = $_POST['upload_type'] ?? ''; // 'image', 'audio', or 'video'
+$upload_type = $_POST['upload_type'] ?? ''; // 'image', 'audio', 'video', or 'document'
 
 // Validate upload type
-if (!in_array($upload_type, ['image', 'audio', 'video'])) {
+if (!in_array($upload_type, ['image', 'audio', 'video', 'document'])) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Invalid upload type']);
     exit;
@@ -36,12 +36,14 @@ $base_upload_dir = __DIR__ . '/uploads/';
 $image_dir = $base_upload_dir . 'images/';
 $audio_dir = $base_upload_dir . 'audio/';
 $video_dir = $base_upload_dir . 'videos/';
+$document_dir = $base_upload_dir . 'documents/';
 
 // Temp upload dirs per session for pre-save uploads
 $session_temp_dir = $base_upload_dir . 'temp/' . session_id() . '/';
 $temp_image_dir = $session_temp_dir . 'images/';
 $temp_audio_dir = $session_temp_dir . 'audio/';
 $temp_video_dir = $session_temp_dir . 'videos/';
+$temp_document_dir = $session_temp_dir . 'documents/';
 
 if (!is_dir($base_upload_dir)) {
     mkdir($base_upload_dir, 0755, true);
@@ -55,6 +57,9 @@ if (!is_dir($audio_dir)) {
 if (!is_dir($video_dir)) {
     mkdir($video_dir, 0755, true);
 }
+if (!is_dir($document_dir)) {
+    mkdir($document_dir, 0755, true);
+}
 
 // Ensure temp dirs exist
 if (!is_dir($temp_image_dir)) {
@@ -66,6 +71,9 @@ if (!is_dir($temp_audio_dir)) {
 if (!is_dir($temp_video_dir)) {
     mkdir($temp_video_dir, 0755, true);
 }
+if (!is_dir($temp_document_dir)) {
+    mkdir($temp_document_dir, 0755, true);
+}
 
 // Handle file upload
 if ($upload_type === 'image') {
@@ -74,6 +82,8 @@ if ($upload_type === 'image') {
     handleAudioUpload($property_id, $audio_dir, $conn, $temp_audio_dir);
 } elseif ($upload_type === 'video') {
     handleVideoUpload($property_id, $video_dir, $conn, $temp_video_dir);
+} elseif ($upload_type === 'document') {
+    handleDocumentUpload($property_id, $document_dir, $conn, $temp_document_dir);
 }
 
 function handleImageUpload($property_id, $upload_dir, $conn, $temp_dir) {
@@ -168,6 +178,121 @@ function handleImageUpload($property_id, $upload_dir, $conn, $temp_dir) {
             ]);
         }
     } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to move uploaded file']);
+    }
+}
+
+function handleDocumentUpload($property_id, $upload_dir, $conn, $temp_dir) {
+    if (!isset($_FILES['document']) || $_FILES['document']['error'] !== UPLOAD_ERR_OK) {
+        // Log upload error details for debugging
+        $logDir = __DIR__ . '/logs/';
+        if (!is_dir($logDir)) { @mkdir($logDir, 0755, true); }
+        $err = isset($_FILES['document']) ? $_FILES['document']['error'] : 'missing';
+        $tmpName = isset($_FILES['document']['tmp_name']) ? $_FILES['document']['tmp_name'] : '';
+        $origName = isset($_FILES['document']['name']) ? $_FILES['document']['name'] : '';
+        $logMsg = sprintf("[%s] Document upload error on property_id=%s: code=%s, tmp_name=%s, orig_name=%s\n",
+            date('Y-m-d H:i:s'), $property_id, $err, $tmpName, $origName);
+        @file_put_contents($logDir . 'upload_debug.log', $logMsg, FILE_APPEND);
+
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'No document file uploaded or upload error (code: ' . $err . ')']);
+        return;
+    }
+
+    $file = $_FILES['document'];
+    $allowed_types = ['application/pdf'];
+    $max_size = 10 * 1024 * 1024; // 10MB for documents
+
+    // Validate file type
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime_type = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+
+    // Accept common PDF mime variants. Also accept if the filename extension is .pdf as a fallback
+    $accepted_mimes = array_merge($allowed_types, ['application/x-pdf', 'application/acrobat', 'applications/vnd.pdf', 'text/pdf']);
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($mime_type, $accepted_mimes) && $ext !== 'pdf') {
+        // Log unexpected mime types for diagnosis
+        $logDir = __DIR__ . '/logs/';
+        if (!is_dir($logDir)) { @mkdir($logDir, 0755, true); }
+        $logMsg = sprintf("[%s] Rejected document upload due to mime-type mismatch: detected=%s, name=%s\n", date('Y-m-d H:i:s'), $mime_type, $file['name']);
+        @file_put_contents($logDir . 'upload_debug.log', $logMsg, FILE_APPEND);
+
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Invalid document format. Only PDF is allowed. Detected: ' . $mime_type]);
+        return;
+    }
+
+    // Validate file size
+    if ($file['size'] > $max_size) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Document file size exceeds 10MB limit.']);
+        return;
+    }
+
+    // Generate unique filename
+    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $filename = 'property_' . max(0, $property_id) . '_doc_' . uniqid() . '.' . $extension;
+    if ($property_id > 0) {
+        $file_path = $upload_dir . $filename;
+        $relative_path = 'uploads/documents/' . $filename;
+    } else {
+        $file_path = rtrim($temp_dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $filename;
+        $relative_path = 'uploads/temp/' . session_id() . '/documents/' . $filename;
+    }
+
+    if (move_uploaded_file($file['tmp_name'], $file_path)) {
+        if ($property_id > 0) {
+            // Try to insert into property_documents if table exists
+            $sql = "INSERT INTO property_documents (property_id, file_path, file_name, file_size) VALUES (?, ?, ?, ?)";
+            if ($stmt = $conn->prepare($sql)) {
+                $stmt->bind_param("issi", $property_id, $relative_path, $file['name'], $file['size']);
+                if ($stmt->execute()) {
+                    $doc_id = $conn->insert_id;
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Document uploaded successfully',
+                        'document_id' => $doc_id,
+                        'file_path' => $relative_path,
+                        'file_name' => $file['name']
+                    ]);
+                } else {
+                    // If insert fails, still return success but warn
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Document uploaded but database insert failed: ' . $stmt->error,
+                        'file_path' => $relative_path,
+                        'file_name' => $file['name']
+                    ]);
+                }
+                $stmt->close();
+            } else {
+                // Table may not exist; return success with path
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Document uploaded successfully',
+                    'file_path' => $relative_path,
+                    'file_name' => $file['name']
+                ]);
+            }
+        } else {
+            // Temporary upload saved; return temp info
+            echo json_encode([
+                'success' => true,
+                'message' => 'Document uploaded to temporary storage',
+                'temp_path' => $relative_path,
+                'temp_name' => $filename
+            ]);
+        }
+    } else {
+        // Log move failure details
+        $logDir = __DIR__ . '/logs/';
+        if (!is_dir($logDir)) { @mkdir($logDir, 0755, true); }
+        $logMsg = sprintf("[%s] Failed to move uploaded document for property_id=%s: tmp=%s, dest=%s, file_error=%s\n",
+            date('Y-m-d H:i:s'), $property_id, $file['tmp_name'] ?? '', $file_path, $file['error'] ?? '');
+        @file_put_contents($logDir . 'upload_debug.log', $logMsg, FILE_APPEND);
+
         http_response_code(500);
         echo json_encode(['success' => false, 'message' => 'Failed to move uploaded file']);
     }

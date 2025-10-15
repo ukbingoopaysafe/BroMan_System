@@ -299,7 +299,12 @@ class MediaUploader {
 
     uploadFile(file, type) {
         const formData = new FormData();
-        formData.append(type, file);
+        // Use explicit field name for document uploads
+        if (type === 'document') {
+            formData.append('document', file);
+        } else {
+            formData.append(type, file);
+        }
         formData.append('property_id', this.propertyId);
         formData.append('upload_type', type);
         formData.append('csrf_token', this.csrfToken);

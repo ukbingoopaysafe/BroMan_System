@@ -81,6 +81,20 @@ if ($att_stmt) {
     $att_stmt->close();
 }
 
+// Fetch user-facing documents (PDFs) for this property
+$property_documents = [];
+$doc_stmt = $conn->prepare("SELECT document_id, file_path, file_name, file_size, uploaded_by, upload_date FROM property_documents WHERE property_id = ? ORDER BY upload_date DESC");
+if ($doc_stmt) {
+    $doc_stmt->bind_param('i', $property_id);
+    if ($doc_stmt->execute()) {
+        $doc_res = $doc_stmt->get_result();
+        while ($d = $doc_res->fetch_assoc()) {
+            $property_documents[] = $d;
+        }
+    }
+    $doc_stmt->close();
+}
+
 // Format price for display
 function formatPrice($property)
 {
@@ -672,6 +686,32 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                                     <span><?php echo t('uploaded_on'); ?>: <?php echo date('Y-m-d H:i', strtotime($video['UploadDate'])); ?></span>
                                 </div>
                                 <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Property Documents Section (user-facing PDFs) -->
+        <?php if (!empty($property_documents)): ?>
+        <div class="property-section">
+            <h2>📄 Documents</h2>
+            <div class="media-gallery">
+                <div class="documents-list" style="padding:20px;">
+                    <?php foreach ($property_documents as $doc): ?>
+                        <div class="document-item" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0;">
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <i class="fas fa-file-pdf fa-2x" style="color:#d9534f"></i>
+                                <div>
+                                    <div style="font-weight:600;"><?php echo htmlspecialchars($doc['file_name']); ?></div>
+                                    <div style="font-size:0.9rem;color:#666;"><?php echo formatFileSize($doc['file_size']); ?> &middot; <?php echo date('Y-m-d H:i', strtotime($doc['upload_date'])); ?></div>
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:8px;">
+                                <a href="view_document.php?id=<?php echo (int)$doc['document_id']; ?>" target="_blank" class="btn btn-primary" rel="noopener"><?php echo t('view'); ?></a>
+                                <a href="serve_document.php?id=<?php echo (int)$doc['document_id']; ?>&download=1" class="btn btn-secondary"><?php echo t('download'); ?></a>
                             </div>
                         </div>
                     <?php endforeach; ?>

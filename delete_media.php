@@ -24,11 +24,11 @@ if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_tok
     exit;
 }
 
-$media_type = $_POST['media_type'] ?? ''; // 'image', 'audio' or 'video'
+$media_type = $_POST['media_type'] ?? ''; // 'image', 'audio', 'video', or 'document'
 $media_id = $_POST['media_id'] ?? '';
 
 // Validate input
-if (!in_array($media_type, ['image', 'audio', 'video']) || empty($media_id)) {
+if (!in_array($media_type, ['image', 'audio', 'video', 'document']) || empty($media_id)) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Invalid media type or ID']);
     exit;
@@ -42,6 +42,8 @@ if ($media_type === 'image') {
     deleteAudio($media_id, $conn);
 } elseif ($media_type === 'video') {
     deleteVideo($media_id, $conn);
+} elseif ($media_type === 'document') {
+    deleteDocument($media_id, $conn);
 }
 
 /**
@@ -185,6 +187,46 @@ function deleteAudio($note_id, $conn) {
         } else {
             http_response_code(404);
             echo json_encode(['success' => false, 'message' => 'Audio note not found']);
+        }
+        $stmt->close();
+    } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Database prepare error: ' . $conn->error]);
+    }
+}
+
+function deleteDocument($document_id, $conn) {
+    $sql = "SELECT file_path FROM property_documents WHERE document_id = ?";
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param("i", $document_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 1) {
+            $row = $result->fetch_assoc();
+            $file_path = $row['file_path'];
+            $full_path = __DIR__ . '/' . $file_path;
+
+            $delete_sql = "DELETE FROM property_documents WHERE document_id = ?";
+            if ($delete_stmt = $conn->prepare($delete_sql)) {
+                $delete_stmt->bind_param("i", $document_id);
+                if ($delete_stmt->execute()) {
+                    if (file_exists($full_path)) {
+                        @unlink($full_path);
+                    }
+                    echo json_encode(['success' => true, 'message' => 'Document deleted successfully']);
+                } else {
+                    http_response_code(500);
+                    echo json_encode(['success' => false, 'message' => 'Database error: ' . $delete_stmt->error]);
+                }
+                $delete_stmt->close();
+            } else {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'Database prepare error: ' . $conn->error]);
+            }
+        } else {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Document not found']);
         }
         $stmt->close();
     } else {
