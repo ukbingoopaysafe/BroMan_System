@@ -26,6 +26,9 @@ $conn->close(); // Close connection after fetching data
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo t('dashboard_title'); ?></title>
+    <link rel="icon" href="images/Logo%20Broman.svg" type="image/svg+xml">
+    <link rel="shortcut icon" href="images/Logo%20Broman.svg">
+    <link rel="apple-touch-icon" href="images/Logo%20Broman.svg">
     <link rel="stylesheet" href="modern_styles.css">
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css"> 

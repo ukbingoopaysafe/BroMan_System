@@ -56,6 +56,9 @@ $pageTitle = t('view_document') ?? 'View Document';
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
+    <link rel="icon" href="images/Logo%20Broman.svg" type="image/svg+xml">
+    <link rel="shortcut icon" href="/images/Logo%20Broman.svg">
+    <link rel="apple-touch-icon" href="/images/Logo%20Broman.svg">
     <style>
         body, html { height: 100%; margin: 0; }
         .viewer { height: 100%; display: flex; flex-direction: column; }

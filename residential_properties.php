@@ -354,6 +354,9 @@ function getPropertyTypeBadge($typeId, $typeName) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo t('residential_properties'); ?></title>
     <link rel="stylesheet" href="modern_styles.css">
+    <link rel="icon" href="images/Logo%20Broman.svg" type="image/svg+xml">
+        <link rel="shortcut icon" href="/images/Logo%20Broman.svg">
+        <link rel="apple-touch-icon" href="/images/Logo%20Broman.svg">
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css">
     <?php endif; ?>

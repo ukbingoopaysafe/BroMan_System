@@ -33,9 +33,12 @@ $test_values = [1, 2, 1.5, 0.5, 5, 10];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>اختبار عرض فترة السداد</title>
-    <link rel="stylesheet" href="theme.css">
-    <link rel="stylesheet" href="modern_styles.css">
-    <link rel="stylesheet" href="rtl_styles.css">
+    <link rel="icon" href="images/Logo%20Broman.svg" type="image/svg+xml">
+        <link rel="shortcut icon" href="/images/Logo%20Broman.svg">
+        <link rel="apple-touch-icon" href="/images/Logo%20Broman.svg">
+        <link rel="stylesheet" href="theme.css">
+        <link rel="stylesheet" href="modern_styles.css">
+        <link rel="stylesheet" href="rtl_styles.css">
     <style>
         .test-container {
             max-width: 600px;

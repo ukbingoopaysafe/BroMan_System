@@ -222,6 +222,9 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $page_title; ?> - Broman Real Estate</title>
+    <link rel="icon" href="images/Logo%20Broman.svg" type="image/svg+xml">
+    <link rel="shortcut icon" href="images/Logo%20Broman.svg">
+    <link rel="apple-touch-icon" href="images/Logo%20Broman.svg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="modern_styles.css">
