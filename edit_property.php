@@ -341,9 +341,11 @@ if ($att_stmt) {
 
             // temporary debug logging removed
 
+            // Build types string programmatically to avoid manual counting mistakes
+            // 37 's' for the parameters and final 'i' for PropertyID (total 38)
+            $types = str_repeat('s', 37) . 'i';
             $stmt_update->bind_param(
-                // types: ensure payment_years is 'd' (double) and counts match the 38 parameters
-                "isssdssidddssdddsssissssisddddddsssddi",
+                $types,
                 $property_type_id_posted,
                 $title_posted,
                 $description_posted,
@@ -1334,7 +1336,11 @@ $conn->close();
                     const finishingTypeField = document.getElementById('finishing_type_id');
                     const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
                     
-                    if (unitDesignField) unitDesignField.setAttribute('required', 'required');
+                    // Ensure residential inputs are enabled so their values are submitted
+                    if (unitDesignField) {
+                        unitDesignField.setAttribute('required', 'required');
+                        unitDesignField.disabled = false;
+                    }
                     if (finishingTypeField) {
                         finishingTypeField.setAttribute('required', 'required');
                         finishingTypeField.disabled = false;
@@ -1343,6 +1349,14 @@ $conn->close();
                         finishingTypeCommercialField.removeAttribute('required');
                         finishingTypeCommercialField.disabled = true;
                     }
+
+                    // Disable commercial-only fields so they don't get submitted and overwrite residential values
+                    const unitDesignCommercial = document.getElementById('unit_design_commercial');
+                    const unitFloorCommercial = document.getElementById('unit_floor_commercial');
+                    const floorsCountCommercial = document.getElementById('floors_count_commercial');
+                    if (unitDesignCommercial) unitDesignCommercial.disabled = true;
+                    if (unitFloorCommercial) unitFloorCommercial.disabled = true;
+                    if (floorsCountCommercial) floorsCountCommercial.disabled = true;
 
                 } else if (selectedTypeId === COMMERCIAL_ID || selectedTypeId === ADMINISTRATIVE_ID || selectedTypeId === HOTEL_ID || selectedTypeId === MEDICAL_ID) {
                     residentialCoastalFields.classList.remove('active');
@@ -1353,7 +1367,12 @@ $conn->close();
                     const finishingTypeField = document.getElementById('finishing_type_id');
                     const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
                     
-                    if (unitDesignField) unitDesignField.removeAttribute('required');
+                    // Ensure commercial inputs are enabled and residential ones disabled
+                    if (unitDesignField) {
+                        unitDesignField.removeAttribute('required');
+                        // disable residential main unit_design so commercial value will be the submitted one
+                        unitDesignField.disabled = true;
+                    }
                     if (finishingTypeField) {
                         finishingTypeField.removeAttribute('required');
                         finishingTypeField.disabled = true;
@@ -1362,6 +1381,14 @@ $conn->close();
                         finishingTypeCommercialField.setAttribute('required', 'required');
                         finishingTypeCommercialField.disabled = false;
                     }
+
+                    // Enable commercial-only fields
+                    const unitDesignCommercial = document.getElementById('unit_design_commercial');
+                    const unitFloorCommercial = document.getElementById('unit_floor_commercial');
+                    const floorsCountCommercial = document.getElementById('floors_count_commercial');
+                    if (unitDesignCommercial) unitDesignCommercial.disabled = false;
+                    if (unitFloorCommercial) unitFloorCommercial.disabled = false;
+                    if (floorsCountCommercial) floorsCountCommercial.disabled = false;
 
                 } else {
                     residentialCoastalFields.classList.remove('active');
@@ -1372,7 +1399,10 @@ $conn->close();
                     const finishingTypeField = document.getElementById('finishing_type_id');
                     const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
                     
-                    if (unitDesignField) unitDesignField.removeAttribute('required');
+                    if (unitDesignField) {
+                        unitDesignField.removeAttribute('required');
+                        unitDesignField.disabled = true;
+                    }
                     if (finishingTypeField) {
                         finishingTypeField.removeAttribute('required');
                         finishingTypeField.disabled = true;
@@ -1381,6 +1411,14 @@ $conn->close();
                         finishingTypeCommercialField.removeAttribute('required');
                         finishingTypeCommercialField.disabled = true;
                     }
+
+                    // Disable commercial-only fields as well
+                    const unitDesignCommercial = document.getElementById('unit_design_commercial');
+                    const unitFloorCommercial = document.getElementById('unit_floor_commercial');
+                    const floorsCountCommercial = document.getElementById('floors_count_commercial');
+                    if (unitDesignCommercial) unitDesignCommercial.disabled = true;
+                    if (unitFloorCommercial) unitFloorCommercial.disabled = true;
+                    if (floorsCountCommercial) floorsCountCommercial.disabled = true;
                 }
             }
 
