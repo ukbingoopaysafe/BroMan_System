@@ -3,8 +3,14 @@ require_once __DIR__ . '/security.php';
 ensure_secure_session_started();
 require_once 'permissions.php'; // Include permissions system
 
-// Check permissions - only manager and admin can delete properties
-check_permission('manage_properties');
+// Check permissions - only manager can delete properties
+if (!is_logged_in() || !can_delete_properties()) {
+    // Forbidden
+    http_response_code(403);
+    $_SESSION["error_message"] = "ليس لديك صلاحية لحذف العقار.";
+    header("Location: index_properties.php");
+    exit();
+}
 
 require_once 'db.php'; // Database connection
 

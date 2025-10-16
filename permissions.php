@@ -64,6 +64,14 @@ function can_manage_properties() {
 }
 
 /**
+ * فحص صلاحية حذف العقارات فقط
+ * الحذف مسموح للمدير فقط (manager)
+ */
+function can_delete_properties() {
+    return is_manager();
+}
+
+/**
  * فحص صلاحية عرض العقارات
  * جميع المستخدمين يمكنهم عرض العقارات
  */

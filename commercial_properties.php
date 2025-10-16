@@ -598,6 +598,8 @@ function getPropertyTypeBadge($typeId, $typeName) {
                             <a href="edit_property.php?id=<?php echo $property['PropertyID']; ?>" class="btn btn-sm btn-warning">
                                 <i class="fas fa-edit"></i> <?php echo t('edit'); ?>
                             </a>
+                            <?php endif; ?>
+                            <?php if (can_delete_properties()): ?>
                             <form method="POST" action="delete_property.php" style="display:inline" onsubmit="return confirm('<?php echo t('confirm_delete_property'); ?>');">
                                 <input type="hidden" name="id" value="<?php echo (int)$property['PropertyID']; ?>">
                                 <?php echo csrf_input(); ?>
@@ -718,6 +720,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
                                     <a href="edit_property.php?id=<?php echo $property['PropertyID']; ?>" class="btn-edit" title="<?php echo t('edit'); ?>">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    <?php if (can_delete_properties()): ?>
                                     <form method="POST" action="delete_property.php" style="display:inline" onsubmit="return confirm('<?php echo t('confirm_delete_property'); ?>');">
                                         <input type="hidden" name="id" value="<?php echo (int)$property['PropertyID']; ?>">
                                         <?php echo csrf_input(); ?>
@@ -725,6 +728,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                             <?php endif; ?>
