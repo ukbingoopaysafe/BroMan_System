@@ -67,7 +67,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             $_SESSION["created_at"] = time();
                             $_SESSION["last_activity"] = time();
                             // Language preference could be saved here if needed
-                            
+
+                            // Log login activity (non-blocking)
+                            try {
+                                require_once __DIR__ . '/activity_log.php';
+                                if (function_exists('log_activity')) {
+                                    log_activity($conn, $employee_id, 'login', json_encode(['username' => $db_username]));
+                                }
+                            } catch (Exception $e) {
+                                error_log('Failed to record login activity: ' . $e->getMessage());
+                            }
+
+                            // Update active session record
+                            try {
+                                require_once __DIR__ . '/session_activity.php';
+                                update_session_activity($conn);
+                            } catch (Exception $e) {
+                                error_log('Failed to update session activity: ' . $e->getMessage());
+                            }
+
                             header("Location: dashboard.php");
                             exit();
                         } else {

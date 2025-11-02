@@ -24,6 +24,30 @@ if (!isset($_SESSION['last_activity'])) {
 
 $current_time = time();
 
+// Define session timeout (30 minutes)
+if (!defined('SESSION_TIMEOUT')) {
+    define('SESSION_TIMEOUT', 1800); // 30 minutes in seconds
+}
+
+// Check if session has timed out
+if (($current_time - $_SESSION['last_activity']) > SESSION_TIMEOUT) {
+    // Log session expiration
+    $log_msg = date('Y-m-d H:i:s') . " | Session expired for user: " . (isset($_SESSION['username']) ? $_SESSION['username'] : 'unknown') . " | IP: " . $_SERVER['REMOTE_ADDR'] . " | Agent: " . $_SERVER['HTTP_USER_AGENT'] . "\n";
+    file_put_contents(__DIR__ . '/session_activity.log', $log_msg, FILE_APPEND);
+    // Session has expired - destroy it and redirect to login
+    session_destroy();
+    header("Location: login.php?timeout=idle");
+    exit;
+}
+
+// Check for inactivity timeout (30 minutes)
+if (($current_time - $_SESSION['last_activity']) > SESSION_TIMEOUT) {
+    session_unset();
+    session_destroy();
+    header("Location: login.php?timeout=1");
+    exit;
+}
+
 // Check for absolute timeout
 if (($current_time - $_SESSION['created_at']) > SESSION_ABSOLUTE_TIMEOUT) {
     session_unset();
@@ -42,6 +66,12 @@ if (($current_time - $_SESSION['last_activity']) > SESSION_TIMEOUT) {
 
 // Update last activity timestamp
 $_SESSION['last_activity'] = $current_time;
+
+// Update session activity in database
+// Ensure DB connection is available
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/session_activity.php';
+update_session_activity($conn);
 
 // Calculate time remaining for warnings
 $idle_time_remaining = SESSION_TIMEOUT - ($current_time - $_SESSION['last_activity']);

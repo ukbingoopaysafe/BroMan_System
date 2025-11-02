@@ -4,6 +4,26 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
+// Attempt to log logout activity if possible
+try {
+    require_once __DIR__ . '/db.php';
+    require_once __DIR__ . '/activity_log.php';
+    $emp = $_SESSION['employee_id'] ?? null;
+    if (isset($conn) && function_exists('log_activity')) {
+        log_activity($conn, $emp, 'logout', json_encode(['username' => $_SESSION['username'] ?? null]));
+    }
+    // Remove session from active_sessions table
+    try {
+        require_once __DIR__ . '/session_activity.php';
+        if (isset($conn)) remove_session($conn);
+    } catch (Exception $e) {
+        error_log('Failed to remove active session: ' . $e->getMessage());
+    }
+    if (isset($conn)) { $conn->close(); }
+} catch (Exception $e) {
+    error_log('Failed to record logout activity: ' . $e->getMessage());
+}
+
 // Unset all session variables
 session_unset();
 

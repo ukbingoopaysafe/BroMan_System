@@ -44,7 +44,8 @@ if ($stmt = $conn->prepare($sql)) {
     $_SESSION['error_message'] = t('database_error');
 }
 
-$conn->close(); // Close connection after fetching data
+// Keep the shared connection open for other includes (e.g. session_check/navbar)
+// PHP will close the connection automatically at the end of the request.
 
 ?>
 
@@ -61,6 +62,35 @@ $conn->close(); // Close connection after fetching data
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css"> 
     <?php endif; ?>
+    <!-- Premium fonts and page-specific overrides -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root{ --primary:#10b981; --accent:#2563eb; --muted:#6b7280; --card:#ffffff; --bg:#f7fafc }
+        html,body{font-family:Inter, Tajawal, system-ui, -apple-system, 'Segoe UI', Roboto, Arial; background:var(--bg); color:#0b1220}
+        .container{max-width:1100px;margin:28px auto;padding:0 20px}
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+        .page-header h1{margin:0;font-size:26px;font-weight:700}
+        .btn-add{background:linear-gradient(180deg,var(--primary),#0ea86f);color:#fff;border-radius:8px;padding:10px 14px;text-decoration:none;display:inline-block}
+        .filter-section{background:transparent;margin-bottom:18px}
+        .filter-form .filter-item:first-child { margin-right:6px }
+        .btn-add{white-space:nowrap}
+    .filter-form{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(15,23,42,0.06);display:flex;gap:12px;align-items:center}
+    .filter-form .filter-item{display:flex;align-items:center}
+    .form-input{flex:1;padding:12px 14px;border-radius:8px;border:1px solid #eef2f7;background:#fff;height:44px;box-sizing:border-box}
+    .btn-primary{background:var(--accent);color:#fff;padding:0 16px;border-radius:8px;border:none;height:44px;display:inline-flex;align-items:center;justify-content:center}
+    .btn-add{height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0 16px}
+        .table-responsive{background:linear-gradient(180deg,#fff,#fbfdff);padding:12px;border-radius:12px;box-shadow:0 8px 30px rgba(15,23,42,0.04)}
+        .properties-table{width:100%;border-collapse:collapse;font-size:14px}
+        .properties-table thead th{background:transparent;color:var(--muted);text-align:left;padding:12px;border-bottom:1px solid #eef2f7}
+        .properties-table td{padding:14px;border-bottom:1px dashed #f1f5f9;vertical-align:middle}
+        .btn-edit{background:#fbbf24;color:#0b1220;padding:8px 12px;border-radius:8px;text-decoration:none;border:none}
+        .btn-delete{background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:none}
+        .no-data{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 20px rgba(2,6,23,0.04)}
+        /* RTL adjustments */
+        html[dir="rtl"] .page-header{direction:rtl}
+        html[dir="rtl"] .properties-table thead th, html[dir="rtl"] .properties-table td{text-align:right}
+        @media (max-width:820px){ .filter-form{flex-direction:column;align-items:stretch} }
+    </style>
 </head>
 <body>
 
@@ -69,12 +99,14 @@ $conn->close(); // Close connection after fetching data
     <div class="container">
         <div class="page-header">
             <h1><?php echo t('employee_management'); ?></h1>
-            <a href="add_employee.php" class="btn btn-add">+ <?php echo t('add_new_employee'); ?></a>
         </div>
 
         <div class="filter-section">
             <form method="GET" action="employees_list.php" class="filter-form">
                 <div class="filter-item">
+                    <a href="add_employee.php" class="btn btn-add">+ <?php echo t('add_new_employee'); ?></a>
+                </div>
+                <div class="filter-item" style="flex:1">
                     <input type="text" name="search" class="form-input" placeholder="<?php echo t('search_employees_placeholder'); ?>" value="<?php echo htmlspecialchars($search_term); ?>">
                 </div>
                 <div class="filter-item">

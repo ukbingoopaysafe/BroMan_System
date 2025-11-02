@@ -157,6 +157,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["excel_file"])) {
                         
                         if ($update_stmt->execute()) {
                             $properties_updated++;
+                            // Log update activity
+                            try {
+                                require_once __DIR__ . '/activity_log.php';
+                                $emp_for_log = $_SESSION['employee_id'] ?? $_SESSION['id'] ?? null;
+                                if (function_exists('log_activity')) {
+                                    log_activity($conn, $emp_for_log, 'edit_property', json_encode(['property_id' => $existing_id, 'source' => 'import_excel']));
+                                }
+                            } catch (Exception $e) {
+                                error_log('Failed to record import edit activity: ' . $e->getMessage());
+                            }
                         } else {
                             throw new Exception("Error updating property: " . $update_stmt->error);
                         }
@@ -182,6 +192,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["excel_file"])) {
                         
                         if ($insert_stmt->execute()) {
                             $properties_added++;
+                            // Log insert activity
+                            try {
+                                require_once __DIR__ . '/activity_log.php';
+                                $emp_for_log = $_SESSION['employee_id'] ?? $_SESSION['id'] ?? null;
+                                if (function_exists('log_activity')) {
+                                    $new_id = $conn->insert_id;
+                                    log_activity($conn, $emp_for_log, 'add_property', json_encode(['property_id' => $new_id, 'source' => 'import_excel']));
+                                }
+                            } catch (Exception $e) {
+                                error_log('Failed to record import add activity: ' . $e->getMessage());
+                            }
                         } else {
                             throw new Exception("Error inserting property: " . $insert_stmt->error);
                         }

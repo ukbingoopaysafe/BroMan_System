@@ -4,6 +4,7 @@ require_once __DIR__ . '/lang/translate.php';
 require_once __DIR__ . '/security.php';
 ensure_secure_session_started();
 require_once 'permissions.php'; // Include permissions system
+require_once __DIR__ . '/property_changes_tracker.php'; // Include property changes tracker
 
 // Check permissions - only manager and admin can edit properties
 check_permission('manage_properties');
@@ -192,6 +193,43 @@ if ($att_stmt) {
 
 // --- Process form submission for update ---
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Store old property data for comparison
+    $old_property_data = [
+        'Title' => $title,
+        'Description' => $description,
+        'Location' => $location,
+        'Area' => $area,
+        'Status' => $status,
+        'unit_design' => $unit_design,
+        'compound_area' => $compound_area,
+        'down_payment_percentage' => $down_payment_percentage,
+        'payment_years' => $payment_years,
+        'delivery_date' => $delivery_date,
+        'ProjectName' => $project_name,
+        'min_area' => $min_area,
+        'max_area' => $max_area,
+        'avg_area' => $avg_area,
+        'district' => $district,
+        'governorate' => $governorate,
+        'company_name' => $company_name,
+        'FloorsCount' => $floors_count,
+        'sales_manager_name' => $sales_manager_name,
+        'sales_manager_phone' => $sales_manager_phone,
+        'salesperson_name' => $salesperson_name,
+        'salesperson_phone' => $salesperson_phone,
+        'year_built' => $year_built,
+        'unit_floor' => $unit_floor,
+        'net_area' => $net_area,
+        'loading_percentage' => $loading_percentage,
+        'price_cash' => $price_cash,
+        'price_installments' => $price_installments,
+        'meter_price_cash' => $meter_price_cash,
+        'meter_price_installments' => $meter_price_installments,
+        'seller_type' => $seller_type,
+        'seller_name' => $seller_name,
+        'seller_phone' => $seller_phone
+    ];
+
     $property_id_post = trim($_POST["property_id"]);
     if (empty($property_id_post) || $property_id_post != $property_id) {
         $errors['general'] = t('invalid_property_id');
@@ -405,6 +443,62 @@ if ($att_stmt) {
                     $moved = moveTempUploadsToProperty($property_id, session_id(), $conn);
                     error_log('Moved temp uploads after edit for session ' . session_id() . ': ' . json_encode($moved));
                 }
+
+                // Get the new property data after update for change tracking
+                $new_property_data = [
+                    'Title' => $title_posted,
+                    'Description' => $description_posted,
+                    'Location' => $location_posted,
+                    'Area' => $area_val,
+                    'Status' => $status_posted,
+                    'unit_design' => $unit_design_posted,
+                    'compound_area' => $compound_area_val,
+                    'down_payment_percentage' => $down_payment_val,
+                    'payment_years' => $payment_years_val,
+                    'delivery_date' => $delivery_date_posted,
+                    'ProjectName' => $project_name_posted,
+                    'min_area' => $min_area_val,
+                    'max_area' => $max_area_val,
+                    'avg_area' => $avg_area_val,
+                    'district' => $district_posted,
+                    'governorate' => $governorate_posted,
+                    'company_name' => $company_name_posted,
+                    'FloorsCount' => $floors_count_val,
+                    'sales_manager_name' => $sales_manager_name_posted,
+                    'sales_manager_phone' => $sales_manager_phone_posted,
+                    'salesperson_name' => $salesperson_name_posted,
+                    'salesperson_phone' => $salesperson_phone_posted,
+                    'year_built' => $year_built_posted,
+                    'unit_floor' => $unit_floor_posted,
+                    'net_area' => $net_area_val,
+                    'loading_percentage' => $loading_percentage_val,
+                    'price_cash' => $price_cash_val,
+                    'price_installments' => $price_installments_val,
+                    'meter_price_cash' => $meter_price_cash_val,
+                    'meter_price_installments' => $meter_price_installments_val,
+                    'seller_type' => $seller_type_posted,
+                    'seller_name' => $seller_name_posted,
+                    'seller_phone' => $seller_phone_posted
+                ];
+
+                // Track and log changes
+                try {
+                    require_once __DIR__ . '/activity_log.php';
+                    $emp_for_log = $_SESSION['employee_id'] ?? null;
+                    
+                    // Get the changes between old and new data
+                    $changes = track_property_changes($old_property_data, $new_property_data);
+                    
+                    if (function_exists('log_activity') && !empty($changes)) {
+                        log_activity($conn, $emp_for_log, 'edit_property', [
+                            'property_id' => $property_id,
+                            'changes' => $changes
+                        ]);
+                    }
+                } catch (Exception $e) {
+                    error_log('Failed to record edit_property activity: ' . $e->getMessage());
+                }
+
                 header("Location: view_property.php?id=" . $property_id);
                 exit();
             } else {
@@ -422,7 +516,6 @@ if ($att_stmt) {
     }
 }
 
-$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -1521,4 +1614,9 @@ $conn->close();
     </script>
 </body>
 </html>
-
+<?php 
+// Close the database connection at the very end
+if (isset($conn)) {
+    $conn->close();
+}
+?>

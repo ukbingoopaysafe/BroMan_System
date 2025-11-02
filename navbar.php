@@ -58,6 +58,10 @@ $switch_lang_url = basename($_SERVER['PHP_SELF']) . '?' . http_build_query($quer
             <?php if (can_manage_employees()): ?>
                 <li><a href="employees_list.php" class="<?php echo ($active_page == "employees_list.php" || $active_page == "add_employee.php" || $active_page == "edit_employee.php") ? "active" : ""; ?>"><?php echo t('employees'); ?></a></li>
             <?php endif; ?>
+      <?php if (is_manager()): ?>
+        <li><a href="manager_activity.php" class="<?php echo ($active_page == "manager_activity.php") ? "active" : ""; ?>"><?php echo t('activity_logs') ? t('activity_logs') : (get_lang_code() === 'ar' ? 'سجل النشاط' : 'Activity Log'); ?></a></li>
+      <?php endif; ?>
+      <!-- Reports link removed as requested -->
             <li>
                 <form action="logout.php" method="POST" style="display: inline;">
                     <button type="submit" class="btn-logout"><?php echo sprintf(t('logout_user'), $user_full_name); ?></button>

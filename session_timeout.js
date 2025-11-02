@@ -3,7 +3,10 @@ class SessionTimeoutManager {
     constructor() {
         this.warningShown = false;
         this.checkInterval = 30000; // Check every 30 seconds
+        this.sessionTimeout = 1800000; // 30 minutes in milliseconds
+        this.warningThreshold = 300000; // Show warning 5 minutes before expiry
         this.warningDialog = null;
+        this.lastActivity = Date.now();
         this.init();
     }
 
@@ -26,15 +29,32 @@ class SessionTimeoutManager {
         const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
         events.forEach(event => {
             document.addEventListener(event, () => {
+                this.lastActivity = Date.now();
                 if (this.warningShown) {
                     this.hideWarning();
                 }
+                // Extend session on server
+                this.extendSession();
             });
         });
     }
 
     async checkSessionStatus() {
         try {
+            const timeSinceLastActivity = Date.now() - this.lastActivity;
+            
+            // Show warning 5 minutes before session expires
+            if (timeSinceLastActivity >= (this.sessionTimeout - this.warningThreshold) && !this.warningShown) {
+                this.showWarning();
+                return;
+            }
+            
+            // Check if session has expired
+            if (timeSinceLastActivity >= this.sessionTimeout) {
+                this.handleSessionExpired();
+                return;
+            }
+            
             const response = await fetch('session_status.php', {
                 method: 'GET',
                 credentials: 'same-origin'
@@ -47,7 +67,8 @@ class SessionTimeoutManager {
             const data = await response.json();
             
             if (data.expired) {
-                // Session has expired, redirect to login
+                // Session has expired, handle expiration
+                this.handleSessionExpired();
                 window.location.href = 'login.php?timeout=' + data.timeout_type;
                 return;
             }

@@ -344,6 +344,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Use robust flash helper and set legacy session key for compatibility (mirror edit behavior)
             require_once __DIR__ . '/flash.php';
             if (function_exists('add_flash')) { add_flash(t('property_added_success'), 6); }
+
+            // Log property addition for auditing
+            try {
+                require_once __DIR__ . '/activity_log.php';
+                $emp_for_log = $employee_id ?? ($_SESSION['employee_id'] ?? null);
+                if (function_exists('log_activity')) {
+                    log_activity($conn, $emp_for_log, 'add_property', json_encode(['property_id' => $new_property_id, 'type' => 'coastal']));
+                }
+            } catch (Exception $e) {
+                error_log('Failed to record add_property activity: ' . $e->getMessage());
+            }
+
             // session is written before redirect
             session_write_close(); // Force session data to be saved now
             header("Location: view_property.php?id=" . $new_property_id . "&added=1");

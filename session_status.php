@@ -7,12 +7,19 @@ require_once 'session_check.php';
 $current_time = time();
 $response = array();
 
-// Check if session is still valid (session_check.php would have redirected if expired)
-$response['expired'] = false;
+// Check if session has expired
+$idle_time = $current_time - $_SESSION['last_activity'];
+if ($idle_time > SESSION_TIMEOUT) {
+    $response['expired'] = true;
+    $response['timeout_type'] = 'idle';
+    session_destroy();
+    exit(json_encode($response));
+} else {
+    $response['expired'] = false;
+}
 
 // Check for warnings
-$idle_time_remaining = SESSION_TIMEOUT - ($current_time - $_SESSION['last_activity']);
-$absolute_time_remaining = SESSION_ABSOLUTE_TIMEOUT - ($current_time - $_SESSION['created_at']);
+$idle_time_remaining = SESSION_TIMEOUT - $idle_time;
 
 $response['warning'] = false;
 $response['timeout_type'] = '';

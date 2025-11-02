@@ -16,6 +16,7 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
 
 require_once __DIR__ . '/db.php'; // Include database connection using absolute path
 require_once __DIR__ . '/media_functions.php'; // Include media helper functions
+require_once __DIR__ . '/log_property_visit.php'; // Include property visit logging
 
 // Check if property ID is provided
 if (!isset($_GET['id']) || empty($_GET['id'])) {
@@ -46,6 +47,11 @@ if ($stmt = $conn->prepare($sql)) {
         $result = $stmt->get_result();
         if ($result->num_rows == 1) {
             $property = $result->fetch_assoc();
+            // Debug session data
+            error_log("Session data in view_property.php: " . print_r($_SESSION, true));
+            // Log the property visit
+            $visit_logged = log_property_visit($property_id);
+            error_log("Property visit log result: " . ($visit_logged ? "success" : "failed"));
         } else {
             // Property not found
             header("Location: index_properties.php");
