@@ -1,13 +1,23 @@
 <?php
 // Helper function to generate sorting URL
 function getSortUrl($column, $current_sort, $current_direction) {
-    $new_direction = ($current_sort === $column && $current_direction === 'asc') ? 'desc' : 'asc';
-    
-    // Preserve current filters
+    // If clicking the same column, toggle its direction.
+    // If switching to a different column, set the new column direction to the
+    // opposite of the currently visible ordering so a single click reverses
+    // the listing immediately (matches user expectation).
+    if ($current_sort === $column) {
+        $new_direction = ($current_direction === 'asc') ? 'desc' : 'asc';
+    } else {
+        // Use the opposite of the current listing direction for the new column
+        // so one click flips order immediately.
+        $new_direction = ($current_direction === 'asc') ? 'desc' : 'asc';
+    }
+
+    // Preserve current filters and set sorting params
     $params = $_GET;
     $params['sort'] = $column;
     $params['direction'] = $new_direction;
-    
+
     return '?' . http_build_query($params);
 }
 
