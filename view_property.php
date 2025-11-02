@@ -242,6 +242,12 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
+        /* Ensure this page uses the site-wide Inter + Tajawal fonts (override any local rules) */
+        html, body {
+            font-family: 'Inter', 'Tajawal', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+    </style>
+    <style>
         /* Enhanced Property Details Styling */
         .property-details {
             margin-bottom: 40px;

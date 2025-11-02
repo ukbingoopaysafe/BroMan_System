@@ -1,6 +1,7 @@
 /* الخطوط والألوان العامة */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /* Use Inter + Tajawal to match manager_activity page */
+    font-family: 'Inter', 'Tajawal', system-ui, -apple-system, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f4f6f9;
     margin: 0;
     padding: 0;
@@ -34,7 +35,8 @@ a:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-family: 'Cairo', sans-serif;
+    /* inherit global font */
+    font-family: inherit;
 }
 
 .navbar .nav-left {
@@ -264,7 +266,8 @@ input, select, textarea {
     max-width: 1100px;
     margin: 20px auto;
     padding: 0 15px;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    /* use global font */
+    font-family: inherit;
     direction: rtl;
     text-align: right;
 }
