@@ -21,6 +21,9 @@ return [
 
     // Dashboard
     'dashboard_title' => 'Dashboard',
+    // Legacy keys used by some templates
+    'welcome_dashboard' => 'Welcome to the dashboard',
+    'dashboard_content' => '',
     'welcome_message' => 'Welcome, %s!',
     'dashboard_intro' => '',
     'total_properties' => 'Total Properties',

@@ -1,22 +1,19 @@
 <?php
-require_once __DIR__ . 
-'/lang/translate.php'; // Include translation handler
+require_once __DIR__ . '/lang/translate.php'; // Include translation handler
 
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// Check if the user is logged in, if not then redirect to login page
+// If user is not logged in, send to login. If logged in, redirect to the dashboard page.
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header("Location: login.php");
     exit;
+} else {
+    // Redirect logged-in users to the main dashboard
+    header("Location: dashboard.php");
+    exit;
 }
-
-require_once __DIR__ . '/db.php'; // Include database connection using absolute path
-
-$is_admin = (isset($_SESSION["role"]) && $_SESSION["role"] === "admin"); // Assuming role check is still relevant
-
-$conn->close(); // Close connection after fetching data
 
 ?>
 

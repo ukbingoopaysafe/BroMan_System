@@ -21,6 +21,9 @@ return [
 
     // Dashboard
     'dashboard_title' => 'لوحة التحكم',
+    // Legacy keys used by some templates
+    'welcome_dashboard' => 'لوحة التحكم',
+    'dashboard_content' => '',
     'welcome_message' => 'أهلاً بك، %s!',
     'dashboard_intro' => '',
     'total_properties' => 'إجمالي العقارات',
