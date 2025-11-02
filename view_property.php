@@ -976,6 +976,49 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
             </div>
 
             <?php 
+            // Helper: normalize phone numbers for tel: links so that apps
+            // (e.g., WhatsApp on desktop) receive an international format.
+            // Rules applied (best-effort):
+            // - Keep numbers that already start with '+' as-is.
+            // - Convert leading '00' to leading '+'.
+            // - If the number starts with a single leading '0' (local Egyptian style
+            //   like 010..., 011..., 012..., 015...), replace it with '+20' + rest.
+            // - If the number starts with '20' (country code present but no '+'),
+            //   prefix with '+'.
+            // - Otherwise, return digits-only string (best-effort).
+            function normalize_phone_for_tel($raw) {
+                $s = trim((string)$raw);
+                if ($s === '') return '';
+                // keep plus sign and digits only
+                $s = preg_replace('/[^0-9+]/', '', $s);
+                if ($s === '') return '';
+
+                // already international with plus
+                if (strpos($s, '+') === 0) {
+                    return $s;
+                }
+
+                // leading 00 -> +
+                if (strpos($s, '00') === 0) {
+                    return '+' . ltrim($s, '0');
+                }
+
+                // local Egyptian numbers: start with single 0 e.g. 010..., 011..., 012..., 015...
+                if (strpos($s, '0') === 0) {
+                    $without0 = substr($s, 1);
+                    // common mobile patterns in Egypt have 10 digits with leading 0
+                    // so after removing 0 we expect 9 digits; still, add +20 in any case
+                    return '+20' . $without0;
+                }
+
+                // if it already starts with country code like 20..., add +
+                if (strpos($s, '20') === 0) {
+                    return '+' . $s;
+                }
+
+                // fallback: return digits-only (no plus)
+                return $s;
+            }
             // Check if there is any sales information to display before showing the section
             if (
                 !empty($property['sales_manager_name']) || 
@@ -993,7 +1036,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                     if (!empty($property['sales_manager_phone'])) {
                         $sm_raw = trim($property['sales_manager_phone']);
                         $sm_display = htmlspecialchars($sm_raw);
-                        $sm_tel = preg_replace('/[^+0-9]/', '', $sm_raw);
+                        $sm_tel = normalize_phone_for_tel($sm_raw);
                         if (function_exists('get_direction') && get_direction() === 'rtl') {
                             $sales_manager_phone_html = '<a href="tel:' . $sm_tel . '" style="display:inline-block;width:100%;text-align:right;direction:rtl;">' . $sm_display . '</a>';
                         } else {
@@ -1005,7 +1048,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                     if (!empty($property['salesperson_phone'])) {
                         $sp_raw = trim($property['salesperson_phone']);
                         $sp_display = htmlspecialchars($sp_raw);
-                        $sp_tel = preg_replace('/[^+0-9]/', '', $sp_raw);
+                        $sp_tel = normalize_phone_for_tel($sp_raw);
                         if (function_exists('get_direction') && get_direction() === 'rtl') {
                             $salesperson_phone_html = '<a href="tel:' . $sp_tel . '" style="display:inline-block;width:100%;text-align:right;direction:rtl;">' . $sp_display . '</a>';
                         } else {
@@ -1104,7 +1147,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                 $seller_phone_html = null;
                 if (!empty($seller_phone_raw)) {
                     $phone_display = htmlspecialchars(trim($seller_phone_raw));
-                    $tel = preg_replace('/[^+0-9]/', '', $seller_phone_raw);
+                    $tel = normalize_phone_for_tel($seller_phone_raw);
                     // Force RTL inline styling for links to avoid stylesheet specificity/order conflicts
                     if (function_exists('get_direction') && get_direction() === 'rtl') {
                         $seller_phone_html = '<a href="tel:' . $tel . '" style="display:inline-block;width:100%;text-align:right;direction:rtl;">' . $phone_display . '</a>';
