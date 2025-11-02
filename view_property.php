@@ -981,31 +981,58 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
             <div class="property-section">
                 <h2><?php echo t('sales_information'); ?></h2>
                 <div class="detail-grid">
+                    <?php
+                    // Prepare clickable phones for sales manager and salesperson (preserve RTL handling like seller phone)
+                    $sales_manager_phone_html = null;
+                    if (!empty($property['sales_manager_phone'])) {
+                        $sm_raw = trim($property['sales_manager_phone']);
+                        $sm_display = htmlspecialchars($sm_raw);
+                        $sm_tel = preg_replace('/[^+0-9]/', '', $sm_raw);
+                        if (function_exists('get_direction') && get_direction() === 'rtl') {
+                            $sales_manager_phone_html = '<a href="tel:' . $sm_tel . '" style="display:inline-block;width:100%;text-align:right;direction:rtl;">' . $sm_display . '</a>';
+                        } else {
+                            $sales_manager_phone_html = '<a href="tel:' . $sm_tel . '">' . $sm_display . '</a>';
+                        }
+                    }
+
+                    $salesperson_phone_html = null;
+                    if (!empty($property['salesperson_phone'])) {
+                        $sp_raw = trim($property['salesperson_phone']);
+                        $sp_display = htmlspecialchars($sp_raw);
+                        $sp_tel = preg_replace('/[^+0-9]/', '', $sp_raw);
+                        if (function_exists('get_direction') && get_direction() === 'rtl') {
+                            $salesperson_phone_html = '<a href="tel:' . $sp_tel . '" style="display:inline-block;width:100%;text-align:right;direction:rtl;">' . $sp_display . '</a>';
+                        } else {
+                            $salesperson_phone_html = '<a href="tel:' . $sp_tel . '">' . $sp_display . '</a>';
+                        }
+                    }
+                    ?>
+
                     <?php if (!empty($property['sales_manager_name'])): ?>
-                    <div class="detail-item">
+                    <div class="detail-item detail-name">
                         <span class="detail-label"><?php echo t('sales_manager_name_label'); ?>:</span>
                         <span class="detail-value"><?php echo htmlspecialchars($property['sales_manager_name']); ?></span>
                     </div>
                     <?php endif; ?>
 
-                    <?php if (!empty($property['sales_manager_phone'])): ?>
-                    <div class="detail-item">
+                    <?php if ($sales_manager_phone_html !== null): ?>
+                    <div class="detail-item detail-phone">
                         <span class="detail-label"><?php echo t('sales_manager_phone_label'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['sales_manager_phone']); ?></span>
+                        <span class="detail-value"><?php echo $sales_manager_phone_html; ?></span>
                     </div>
                     <?php endif; ?>
 
                     <?php if (!empty($property['salesperson_name'])): ?>
-                    <div class="detail-item">
+                    <div class="detail-item detail-name">
                         <span class="detail-label"><?php echo t('salesperson_name_label'); ?>:</span>
                         <span class="detail-value"><?php echo htmlspecialchars($property['salesperson_name']); ?></span>
                     </div>
                     <?php endif; ?>
 
-                    <?php if (!empty($property['salesperson_phone'])): ?>
-                    <div class="detail-item">
+                    <?php if ($salesperson_phone_html !== null): ?>
+                    <div class="detail-item detail-phone">
                         <span class="detail-label"><?php echo t('salesperson_phone_label'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['salesperson_phone']); ?></span>
+                        <span class="detail-value"><?php echo $salesperson_phone_html; ?></span>
                     </div>
                     <?php endif; ?>
                 </div>

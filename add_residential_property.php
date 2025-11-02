@@ -131,13 +131,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($stmt = $conn->prepare($sql)) {
         // Dynamically build types string from variable values to avoid manual mismatch
+        // Define bind variables in the same order as the INSERT statement
         $bind_vars = [
             $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $year_built, $unit_floor, $net_area, $loading_percentage, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $seller_type, $seller_name, $seller_phone, $latitude, $longitude
         ];
 
-        // Build types string: i for integers, d for floats, s for everything else
+        // Parallel array of parameter names so we can force certain fields (like phone numbers)
+        // to always be bound as strings which preserves leading zeros.
+        $bind_keys = [
+            'property_type_id', 'title', 'description', 'location', 'area', 'bedrooms', 'status', 'listing_type', 'employee_id', 'unit_design', 'finishing_type_id', 'compound_area', 'down_payment_percentage', 'payment_years', 'delivery_date', 'project_name', 'min_area', 'max_area', 'avg_area', 'district', 'governorate', 'company_name', 'floors_count', 'sales_manager_name', 'sales_manager_phone', 'salesperson_name', 'salesperson_phone', 'year_built', 'unit_floor', 'net_area', 'loading_percentage', 'price_cash', 'price_installments', 'meter_price_cash', 'meter_price_installments', 'seller_type', 'seller_name', 'seller_phone', 'latitude', 'longitude'
+        ];
+
+        // Fields that MUST be treated as strings even if they look numeric.
+        $force_string_fields = [
+            'sales_manager_phone',
+            'salesperson_phone',
+            'seller_phone',
+            // Add other phone-like fields here if needed in future
+        ];
+
+        // Build types string: i for integers, d for floats, s for everything else.
+        // But force specific fields (phones) to be 's' to avoid integer conversion
         $types = '';
-        foreach ($bind_vars as $bv) {
+        foreach ($bind_vars as $i => $bv) {
+            $key = $bind_keys[$i] ?? null;
+            if ($key !== null && in_array($key, $force_string_fields, true)) {
+                $types .= 's';
+                continue;
+            }
+
             if (is_int($bv)) {
                 $types .= 'i';
             } elseif (is_float($bv)) {

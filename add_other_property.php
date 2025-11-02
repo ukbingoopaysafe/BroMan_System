@@ -125,13 +125,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
     if ($stmt = $conn->prepare($sql)) {
-        // Build bind-vars and types dynamically to preserve decimal types (payment_years)
+        // Build bind-vars in same order as INSERT and force phone-like fields to be strings
         $bind_vars = [
             $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $year_built, $unit_floor, $net_area, $loading_percentage, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $seller_type, $seller_name, $seller_phone, $latitude, $longitude
         ];
 
+        // Parallel keys for forced typing
+        $bind_keys = [
+            'property_type_id', 'title', 'description', 'location', 'area', 'bedrooms', 'status', 'listing_type', 'employee_id', 'unit_design', 'finishing_type_id', 'compound_area', 'down_payment_percentage', 'payment_years', 'delivery_date', 'project_name', 'min_area', 'max_area', 'avg_area', 'district', 'governorate', 'company_name', 'floors_count', 'sales_manager_name', 'sales_manager_phone', 'salesperson_name', 'salesperson_phone', 'year_built', 'unit_floor', 'net_area', 'loading_percentage', 'price_cash', 'price_installments', 'meter_price_cash', 'meter_price_installments', 'seller_type', 'seller_name', 'seller_phone', 'latitude', 'longitude'
+        ];
+
+        $force_string_fields = [
+            'sales_manager_phone', 'salesperson_phone', 'seller_phone'
+        ];
+
         $types = '';
-        foreach ($bind_vars as $bv) {
+        foreach ($bind_vars as $i => $bv) {
+            $key = $bind_keys[$i] ?? null;
+            if ($key !== null && in_array($key, $force_string_fields, true)) {
+                $types .= 's';
+                continue;
+            }
+
             if (is_int($bv)) {
                 $types .= 'i';
             } elseif (is_float($bv)) {
