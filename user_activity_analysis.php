@@ -313,6 +313,15 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title><?php echo htmlspecialchars($title); ?></title>
+    <?php
+    // Compute application base path so favicon requests target the correct folder (matches other pages)
+    $app_base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+    if ($app_base === '/' || $app_base === '.') { $app_base = ''; }
+    $favicon_path = $app_base . '/images/Logo%20Broman.svg';
+    ?>
+    <link rel="icon" href="<?php echo htmlspecialchars($favicon_path); ?>" type="image/svg+xml">
+    <link rel="shortcut icon" href="<?php echo htmlspecialchars($favicon_path); ?>">
+    <link rel="apple-touch-icon" href="<?php echo htmlspecialchars($favicon_path); ?>">
     <link rel="stylesheet" href="modern_styles.css">
     <?php if (get_direction() === 'rtl'): ?><link rel="stylesheet" href="rtl_styles.css"><?php endif; ?>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
