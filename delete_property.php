@@ -33,6 +33,23 @@ $property_id_to_delete = null;
 if (isset($_POST["id"]) && !empty(trim($_POST["id"]))) {
     $property_id_to_delete = (int) trim($_POST["id"]);
 
+    // Get property details for logging BEFORE deletion
+    $property_details = null;
+    $sql_get_property = "SELECT p.PropertyID, p.Title, pt.TypeName_ar as property_type 
+                         FROM properties p 
+                         LEFT JOIN propertytypes pt ON p.PropertyTypeID = pt.PropertyTypeID 
+                         WHERE p.PropertyID = ?";
+    if ($stmt_get = $conn->prepare($sql_get_property)) {
+        $stmt_get->bind_param("i", $property_id_to_delete);
+        if ($stmt_get->execute()) {
+            $result_get = $stmt_get->get_result();
+            if ($row = $result_get->fetch_assoc()) {
+                $property_details = $row;
+            }
+        }
+        $stmt_get->close();
+    }
+
     // Delete all related media files before deleting the property
     // Images
     $sql_images = "SELECT file_path FROM property_images WHERE property_id = ?";
@@ -115,8 +132,27 @@ if (isset($_POST["id"]) && !empty(trim($_POST["id"]))) {
 
         if ($stmt->execute()) {
             if ($stmt->affected_rows > 0) {
+                // Log the deletion activity
+                try {
+                    require_once __DIR__ . '/activity_log.php';
+                    $employee_id = $_SESSION['employee_id'] ?? null;
+                    if (function_exists('log_activity') && $employee_id && $property_details) {
+                        log_activity($conn, $employee_id, 'delete_property', [
+                            'property_id' => $property_id_to_delete,
+                            'property_title' => $property_details['Title'] ?? null,
+                            'property_type' => $property_details['property_type'] ?? null
+                        ]);
+                    }
+                } catch (Exception $e) {
+                    error_log('Failed to record delete_property activity: ' . $e->getMessage());
+                }
+
                 require_once __DIR__ . '/flash.php';
-                if (function_exists('add_flash')) { add_flash("Property deleted successfully.", 6); }
+                require_once __DIR__ . '/lang/translate.php';
+                if (function_exists('add_flash')) { 
+                    $message = function_exists('t') ? t('property_deleted_successfully') : 'Property deleted successfully.';
+                    add_flash($message, 6); 
+                }
             } else {
                 $_SESSION["error_message"] = "Property not found or already deleted.";
             }
@@ -133,6 +169,25 @@ if (isset($_POST["id"]) && !empty(trim($_POST["id"]))) {
     $_SESSION["error_message"] = "No property ID specified for deletion.";
 }
 
-// Redirect back to the property list page
-header("Location: index_properties.php");
+// Redirect back - check if we came from duplicate review page
+$redirect_url = "index_properties.php";
+if (isset($_SERVER['HTTP_REFERER'])) {
+    $referer = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_PATH);
+    if (strpos($referer, 'admin_duplicate_properties.php') !== false) {
+        // Extract phone parameter from referer if present
+        $referer_query = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_QUERY);
+        if ($referer_query) {
+            parse_str($referer_query, $params);
+            if (isset($params['phone'])) {
+                $redirect_url = "admin_duplicate_properties.php?phone=" . urlencode($params['phone']);
+            } else {
+                $redirect_url = "admin_duplicate_properties.php";
+            }
+        } else {
+            $redirect_url = "admin_duplicate_properties.php";
+        }
+    }
+}
+
+header("Location: " . $redirect_url);
 exit();

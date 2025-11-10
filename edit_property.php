@@ -499,7 +499,7 @@ if ($att_stmt) {
                     error_log('Failed to record edit_property activity: ' . $e->getMessage());
                 }
 
-                header("Location: view_property.php?id=" . $property_id);
+                header("Location: view_property.php?id=" . $property_id . "&edited=1");
                 exit();
             } else {
                 $errors['db_update'] = t('error_updating_property') . ': ' . $stmt_update->error;

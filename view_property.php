@@ -49,9 +49,17 @@ if ($stmt = $conn->prepare($sql)) {
             $property = $result->fetch_assoc();
             // Debug session data
             error_log("Session data in view_property.php: " . print_r($_SESSION, true));
-            // Log the property visit
-            $visit_logged = log_property_visit($property_id);
-            error_log("Property visit log result: " . ($visit_logged ? "success" : "failed"));
+            // Log the property visit ONLY if not redirected from add/edit property (avoid logging after adding/editing)
+            // Check if 'added' or 'edited' parameter exists in URL - if so, skip visit logging
+            $skip_visit_log = (isset($_GET['added']) && $_GET['added'] == '1') || (isset($_GET['edited']) && $_GET['edited'] == '1');
+            
+            if (!$skip_visit_log) {
+                $visit_logged = log_property_visit($property_id);
+                error_log("Property visit log result: " . ($visit_logged ? "success" : "failed"));
+            } else {
+                $reason = isset($_GET['added']) ? "add property" : "edit property";
+                error_log("Skipping property visit log - redirected from " . $reason);
+            }
         } else {
             // Property not found
             header("Location: index_properties.php");
@@ -240,7 +248,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
     <?php endif; ?>
     <!-- Map provider: Leaflet + OpenStreetMap (Leaflet-only) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
     <style>
         /* Ensure this page uses the site-wide Inter + Tajawal fonts (override any local rules) */
         html, body {
@@ -1242,7 +1250,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
         </div>
     </div>
 
-    <script src="lightbox.js"></script>
+    <script src="lightbox.js" defer></script>
     
     <?php if (!empty($property['latitude']) && !empty($property['longitude'])): ?>
     <script>

@@ -29,9 +29,20 @@ if (!defined('SESSION_TIMEOUT')) {
     define('SESSION_TIMEOUT', 1800); // 30 minutes in seconds
 }
 
+// Helper: basic log rotation to prevent unlimited growth
+function rotate_session_log_if_needed() {
+    $logFile = __DIR__ . '/session_activity.log';
+    $maxBytes = 1024 * 1024; // 1 MB
+    if (file_exists($logFile) && filesize($logFile) > $maxBytes) {
+        $suffix = date('Ymd_His');
+        @rename($logFile, __DIR__ . "/session_activity_$suffix.log");
+    }
+}
+
 // Check if session has timed out
 if (($current_time - $_SESSION['last_activity']) > SESSION_TIMEOUT) {
     // Log session expiration
+    rotate_session_log_if_needed();
     $log_msg = date('Y-m-d H:i:s') . " | Session expired for user: " . (isset($_SESSION['username']) ? $_SESSION['username'] : 'unknown') . " | IP: " . $_SERVER['REMOTE_ADDR'] . " | Agent: " . $_SERVER['HTTP_USER_AGENT'] . "\n";
     file_put_contents(__DIR__ . '/session_activity.log', $log_msg, FILE_APPEND);
     // Session has expired - destroy it and redirect to login

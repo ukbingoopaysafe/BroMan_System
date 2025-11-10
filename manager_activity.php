@@ -157,6 +157,8 @@ $export_label = t('export');
         .tag-green{background:#10b981}
         .tag-orange{background:#f59e0b}
         .tag-teal{background:#06b6d4}
+        .tag-red{background:#dc3545}
+        .tag-gray{background:#6b7280}
         .icon-btn{background:transparent;border:0;padding:6px;border-radius:8px;cursor:pointer}
         .expand-toggle{background:transparent;border:0;font-size:14px;margin-right:8px}
         .small{color:var(--muted);font-size:13px}
@@ -240,6 +242,7 @@ $export_label = t('export');
                         case 'property_visit': $latest_cat_class = 'tag-blue'; break;
                         case 'add_property': $latest_cat_class = 'tag-green'; break;
                         case 'edit_property': $latest_cat_class = 'tag-orange'; break;
+                        case 'delete_property': $latest_cat_class = 'tag-red'; break;
                         case 'login': $latest_cat_class = 'tag-teal'; break;
                         case 'logout': $latest_cat_class = 'tag-gray'; break;
                         default: $latest_cat_class = 'tag-gray'; break;
@@ -268,6 +271,7 @@ $export_label = t('export');
                             case 'property_visit': $cat_class = 'tag-blue'; break;
                             case 'add_property': $cat_class = 'tag-green'; break;
                             case 'edit_property': $cat_class = 'tag-orange'; break;
+                            case 'delete_property': $cat_class = 'tag-red'; break;
                             case 'login': $cat_class = 'tag-teal'; break;
                             case 'logout': $cat_class = 'tag-gray'; break;
                             default: $cat_class = 'tag-gray'; break;
