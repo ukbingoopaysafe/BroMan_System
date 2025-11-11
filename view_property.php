@@ -246,9 +246,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css">
     <?php endif; ?>
-    <!-- Map provider: Leaflet + OpenStreetMap (Leaflet-only) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+    <!-- Map provider: Google Maps -->
     <style>
         /* Ensure this page uses the site-wide Inter + Tajawal fonts (override any local rules) */
         html, body {
@@ -1251,26 +1249,62 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
     </div>
 
     <script src="lightbox.js" defer></script>
+    <script src="maps_loader.js"></script>
     
     <?php if (!empty($property['latitude']) && !empty($property['longitude'])): ?>
     <script>
-        // Initialize static map for property location (Leaflet-only)
-        document.addEventListener('DOMContentLoaded', function() {
-            const lat = <?php echo $property['latitude']; ?>;
-            const lng = <?php echo $property['longitude']; ?>;
-
-            if (typeof L === 'undefined') {
-                console.error('Leaflet is not loaded.');
+        document.addEventListener('DOMContentLoaded', function () {
+            const mapElement = document.getElementById('property-map');
+            if (!mapElement) {
                 return;
             }
 
-            const map = L.map('property-map').setView([lat, lng], 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
-            const marker = L.marker([lat, lng]).addTo(map);
-            marker.bindPopup('<?php echo addslashes($property['Title']); ?>').openPopup();
+            const apiKey = '<?php echo addslashes(GOOGLE_MAPS_API_KEY); ?>';
+            const lat = <?php echo json_encode((float)$property['latitude']); ?>;
+            const lng = <?php echo json_encode((float)$property['longitude']); ?>;
+            const propertyTitle = <?php echo json_encode($property['Title'] ?? t('property_location')); ?>;
+            const infoWindowContent = <?php echo json_encode('<div style="min-width:180px;"><strong>' . htmlspecialchars($property['Title'] ?? t('property_location'), ENT_QUOTES, 'UTF-8') . '</strong><br>' . htmlspecialchars($property['Location'] ?? '', ENT_QUOTES, 'UTF-8') . '</div>'); ?>;
+
+            function initMap() {
+                const position = { lat: lat, lng: lng };
+
+                const map = new google.maps.Map(mapElement, {
+                    center: position,
+                    zoom: 15,
+                    gestureHandling: 'greedy',
+                    mapTypeControl: true,
+                    streetViewControl: true,
+                    fullscreenControl: true
+                });
+
+                const marker = new google.maps.Marker({
+                    position: position,
+                    map: map,
+                    title: propertyTitle || undefined,
+                    animation: google.maps.Animation.DROP
+                });
+
+                if (infoWindowContent) {
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: infoWindowContent
+                    });
+                    infoWindow.open(map, marker);
+                    marker.addListener('click', function () {
+                        infoWindow.open(map, marker);
+                    });
+                }
+            }
+
+            function handleMapError(error) {
+                console.error(error && error.message ? error.message : error);
+                BroManMaps.showError(mapElement, 'تعذر تحميل خريطة الموقع. يرجى التحقق من مفتاح Google Maps API.');
+            }
+
+            if (typeof BroManMaps !== 'undefined') {
+                BroManMaps.loadGoogleMaps(apiKey, initMap, handleMapError);
+            } else {
+                console.error('maps_loader.js لم يتم تحميله.');
+            }
         });
     </script>
     <?php endif; ?>

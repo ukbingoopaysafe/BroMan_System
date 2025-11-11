@@ -464,9 +464,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css">
     <?php endif; ?>
-    <!-- Map provider: Leaflet + OpenStreetMap (Leaflet-only) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Map provider: Google Maps -->
     <style>
         .form-section { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
         .form-section h3 { margin-bottom: 15px; color: #0056b3; }
@@ -840,77 +838,105 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <?php include 'footer.php'; ?>
 
+<script src="maps_loader.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize interactive map using Leaflet only
+document.addEventListener('DOMContentLoaded', function () {
+    const mapElement = document.getElementById('map');
+    const latInput = document.getElementById('latitude');
+    const lngInput = document.getElementById('longitude');
+    const parseBtn = document.getElementById('parse_google_link');
+    const apiKey = '<?php echo addslashes(GOOGLE_MAPS_API_KEY); ?>';
+    const defaultLat = 30.0444;
+    const defaultLng = 31.2357;
     let map;
     let marker;
 
-    function initMap() {
-        const defaultLat = 30.0444;
-        const defaultLng = 31.2357;
+    if (!mapElement || !latInput || !lngInput) {
+        return;
+    }
 
-        const latInput = document.getElementById('latitude');
-        const lngInput = document.getElementById('longitude');
-        const lat = parseFloat(latInput.value) || defaultLat;
-        const lng = parseFloat(lngInput.value) || defaultLng;
-
-        if (typeof L === 'undefined') {
-            console.error('Leaflet is not loaded.');
+    function placeMarker(position) {
+        if (!map) {
             return;
         }
-
-        map = L.map('map').setView([lat, lng], 10);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-
-        if (!isNaN(parseFloat(latInput.value)) && !isNaN(parseFloat(lngInput.value))) {
-            marker = L.marker([lat, lng]).addTo(map);
+        if (marker) {
+            marker.setMap(null);
         }
+        marker = new google.maps.Marker({
+            position: position,
+            map: map,
+            animation: google.maps.Animation.DROP
+        });
+        map.panTo(position);
+    }
 
-        map.on('click', function(e) {
-            const clickedLat = e.latlng.lat;
-            const clickedLng = e.latlng.lng;
+    function extractLatLngFromGoogleUrl(url) {
+        try {
+            if (!url || typeof url !== 'string') {
+                return null;
+            }
 
-            latInput.value = clickedLat;
-            lngInput.value = clickedLng;
+            const atMatch = url.match(/@([0-9.+-]+),([0-9.+-]+)/);
+            if (atMatch) {
+                return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
+            }
 
-            if (marker) { map.removeLayer(marker); }
-            marker = L.marker([clickedLat, clickedLng]).addTo(map);
+            const qMatch = url.match(/[?&](?:query|q)=\s*([0-9.+-]+),\s*([0-9.+-]+)/);
+            if (qMatch) {
+                return { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) };
+            }
+
+            const dMatch = url.match(/!3d([0-9.+-]+)!4d([0-9.+-]+)/);
+            if (dMatch) {
+                return { lat: parseFloat(dMatch[1]), lng: parseFloat(dMatch[2]) };
+            }
+
+            return null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function initMap() {
+        const currentLat = parseFloat(latInput.value);
+        const currentLng = parseFloat(lngInput.value);
+        const hasCoordinates = !isNaN(currentLat) && !isNaN(currentLng);
+        const center = {
+            lat: hasCoordinates ? currentLat : defaultLat,
+            lng: hasCoordinates ? currentLng : defaultLng
+        };
+
+        map = new google.maps.Map(mapElement, {
+            center: center,
+            zoom: hasCoordinates ? 15 : 10,
+            gestureHandling: 'greedy',
+            mapTypeControl: true,
+            streetViewControl: true,
+            fullscreenControl: true
         });
 
-        // Helper: extract lat/lng from common Google Maps link formats
-        function extractLatLngFromGoogleUrl(url) {
-            try {
-                if (!url || typeof url !== 'string') return null;
-
-                const atMatch = url.match(/@([0-9.+-]+),([0-9.+-]+)/);
-                if (atMatch) return {lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2])};
-
-                const qMatch = url.match(/[?&](?:query|q)=\s*([0-9.+-]+),\s*([0-9.+-]+)/);
-                if (qMatch) return {lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2])};
-
-                const dMatch = url.match(/!3d([0-9.+-]+)!4d([0-9.+-]+)/);
-                if (dMatch) return {lat: parseFloat(dMatch[1]), lng: parseFloat(dMatch[2])};
-
-                return null;
-            } catch (e) { return null; }
+        if (hasCoordinates) {
+            placeMarker(center);
         }
 
-        const parseBtn = document.getElementById('parse_google_link');
+        map.addListener('click', function (event) {
+            const clickedLat = event.latLng.lat();
+            const clickedLng = event.latLng.lng();
+            latInput.value = clickedLat.toFixed(6);
+            lngInput.value = clickedLng.toFixed(6);
+            placeMarker({ lat: clickedLat, lng: clickedLng });
+        });
+
         if (parseBtn) {
-            parseBtn.addEventListener('click', function() {
+            parseBtn.addEventListener('click', function () {
                 const input = document.getElementById('google_map_link');
                 const val = input ? input.value.trim() : '';
                 const coords = extractLatLngFromGoogleUrl(val);
                 if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
-                    latInput.value = coords.lat;
-                    lngInput.value = coords.lng;
-                    if (marker) { map.removeLayer(marker); }
-                    marker = L.marker([coords.lat, coords.lng]).addTo(map);
-                    map.setView([coords.lat, coords.lng], 15);
+                    latInput.value = coords.lat.toFixed(6);
+                    lngInput.value = coords.lng.toFixed(6);
+                    placeMarker({ lat: coords.lat, lng: coords.lng });
+                    map.setZoom(15);
                 } else {
                     alert('لم يتم العثور على إحداثيات في الرابط. الرجاء التحقق من أن الرابط من خرائط جوجل ويتضمن إحداثيات.');
                 }
@@ -918,7 +944,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    window.addEventListener('load', initMap);
+    function handleMapError(error) {
+        console.error(error && error.message ? error.message : error);
+        BroManMaps.showError(mapElement, 'يرجى التأكد من إعداد مفتاح Google Maps API بشكل صحيح.');
+    }
+
+    BroManMaps.loadGoogleMaps(apiKey, initMap, handleMapError);
 });
 </script>
 
