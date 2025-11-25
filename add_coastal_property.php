@@ -123,6 +123,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $seller_name = trim($_POST['seller_name'] ?? null);
     $seller_phone = trim($_POST['seller_phone'] ?? null);
 
+    // تحقق من أن أرقام الهواتف المطلوبة هي 11 رقم بالضبط
+    function isValidEgyptianPhone($phone) {
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        return strlen($phone) === 11;
+    }
+    if (empty($seller_phone) || !isValidEgyptianPhone($seller_phone)) {
+        $errors[] = 'يجب أن يكون رقم هاتف البائع 11 رقم.';
+    }
+    if (empty($sales_manager_phone) || !isValidEgyptianPhone($sales_manager_phone)) {
+        $errors[] = 'يجب أن يكون رقم هاتف مدير المبيعات 11 رقم.';
+    }
+    if (empty($salesperson_phone) || !isValidEgyptianPhone($salesperson_phone)) {
+        $errors[] = 'يجب أن يكون رقم هاتف مسؤول المبيعات 11 رقم.';
+    }
+
     $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, year_built, unit_floor, net_area, loading_percentage, price_cash, price_installments, meter_price_cash, meter_price_installments, seller_type, seller_name, seller_phone, DateAdded) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
@@ -289,7 +304,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $documents_dir = $base_upload_dir . 'documents/';
                 if (!is_dir($documents_dir)) { mkdir($documents_dir, 0755, true); }
                 $allowed_doc_mime = ['application/pdf' => 'pdf'];
-                $max_doc_size = 10 * 1024 * 1024; // 10MB
+                $max_doc_size = 10 * 1024 *1024; // 10MB
                 $finfoDoc = finfo_open(FILEINFO_MIME_TYPE);
                 foreach ($_FILES['documents']['name'] as $idx => $name) {
                     if ($_FILES['documents']['error'][$idx] !== UPLOAD_ERR_OK) { continue; }
@@ -1039,6 +1054,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.addEventListener('load', initMap);
 });
+</script>
+
+<script>
+// تحقق من أن خانات الهاتف المطلوبة هي 11 رقم
+function validatePhoneInput(input) {
+    var value = input.value.replace(/[^0-9]/g, '');
+    if (value.length !== 11) {
+        input.setCustomValidity('يجب أن يكون رقم الهاتف 11 رقم');
+    } else {
+        input.setCustomValidity('');
+    }
+}
+var sellerPhoneInput = document.getElementById('seller_phone');
+var salesManagerPhoneInput = document.getElementById('sales_manager_phone');
+var salespersonPhoneInput = document.getElementById('salesperson_phone');
+if (sellerPhoneInput) {
+    sellerPhoneInput.addEventListener('input', function(){ validatePhoneInput(sellerPhoneInput); });
+}
+if (salesManagerPhoneInput) {
+    salesManagerPhoneInput.addEventListener('input', function(){ validatePhoneInput(salesManagerPhoneInput); });
+}
+if (salespersonPhoneInput) {
+    salespersonPhoneInput.addEventListener('input', function(){ validatePhoneInput(salespersonPhoneInput); });
+}
 </script>
 
 </body>

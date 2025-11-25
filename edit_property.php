@@ -341,6 +341,21 @@ if ($att_stmt) {
         $errors['floors_count'] = t('invalid_floors_count');
     }
 
+    // تحقق من أن أرقام الهواتف المطلوبة هي 11 رقم بالضبط
+    function isValidEgyptianPhone($phone) {
+        $phone = preg_replace('/[^0-9]/', '', $phone); // إزالة أي رموز غير رقمية
+        return strlen($phone) === 11;
+    }
+    if (empty($seller_phone_posted) || !isValidEgyptianPhone($seller_phone_posted)) {
+        $errors['seller_phone'] = 'يجب أن يكون رقم هاتف البائع 11 رقم.';
+    }
+    if (empty($sales_manager_phone_posted) || !isValidEgyptianPhone($sales_manager_phone_posted)) {
+        $errors['sales_manager_phone'] = 'يجب أن يكون رقم هاتف مدير المبيعات 11 رقم.';
+    }
+    if (empty($salesperson_phone_posted) || !isValidEgyptianPhone($salesperson_phone_posted)) {
+        $errors['salesperson_phone'] = 'يجب أن يكون رقم هاتف مسؤول المبيعات 11 رقم.';
+    }
+
     // If no errors, proceed with update
     if (empty($errors)) {
         $sql_update = "UPDATE Properties SET 
@@ -1611,6 +1626,29 @@ if ($att_stmt) {
 
             window.addEventListener('load', function() { initMap(); });
         });
+    </script>
+    <script>
+    // تحقق من أن خانات الهاتف المطلوبة هي 11 رقم
+    function validatePhoneInput(input) {
+        var value = input.value.replace(/[^0-9]/g, '');
+        if (value.length !== 11) {
+            input.setCustomValidity('يجب أن يكون رقم الهاتف 11 رقم');
+        } else {
+            input.setCustomValidity('');
+        }
+    }
+    var sellerPhoneInput = document.getElementById('seller_phone');
+    var salesManagerPhoneInput = document.getElementById('sales_manager_phone');
+    var salespersonPhoneInput = document.getElementById('salesperson_phone');
+    if (sellerPhoneInput) {
+        sellerPhoneInput.addEventListener('input', function(){ validatePhoneInput(sellerPhoneInput); });
+    }
+    if (salesManagerPhoneInput) {
+        salesManagerPhoneInput.addEventListener('input', function(){ validatePhoneInput(salesManagerPhoneInput); });
+    }
+    if (salespersonPhoneInput) {
+        salespersonPhoneInput.addEventListener('input', function(){ validatePhoneInput(salespersonPhoneInput); });
+    }
     </script>
 </body>
 </html>
