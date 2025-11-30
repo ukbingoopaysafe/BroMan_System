@@ -970,7 +970,10 @@ document.addEventListener('DOMContentLoaded', function () {
 // تحقق من أن خانات الهاتف المطلوبة هي 11 رقم
 function validatePhoneInput(input) {
     var value = input.value.replace(/[^0-9]/g, '');
-    if (value.length !== 11) {
+    // Allow empty field; only validate when a value is present
+    if (value.length === 0) {
+        input.setCustomValidity('');
+    } else if (value.length !== 11) {
         input.setCustomValidity('يجب أن يكون رقم الهاتف 11 رقم');
     } else {
         input.setCustomValidity('');
