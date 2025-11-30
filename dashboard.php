@@ -11,6 +11,7 @@ $stats = [
     'primary_count' => 0,
     'resale_count' => 0,
     'total_employees' => 0,
+    'duplicates_needs_review' => 0,
 ];
 
 // Get Primary and Resale property counts
@@ -36,6 +37,26 @@ if (can_manage_employees()) {
         $result->free();
     } else {
         error_log("Error fetching employee count: " . $conn->error);
+    }
+}
+
+// Get duplicate groups that need review (if can manage properties)
+if (can_manage_properties()) {
+    $sql_duplicates = "SELECT COUNT(*) AS count
+                       FROM (
+                           SELECT g.normalized_phone
+                           FROM v_duplicate_property_phone_groups g
+                           JOIN v_property_phones_normalized v ON v.normalized_phone = g.normalized_phone
+                           JOIN properties p ON p.PropertyID = v.PropertyID
+                           GROUP BY g.normalized_phone, g.properties_count, g.property_ids, g.phone_roles
+                           HAVING SUM(CASE WHEN p.duplicate_status = 1 THEN 1 ELSE 0 END) > 0
+                       ) AS needs_review_groups";
+    if ($result = $conn->query($sql_duplicates)) {
+        $row = $result->fetch_assoc();
+        $stats['duplicates_needs_review'] = (int)($row['count'] ?? 0);
+        $result->free();
+    } else {
+        error_log("Error fetching duplicate groups count: " . $conn->error);
     }
 }
 
@@ -135,6 +156,14 @@ if (can_manage_employees()) {
                  <a href="employees_list.php">
                     <h3><?php echo t('total_employees'); ?></h3>
                     <p><?php echo $stats['total_employees']; ?></p>
+                 </a>
+            </div>
+            <?php endif; ?>
+            <?php if (can_manage_properties()): ?>
+            <div class="stat-card" style="border-left: 4px solid #ffc107;">
+                 <a href="admin_duplicate_properties.php?status_filter=needs_review">
+                    <h3><?php echo t('duplicates_needs_review'); ?></h3>
+                    <p style="color: #ffc107;"><?php echo $stats['duplicates_needs_review']; ?></p>
                  </a>
             </div>
             <?php endif; ?>

@@ -53,6 +53,9 @@ $switch_lang_url = basename($_SERVER['PHP_SELF']) . '?' . http_build_query($quer
                  </div>
             </li>
             <?php endif; ?>
+            <?php if (can_manage_properties()): ?>
+                <li><a href="admin_duplicate_properties.php" class="<?php echo ($active_page == "admin_duplicate_properties.php") ? "active" : ""; ?>"><?php echo t('duplicates_review'); ?></a></li>
+            <?php endif; ?>
             <?php endif; ?>
 
             <?php if (can_manage_employees()): ?>

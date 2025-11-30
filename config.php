@@ -9,10 +9,10 @@ define("SESSION_ABSOLUTE_TIMEOUT", 28800);
 define("SESSION_WARNING_TIME", 300);
 
 // Google Maps API key
-// This installation is configured to use Leaflet + OpenStreetMap by default.
-// Keep the constant empty unless you explicitly enable Google Maps later.
+// Set this constant to your Google Maps JavaScript API key to enable interactive maps.
+// When left empty, map components will display an error message prompting for configuration.
 if (!defined('GOOGLE_MAPS_API_KEY')) {
-	define('GOOGLE_MAPS_API_KEY', '');
+	define('GOOGLE_MAPS_API_KEY', 'AIzaSyBVFF3AWBPDX7edG3_ezHiTDE6mIoXEUGk');
 }
 ?>
 

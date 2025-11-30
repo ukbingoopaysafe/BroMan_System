@@ -66,8 +66,31 @@ $errors = [];
 $success_message = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $t_start = microtime(true);
     if (!validateCSRFToken($_POST['csrf_token'] ?? null)) {
         $errors[] = t('invalid_csrf_token');
+    }
+    // Idempotency: prevent duplicate submissions within a short window (120s)
+    $fingerprint_fields = [
+        $_SESSION['listing_context'] ?? '',
+        $_POST['title'] ?? '',
+        $_POST['location'] ?? '',
+        $_POST['seller_phone'] ?? '',
+        $_POST['sales_manager_phone'] ?? '',
+        $_POST['salesperson_phone'] ?? ''
+    ];
+    $submission_fingerprint = hash('sha256', json_encode($fingerprint_fields));
+    $now_ts = time();
+    if (!isset($_SESSION['last_add_property_fp'])) {
+        $_SESSION['last_add_property_fp'] = ['fp' => null, 'ts' => 0];
+    }
+    $last = $_SESSION['last_add_property_fp'];
+    if ($last['fp'] === $submission_fingerprint && ($now_ts - (int)$last['ts']) < 120) {
+        // Treat as already processed to avoid duplicates
+        $errors[] = t('operation_cancelled');
+        // Early redirect to properties list to avoid re-insert
+        header('Location: residential_properties.php');
+        exit();
     }
     // --- Data Sanitization ---
     $property_type_id = 1; // Hardcoded for Residential
@@ -144,6 +167,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, year_built, unit_floor, net_area, loading_percentage, price_cash, price_installments, meter_price_cash, meter_price_installments, seller_type, seller_name, seller_phone, latitude, longitude, DateAdded) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
+    $t_prepare_start = microtime(true);
     if ($stmt = $conn->prepare($sql)) {
         // Dynamically build types string from variable values to avoid manual mismatch
         // Define bind variables in the same order as the INSERT statement
@@ -193,8 +217,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Debug: log key fields before execute to help diagnose missing storage
     error_log("DEBUG add_residential_property: year_built=" . var_export($year_built, true) . " seller_type=" . var_export($seller_type, true));
+    $t_before_execute = microtime(true);
     if ($stmt->execute()) {
             $new_property_id = $conn->insert_id;
+            // Save fingerprint as processed
+            $_SESSION['last_add_property_fp'] = ['fp' => $submission_fingerprint, 'ts' => $now_ts];
+            error_log(sprintf('TIMING add_residential: prepare=%.3fs bind=%.3fs exec=%.3fs',
+                $t_before_execute - $t_prepare_start,
+                $t_before_execute - $t_prepare_start, // bind included in prepare-block timing
+                microtime(true) - $t_before_execute
+            ));
 
             // Handle optional media uploads
             $base_upload_dir = __DIR__ . '/uploads/';
@@ -204,8 +236,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if (!is_dir($image_dir)) { mkdir($image_dir, 0755, true); }
             if (!is_dir($audio_dir)) { mkdir($audio_dir, 0755, true); }
 
+            // Helper to check if a files array actually contains any successful file
+            $hasUploads = function($arr) {
+                if (empty($arr) || !isset($arr['error'])) return false;
+                foreach ((array)$arr['error'] as $err) { if ($err === UPLOAD_ERR_OK) return true; }
+                return false;
+            };
+
             // Images
-            if (!empty($_FILES['images']) && is_array($_FILES['images']['name'])) {
+            if ($hasUploads($_FILES['images'] ?? null)) {
                 // Determine if any existing images for this property
                 $is_first_image = true;
                 $check_sql = "SELECT COUNT(*) as count FROM property_images WHERE property_id = ?";
@@ -245,7 +284,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
 
             // Audio
-            if (!empty($_FILES['audio']) && is_array($_FILES['audio']['name'])) {
+            if ($hasUploads($_FILES['audio'] ?? null)) {
                 $allowed_audio_mime = ['audio/mpeg' => 'mp3', 'audio/mp3' => 'mp3', 'audio/wav' => 'wav', 'audio/ogg' => 'ogg', 'audio/m4a' => 'm4a', 'audio/mp4' => 'm4a', 'video/mp4' => 'm4a'];
                 $max_audio_size = 10 * 1024 * 1024;
                 $finfo2 = finfo_open(FILEINFO_MIME_TYPE);
@@ -273,7 +312,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
 
             // Videos
-            if (!empty($_FILES['videos']) && is_array($_FILES['videos']['name'])) {
+            if ($hasUploads($_FILES['videos'] ?? null)) {
                 $allowed_video_mime = [
                     'video/mp4' => 'mp4', 'video/webm' => 'webm', 'video/ogg' => 'ogv',
                     'video/avi' => 'avi', 'video/quicktime' => 'mov', 'video/x-ms-wmv' => 'wmv', 'video/x-flv' => 'flv'
@@ -322,7 +361,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
 
             // Documents (PDFs uploaded as part of media, not manager-only attachments)
-            if (!empty($_FILES['documents']) && is_array($_FILES['documents']['name'])) {
+            if ($hasUploads($_FILES['documents'] ?? null)) {
                 $documents_dir = $base_upload_dir . 'documents/';
                 if (!is_dir($documents_dir)) { mkdir($documents_dir, 0755, true); }
                 $allowed_doc_mime = ['application/pdf' => 'pdf'];
@@ -353,7 +392,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
 
                 // Attachments
-                if (!empty($_FILES['attachments']) && is_array($_FILES['attachments']['name'])) {
+                if ($hasUploads($_FILES['attachments'] ?? null)) {
                     $attachments_dir = $base_upload_dir . 'attachments/';
                     if (!is_dir($attachments_dir)) { mkdir($attachments_dir, 0755, true); }
                     $allowed_ext = ['jpg','jpeg','png','webp','gif','pdf','doc','docx','xls','xlsx','txt','csv','odt'];
@@ -389,31 +428,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     finfo_close($finfo4);
                 }
 
-            // Move any temporary uploads (uploaded before saving the property) into this property
-            if (function_exists('moveTempUploadsToProperty')) {
-                $moved = moveTempUploadsToProperty($new_property_id, session_id(), $conn);
-                // Optionally log what was moved for debugging
-                error_log('Moved temp uploads for session ' . session_id() . ': ' . json_encode($moved));
-            }
-
-            // Use robust flash helper and set legacy session key for compatibility (mirror edit behavior)
-            require_once __DIR__ . '/flash.php';
-            if (function_exists('add_flash')) { add_flash(t('property_added_success'), 6); }
-
-            // Log property addition for auditing
+            // Log activity before closing session
             try {
                 require_once __DIR__ . '/activity_log.php';
-                $emp_for_log = $employee_id ?? ($_SESSION['employee_id'] ?? null);
-                if (function_exists('log_activity')) {
-                    log_activity($conn, $emp_for_log, 'add_property', json_encode(['property_id' => $new_property_id, 'type' => 'residential']));
+                $employee_id = $_SESSION['employee_id'] ?? null;
+                if (function_exists('log_activity') && $employee_id) {
+                    log_activity($conn, $employee_id, 'add_property', [
+                        'property_id' => $new_property_id,
+                        'type' => 'residential'
+                    ]);
                 }
             } catch (Exception $e) {
                 error_log('Failed to record add_property activity: ' . $e->getMessage());
             }
 
-            // session is written before redirect
-            session_write_close(); // Force session data to be saved now
-            header("Location: view_property.php?id=" . $new_property_id . "&added=1");
+            // Fastest possible redirect; skip all non-critical background work here
+            require_once __DIR__ . '/flash.php';
+            if (function_exists('add_flash')) { add_flash(t('property_added_success'), 6); }
+            
+            // Update duplicate status for all properties sharing the same phone numbers
+            require_once __DIR__ . '/duplicate_status_helper.php';
+            updateDuplicateStatusByPhone($new_property_id, $conn);
+            
+            session_write_close();
+            header("Location: view_property.php?id=" . $new_property_id . "&added=1", true, 303);
             exit();
         } else {
             error_log("DB Error (add_residential_property): " . $stmt->error);
@@ -424,6 +462,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         error_log("DB Prepare Error (add_residential_property): " . $conn->error);
         $errors[] = t('database_error');
     }
+    error_log(sprintf('TIMING add_residential TOTAL=%.3fs', microtime(true) - $t_start));
 }
 
 ?>
@@ -440,9 +479,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css">
     <?php endif; ?>
-    <!-- Map provider: Leaflet + OpenStreetMap (Leaflet-only) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Map provider: Google Maps -->
     <style>
         .form-section { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
         .form-section h3 { margin-bottom: 15px; color: #0056b3; }
@@ -532,7 +569,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             margin-left: auto;
         }
     </style>
-    <script src="session_timeout.js"></script>
+    <script src="session_timeout.js" defer></script>
 </head>
 <body>
 
@@ -555,7 +592,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     <?php endif; ?>
 
-    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" class="form-container" enctype="multipart/form-data" data-property-id="0" data-csrf-token="<?php echo $csrf_token; ?>">
+    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" class="form-container" enctype="multipart/form-data" data-prevent-multi-submit="1" data-property-id="0" data-csrf-token="<?php echo $csrf_token; ?>">
         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
 
         <!-- Property Type (Hidden/Fixed for this page) -->
@@ -816,77 +853,105 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <?php include 'footer.php'; ?>
 
+<script src="maps_loader.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize interactive map using Leaflet only
+document.addEventListener('DOMContentLoaded', function () {
+    const mapElement = document.getElementById('map');
+    const latInput = document.getElementById('latitude');
+    const lngInput = document.getElementById('longitude');
+    const parseBtn = document.getElementById('parse_google_link');
+    const apiKey = '<?php echo addslashes(GOOGLE_MAPS_API_KEY); ?>';
+    const defaultLat = 30.0444;
+    const defaultLng = 31.2357;
     let map;
     let marker;
 
-    function initMap() {
-        const defaultLat = 30.0444;
-        const defaultLng = 31.2357;
+    if (!mapElement || !latInput || !lngInput) {
+        return;
+    }
 
-        const latInput = document.getElementById('latitude');
-        const lngInput = document.getElementById('longitude');
-        const lat = parseFloat(latInput.value) || defaultLat;
-        const lng = parseFloat(lngInput.value) || defaultLng;
-
-        if (typeof L === 'undefined') {
-            console.error('Leaflet is not loaded.');
+    function placeMarker(position) {
+        if (!map) {
             return;
         }
-
-        map = L.map('map').setView([lat, lng], 10);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-
-        if (!isNaN(parseFloat(latInput.value)) && !isNaN(parseFloat(lngInput.value))) {
-            marker = L.marker([lat, lng]).addTo(map);
+        if (marker) {
+            marker.setMap(null);
         }
+        marker = new google.maps.Marker({
+            position: position,
+            map: map,
+            animation: google.maps.Animation.DROP
+        });
+        map.panTo(position);
+    }
 
-        map.on('click', function(e) {
-            const clickedLat = e.latlng.lat;
-            const clickedLng = e.latlng.lng;
+    function extractLatLngFromGoogleUrl(url) {
+        try {
+            if (!url || typeof url !== 'string') {
+                return null;
+            }
 
-            latInput.value = clickedLat;
-            lngInput.value = clickedLng;
+            const atMatch = url.match(/@([0-9.+-]+),([0-9.+-]+)/);
+            if (atMatch) {
+                return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
+            }
 
-            if (marker) { map.removeLayer(marker); }
-            marker = L.marker([clickedLat, clickedLng]).addTo(map);
+            const qMatch = url.match(/[?&](?:query|q)=\s*([0-9.+-]+),\s*([0-9.+-]+)/);
+            if (qMatch) {
+                return { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) };
+            }
+
+            const dMatch = url.match(/!3d([0-9.+-]+)!4d([0-9.+-]+)/);
+            if (dMatch) {
+                return { lat: parseFloat(dMatch[1]), lng: parseFloat(dMatch[2]) };
+            }
+
+            return null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function initMap() {
+        const currentLat = parseFloat(latInput.value);
+        const currentLng = parseFloat(lngInput.value);
+        const hasCoordinates = !isNaN(currentLat) && !isNaN(currentLng);
+        const center = {
+            lat: hasCoordinates ? currentLat : defaultLat,
+            lng: hasCoordinates ? currentLng : defaultLng
+        };
+
+        map = new google.maps.Map(mapElement, {
+            center: center,
+            zoom: hasCoordinates ? 15 : 10,
+            gestureHandling: 'greedy',
+            mapTypeControl: true,
+            streetViewControl: true,
+            fullscreenControl: true
         });
 
-        // Helper: extract lat/lng from common Google Maps link formats
-        function extractLatLngFromGoogleUrl(url) {
-            try {
-                if (!url || typeof url !== 'string') return null;
-
-                const atMatch = url.match(/@([0-9.+-]+),([0-9.+-]+)/);
-                if (atMatch) return {lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2])};
-
-                const qMatch = url.match(/[?&](?:query|q)=\s*([0-9.+-]+),\s*([0-9.+-]+)/);
-                if (qMatch) return {lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2])};
-
-                const dMatch = url.match(/!3d([0-9.+-]+)!4d([0-9.+-]+)/);
-                if (dMatch) return {lat: parseFloat(dMatch[1]), lng: parseFloat(dMatch[2])};
-
-                return null;
-            } catch (e) { return null; }
+        if (hasCoordinates) {
+            placeMarker(center);
         }
 
-        const parseBtn = document.getElementById('parse_google_link');
+        map.addListener('click', function (event) {
+            const clickedLat = event.latLng.lat();
+            const clickedLng = event.latLng.lng();
+            latInput.value = clickedLat.toFixed(6);
+            lngInput.value = clickedLng.toFixed(6);
+            placeMarker({ lat: clickedLat, lng: clickedLng });
+        });
+
         if (parseBtn) {
-            parseBtn.addEventListener('click', function() {
+            parseBtn.addEventListener('click', function () {
                 const input = document.getElementById('google_map_link');
                 const val = input ? input.value.trim() : '';
                 const coords = extractLatLngFromGoogleUrl(val);
                 if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
-                    latInput.value = coords.lat;
-                    lngInput.value = coords.lng;
-                    if (marker) { map.removeLayer(marker); }
-                    marker = L.marker([coords.lat, coords.lng]).addTo(map);
-                    map.setView([coords.lat, coords.lng], 15);
+                    latInput.value = coords.lat.toFixed(6);
+                    lngInput.value = coords.lng.toFixed(6);
+                    placeMarker({ lat: coords.lat, lng: coords.lng });
+                    map.setZoom(15);
                 } else {
                     alert('لم يتم العثور على إحداثيات في الرابط. الرجاء التحقق من أن الرابط من خرائط جوجل ويتضمن إحداثيات.');
                 }
@@ -894,7 +959,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    window.addEventListener('load', initMap);
+    function handleMapError(error) {
+        console.error(error && error.message ? error.message : error);
+        BroManMaps.showError(mapElement, 'يرجى التأكد من إعداد مفتاح Google Maps API بشكل صحيح.');
+    }
+
+    BroManMaps.loadGoogleMaps(apiKey, initMap, handleMapError);
 });
 
 // تحقق من أن خانات الهاتف المطلوبة هي 11 رقم
@@ -919,6 +989,8 @@ if (salespersonPhoneInput) {
     salespersonPhoneInput.addEventListener('input', function(){ validatePhoneInput(salespersonPhoneInput); });
 }
 </script>
+
+<script src="prevent_double_submit.js"></script>
 
 </body>
 </html>

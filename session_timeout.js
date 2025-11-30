@@ -2,11 +2,13 @@
 class SessionTimeoutManager {
     constructor() {
         this.warningShown = false;
-        this.checkInterval = 30000; // Check every 30 seconds
+        this.checkInterval = 60000; // Check every 60 seconds (was 30s)
         this.sessionTimeout = 1800000; // 30 minutes in milliseconds
         this.warningThreshold = 300000; // Show warning 5 minutes before expiry
         this.warningDialog = null;
         this.lastActivity = Date.now();
+        this.lastExtendAt = 0;          // last time we pinged extend_session.php
+        this.extendCooldown = 120000;   // min gap between background extend calls (2 minutes)
         this.init();
     }
 
@@ -33,9 +35,12 @@ class SessionTimeoutManager {
                 if (this.warningShown) {
                     this.hideWarning();
                 }
-                // Extend session on server
-                this.extendSession();
-            });
+                // Throttle background keep-alive to avoid spamming on mousemove/scroll
+                const now = Date.now();
+                if (!document.hidden && (now - this.lastExtendAt) > this.extendCooldown) {
+                    this.extendSession();
+                }
+            }, { passive: true });
         });
     }
 
@@ -181,6 +186,8 @@ class SessionTimeoutManager {
 
     async extendSession() {
         try {
+            // record the attempt time immediately to enforce cooldown even if network is slow
+            this.lastExtendAt = Date.now();
             const response = await fetch('extend_session.php', {
                 method: 'POST',
                 credentials: 'same-origin'

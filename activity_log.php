@@ -182,6 +182,36 @@ if (!function_exists('format_activity_details')) {
                         sprintf("%s (Property ID: %d)", $title, $decoded['property_id']);
                 }
                 break;
+            case 'delete_property':
+                if (is_array($decoded) && isset($decoded['property_id'])) {
+                    $id = $decoded['property_id'];
+                    $title = $decoded['property_title'] ?? '';
+                    $type = $decoded['property_type'] ?? null;
+                    
+                    if (function_exists('get_lang_code') && get_lang_code() === 'ar') {
+                        $parts = [];
+                        $parts[] = sprintf('تم حذف العقار رقم %s', $id);
+                        if ($title !== '') {
+                            $parts[] = sprintf('العنوان: %s', $title);
+                        }
+                        if ($type !== null && $type !== '') {
+                            $parts[] = sprintf('النوع: %s', $type);
+                        }
+                        return implode(' | ', $parts);
+                    }
+                    
+                    // English format
+                    $parts = [];
+                    $parts[] = sprintf("Deleted property #%s", $id);
+                    if ($title !== '') {
+                        $parts[] = sprintf("Title: %s", $title);
+                    }
+                    if ($type !== null && $type !== '') {
+                        $parts[] = sprintf("Type: %s", $type);
+                    }
+                    return implode(' | ', $parts);
+                }
+                break;
         }
 
         // Fallback: return original string or JSON pretty
