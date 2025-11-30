@@ -907,7 +907,7 @@ if ($att_stmt) {
             <?php include 'unified_media_uploader.php'; ?>
         </div>
 
-        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]) . '?id=' . $property_id; ?>" method="post">
+        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]) . '?id=' . $property_id; ?>" method="post" class="form-container" data-prevent-multi-submit="1">
             <input type="hidden" name="property_id" value="<?php echo $property_id; ?>">
             <?php echo csrf_input(); ?>
 
@@ -1675,6 +1675,7 @@ if ($att_stmt) {
         salespersonPhoneInput.addEventListener('input', function(){ validatePhoneInput(salespersonPhoneInput); });
     }
     </script>
+    <script src="prevent_double_submit.js"></script>
 </body>
 </html>
 <?php 
