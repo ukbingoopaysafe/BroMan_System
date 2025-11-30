@@ -341,18 +341,18 @@ if ($att_stmt) {
         $errors['floors_count'] = t('invalid_floors_count');
     }
 
-    // تحقق من أن أرقام الهواتف المطلوبة هي 11 رقم بالضبط
+    // تحقق من أن أرقام الهواتف المطلوبة هي 11 رقم فقط إذا تم إدخالها
     function isValidEgyptianPhone($phone) {
-        $phone = preg_replace('/[^0-9]/', '', $phone); // إزالة أي رموز غير رقمية
+        $phone = preg_replace('/[^0-9]/', '', $phone);
         return strlen($phone) === 11;
     }
-    if (empty($seller_phone_posted) || !isValidEgyptianPhone($seller_phone_posted)) {
+    if (!empty($seller_phone_posted) && !isValidEgyptianPhone($seller_phone_posted)) {
         $errors['seller_phone'] = 'يجب أن يكون رقم هاتف البائع 11 رقم.';
     }
-    if (empty($sales_manager_phone_posted) || !isValidEgyptianPhone($sales_manager_phone_posted)) {
+    if (!empty($sales_manager_phone_posted) && !isValidEgyptianPhone($sales_manager_phone_posted)) {
         $errors['sales_manager_phone'] = 'يجب أن يكون رقم هاتف مدير المبيعات 11 رقم.';
     }
-    if (empty($salesperson_phone_posted) || !isValidEgyptianPhone($salesperson_phone_posted)) {
+    if (!empty($salesperson_phone_posted) && !isValidEgyptianPhone($salesperson_phone_posted)) {
         $errors['salesperson_phone'] = 'يجب أن يكون رقم هاتف مسؤول المبيعات 11 رقم.';
     }
 
