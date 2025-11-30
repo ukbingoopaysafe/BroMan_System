@@ -274,6 +274,8 @@ function formatDisplayArea($row)
 {
     if (!empty($row['Area']) && is_numeric($row['Area'])) {
         return number_format(floatval($row['Area']), 0, '.', ',') . ' ' . t('sqm');
+    } elseif (!empty($row['net_area']) && is_numeric($row['net_area'])) {
+        return number_format(floatval($row['net_area']), 0, '.', ',') . ' ' . t('sqm');
     } elseif (!empty($row['min_area']) && is_numeric($row['min_area']) && !empty($row['max_area']) && is_numeric($row['max_area'])) {
         return number_format(floatval($row['min_area']), 0, '.', ',') . ' - ' . number_format(floatval($row['max_area']), 0, '.', ',') . ' ' . t('sqm');
     } elseif (!empty($row['min_area']) && is_numeric($row['min_area'])) {
