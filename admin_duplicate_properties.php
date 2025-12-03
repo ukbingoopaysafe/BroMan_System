@@ -424,27 +424,23 @@ if ($active_phone) {
                         </tr>
                     <?php else: ?>
                         <?php foreach ($groups as $g): 
-                            // Determine review status
-                            $needs_review_count = (int)($g['needs_review_count'] ?? 0);
-                            $reviewed_count = (int)($g['reviewed_count'] ?? 0);
+                            // Determine review status using min/max to avoid double‑counting when the same phone appears in multiple roles
+                            $min_status = (int)($g['min_status'] ?? 0);
+                            $max_status = (int)($g['max_status'] ?? 0);
                             $total_count = (int)$g['properties_count'];
-                            
-                            // Status: "Needs Review" if ANY property has status 1, "Reviewed" if ALL have status 2
-                            $status = 'needs_review'; // default
+
+                            // Default: needs review
+                            $status = 'needs_review';
                             $status_label = t('needs_review');
                             $status_class = 'status-needs-review';
                             $status_icon = 'fa-exclamation-circle';
-                            
-                            if ($reviewed_count === $total_count && $total_count > 0) {
+
+                            // If ALL properties are reviewed (status = 2)
+                            if ($min_status === 2 && $max_status === 2 && $total_count > 0) {
                                 $status = 'reviewed';
                                 $status_label = t('reviewed');
                                 $status_class = 'status-reviewed';
                                 $status_icon = 'fa-check-circle';
-                            } elseif ($needs_review_count > 0) {
-                                $status = 'needs_review';
-                                $status_label = t('needs_review');
-                                $status_class = 'status-needs-review';
-                                $status_icon = 'fa-exclamation-circle';
                             }
                         ?>
                             <tr class="group-row" data-group-phone="<?php echo htmlspecialchars($g['normalized_phone']); ?>">
@@ -526,11 +522,11 @@ if ($active_phone) {
                     </div>
                     <div>
                         <?php
-                        // Determine current review status
-                        $needs_review_count = (int)($g['needs_review_count'] ?? 0);
-                        $reviewed_count = (int)($g['reviewed_count'] ?? 0);
+                        // Determine current review status using min/max to avoid double‑counting
+                        $min_status = (int)($g['min_status'] ?? 0);
+                        $max_status = (int)($g['max_status'] ?? 0);
                         $total_count = (int)$g['properties_count'];
-                        $is_reviewed = ($reviewed_count === $total_count && $total_count > 0);
+                        $is_reviewed = ($min_status === 2 && $max_status === 2 && $total_count > 0);
                         ?>
                         <label class="toggle-switch" id="reviewToggleContainer">
                             <input type="checkbox" id="reviewToggle" <?php echo $is_reviewed ? 'checked' : ''; ?> onchange="toggleGroupReview('<?php echo htmlspecialchars($g['normalized_phone']); ?>', this.checked)">
