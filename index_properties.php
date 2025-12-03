@@ -22,6 +22,7 @@ $current_mode = $_SESSION['listing_context'];
 // Initialize search and filter variables
 $search_term = $governorate_filter = $company_filter = $status_filter = $property_type_filter = "";
 $seller_type_filter = "";
+$year_built_filter = "";
 $min_price_filter = $max_price_filter = $min_area_filter = $max_area_filter = $down_payment_filter = $payment_period_filter = "";
 $unit_design_filter = "";
 $view_mode = isset($_GET['view']) && $_GET['view'] === 'card' ? 'card' : 'table';
@@ -53,6 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     $company_filter = isset($_GET['company']) ? trim($_GET['company']) : '';
     $unit_design_filter = isset($_GET['unit_design']) ? trim($_GET['unit_design']) : '';
     $seller_type_filter = isset($_GET['seller_type']) ? trim($_GET['seller_type']) : '';
+    $year_built_filter = isset($_GET['year_built']) ? trim($_GET['year_built']) : '';
     $status_filter = isset($_GET['status']) ? trim($_GET['status']) : '';
     $property_type_filter = isset($_GET['property_type']) ? trim($_GET['property_type']) : '';
 
@@ -105,6 +107,21 @@ if ($stmt_designs = $conn->prepare($sql_unit_designs)) {
         }
     }
     $stmt_designs->close();
+}
+
+// Fetch distinct year_built values for the filter dropdown
+$year_built_list = [];
+$sql_years = "SELECT DISTINCT year_built FROM Properties 
+              WHERE year_built IS NOT NULL AND year_built != '' AND year_built <> '0'
+              ORDER BY year_built DESC";
+if ($stmt_years = $conn->prepare($sql_years)) {
+    if ($stmt_years->execute()) {
+        $result_years = $stmt_years->get_result();
+        while ($row_year = $result_years->fetch_assoc()) {
+            $year_built_list[] = $row_year['year_built'];
+        }
+    }
+    $stmt_years->close();
 }
 
 // Fetch property types for the filter dropdown
@@ -171,6 +188,13 @@ if (!empty($company_filter)) {
 if (!empty($seller_type_filter)) {
     $sql_where[] = "p.seller_type = ?";
     $params[] = $seller_type_filter;
+    $types .= "s";
+}
+
+// Add year built filter (allow "0" as valid value, so check against empty string instead of empty())
+if ($year_built_filter !== '') {
+    $sql_where[] = "p.year_built = ?";
+    $params[] = $year_built_filter;
     $types .= "s";
 }
 
@@ -453,12 +477,12 @@ function getPropertyTypeBadge($typeId, $typeName) {
                     </select>
                 </div>
                 <div class="filter-item">
-                    <label for="unit_design"><?php echo t('unit_design'); ?>:</label>
-                    <select id="unit_design" name="unit_design" class="form-control">
-                        <option value=""><?php echo t('all_designs'); ?></option>
-                        <?php foreach ($unit_designs as $design_name): ?>
-                            <option value="<?php echo htmlspecialchars($design_name); ?>" <?php echo $unit_design_filter === $design_name ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($design_name); ?>
+                    <label for="year_built"><?php echo t('year_built'); ?>:</label>
+                    <select id="year_built" name="year_built" class="form-control">
+                        <option value=""><?php echo t('all_years'); ?></option>
+                        <?php foreach ($year_built_list as $yb): ?>
+                            <option value="<?php echo htmlspecialchars($yb); ?>" <?php echo $year_built_filter === $yb ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($yb); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -500,6 +524,17 @@ function getPropertyTypeBadge($typeId, $typeName) {
                     <div class="filter-item">
                         <label for="payment_period"><?php echo t('payment_years'); ?>:</label>
                             <input type="number" id="payment_period" name="payment_period" class="form-control" value="<?php echo htmlspecialchars($payment_period_filter); ?>" min="0" step="0.5">
+                    </div>
+                    <div class="filter-item">
+                        <label for="unit_design"><?php echo t('unit_design'); ?>:</label>
+                        <select id="unit_design" name="unit_design" class="form-control">
+                            <option value=""><?php echo t('all_designs'); ?></option>
+                            <?php foreach ($unit_designs as $design_name): ?>
+                                <option value="<?php echo htmlspecialchars($design_name); ?>" <?php echo $unit_design_filter === $design_name ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($design_name); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -748,21 +783,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
         }
     }
     
-    // Show advanced filters if any of them are set
-    document.addEventListener('DOMContentLoaded', function() {
-        const hasAdvancedFilters = <?php echo
-            !empty($min_price_filter) ||
-            !empty($max_price_filter) ||
-            !empty($min_area_filter) ||
-            !empty($max_area_filter) ||
-            !empty($down_payment_filter) ||
-            !empty($payment_period_filter) ? 'true' : 'false';
-        ?>;
-        
-        if (hasAdvancedFilters) {
-            toggleAdvancedFilters();
-        }
-    });
+    // Advanced filters are now opened/closed only when the user clicks the toggle.
 </script>
 
 <script src="property_row_click.js"></script>

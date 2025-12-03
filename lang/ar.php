@@ -369,6 +369,7 @@ return [
 
     // New Phase 2 Fields
     'year_built' => 'سنة البناء',
+    'all_years' => 'كل السنوات',
     'unit_floor' => 'دور الوحدة',
     'net_area' => 'المساحة الصافية (م²)',
     'loading_percentage' => 'نسبة التحميل (%)',

@@ -912,21 +912,13 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                     </div>
                     <?php endif; ?>
                     <?php
-                    // Normalize and validate year_built before display. Treat NULL, empty, 0 or unrealistic values as not set.
+                    // Show raw year_built value whenever it is non-empty (allow numbers or text)
                     $year_raw = $property['year_built'] ?? null;
-                    $show_year = false;
-                    if ($year_raw !== null && trim((string)$year_raw) !== '') {
-                        $year_int = intval($year_raw);
-                        $current_year = intval(date('Y'));
-                        // Consider valid years between 1900 and next year
-                        if ($year_int >= 1900 && $year_int <= ($current_year + 1)) {
-                            $show_year = true;
-                        }
-                    }
-                    if ($show_year): ?>
+                    if ($year_raw !== null && trim((string)$year_raw) !== ''):
+                    ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('year_built'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars((string)$year_int); ?></span>
+                        <span class="detail-value"><?php echo htmlspecialchars(trim((string)$year_raw)); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['unit_floor'])): ?>

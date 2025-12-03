@@ -370,6 +370,7 @@ return [
 
     // New Phase 2 Fields
     'year_built' => 'Year Built',
+    'all_years' => 'All Years',
     'unit_floor' => 'Unit Floor',
     'net_area' => 'Net Area (sqm)',
     'loading_percentage' => 'Loading Percentage (%)',
