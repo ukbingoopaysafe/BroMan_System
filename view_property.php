@@ -109,6 +109,20 @@ if ($doc_stmt) {
     $doc_stmt->close();
 }
 
+// Fetch all sellers linked to this property (new multi-seller table)
+$property_sellers = [];
+$seller_stmt = $conn->prepare("SELECT seller_type, seller_name, seller_phone, created_at FROM property_sellers WHERE property_id = ? ORDER BY id ASC");
+if ($seller_stmt) {
+    $seller_stmt->bind_param('i', $property_id);
+    if ($seller_stmt->execute()) {
+        $seller_res = $seller_stmt->get_result();
+        while ($s = $seller_res->fetch_assoc()) {
+            $property_sellers[] = $s;
+        }
+    }
+    $seller_stmt->close();
+}
+
 // Format price for display
 function formatPrice($property)
 {
@@ -303,6 +317,23 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
             color: #333;
             font-size: 1.05rem;
             word-break: break-word;
+        }
+        /* Seller list styling */
+        .seller-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .seller-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 12px;
+            background: #fafafa;
+        }
+        .seller-card .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
         }
         
         .detail-value a {
@@ -1086,23 +1117,19 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
             </div>
             <?php endif; // End of the main check for sales information ?>
 
-            <?php if (!empty($property['seller_type']) || !empty($property['seller_name']) || !empty($property['seller_phone']) || !empty($property['owner_name']) || !empty($property['owner_phone'])): ?>
+            <?php
+                $has_multi_sellers = !empty($property_sellers);
+                $legacy_seller_present = (!empty($property['seller_type']) || !empty($property['seller_name']) || !empty($property['seller_phone']) || !empty($property['owner_name']) || !empty($property['owner_phone']));
+                if ($has_multi_sellers || $legacy_seller_present):
+            ?>
             <div class="property-section">
                 <h2><?php echo t('owner_information'); ?></h2>
-                <div class="detail-grid detail-grid--inline">
+                <div class="seller-list">
                 <?php
-                // Seller/owner section: render three inline columns: type, name, phone.
-                $seller_type_raw = $property['seller_type'] ?? null;
-                $seller_name_raw = $property['seller_name'] ?? null;
-                $seller_phone_raw = $property['seller_phone'] ?? null;
-
-                // Helper: translate seller_type stored values to localized labels
                 function translate_seller_type($val) {
                     $v = $val === null ? '' : trim((string)$val);
                     if ($v === '') return '';
-                    // map common stored values (Arabic and English variants) to translation keys
                     $map = [
-                        // Arabic values (database canonical values)
                         'مالك' => 'seller_type_owner',
                         'وسيط' => 'seller_type_broker',
                         'وكيل' => 'seller_type_agent',
@@ -1110,7 +1137,6 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                         'شركة مطورة' => 'seller_type_developer_company',
                         'شركة تشطيب' => 'seller_type_finishing_company',
                         'شركة تسويق' => 'seller_type_marketing_company',
-                        // English fallbacks (in case any rows were stored in English)
                         'Owner' => 'seller_type_owner',
                         'Broker' => 'seller_type_broker',
                         'Agent' => 'seller_type_agent',
@@ -1119,55 +1145,57 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                         'Finishing Company' => 'seller_type_finishing_company',
                         'Marketing Company' => 'seller_type_marketing_company',
                     ];
-
-                    if (isset($map[$v])) {
-                        // Use translation helper to get localized label
-                        return t($map[$v]);
-                    }
-
-                    // Unknown value: return raw string so admin can see it
-                    return $v;
+                    return isset($map[$v]) ? t($map[$v]) : $v;
                 }
-
-                // Helper to render a value or a fallback. If $is_seller_type is true,
-                // attempt to translate the stored seller_type value.
                 function render_or_fallback($val, $is_seller_type = false) {
                     if ($val !== null && trim((string)$val) !== '') {
-                        if ($is_seller_type) {
-                            return htmlspecialchars(translate_seller_type($val));
-                        }
-                        return htmlspecialchars(trim((string)$val));
+                        return $is_seller_type ? htmlspecialchars(translate_seller_type($val)) : htmlspecialchars(trim((string)$val));
                     }
                     return htmlspecialchars(t('undefined'));
                 }
 
-                // Prepare clickable phone if available
-                $seller_phone_html = null;
-                if (!empty($seller_phone_raw)) {
-                    $phone_display = htmlspecialchars(trim($seller_phone_raw));
-                    $tel = normalize_phone_for_tel($seller_phone_raw);
-                    // Force RTL inline styling for links to avoid stylesheet specificity/order conflicts
-                    if (function_exists('get_direction') && get_direction() === 'rtl') {
-                        $seller_phone_html = '<a href="tel:' . $tel . '" style="display:inline-block;width:100%;text-align:right;direction:rtl;">' . $phone_display . '</a>';
-                    } else {
-                        $seller_phone_html = '<a href="tel:' . $tel . '">' . $phone_display . '</a>';
-                    }
+                $render_sellers = $property_sellers;
+                if (empty($render_sellers) && $legacy_seller_present) {
+                    $render_sellers[] = [
+                        'seller_type' => $property['seller_type'] ?? null,
+                        'seller_name' => $property['seller_name'] ?? ($property['owner_name'] ?? null),
+                        'seller_phone' => $property['seller_phone'] ?? ($property['owner_phone'] ?? null),
+                    ];
                 }
+
+                foreach ($render_sellers as $idx => $seller_row):
+                    $seller_phone_html = null;
+                    $seller_phone_raw = $seller_row['seller_phone'] ?? '';
+                    if (!empty($seller_phone_raw)) {
+                        $phone_display = htmlspecialchars(trim($seller_phone_raw));
+                        $tel = normalize_phone_for_tel($seller_phone_raw);
+                        if (function_exists('get_direction') && get_direction() === 'rtl') {
+                            $seller_phone_html = '<a href="tel:' . $tel . '" style="display:inline-block;width:100%;text-align:right;direction:rtl;">' . $phone_display . '</a>';
+                        } else {
+                            $seller_phone_html = '<a href="tel:' . $tel . '">' . $phone_display . '</a>';
+                        }
+                    }
                 ?>
-                    <div class="detail-item">
-                        <span class="detail-label"><?php echo t('seller_type'); ?>:</span>
-                        <span class="detail-value"><?php echo render_or_fallback($seller_type_raw, true); ?></span>
+                    <div class="seller-card">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <span class="detail-label"><?php echo t('seller_type'); ?><?php echo count($render_sellers) > 1 ? ' #' . ($idx + 1) : ''; ?>:</span>
+                                <span class="detail-value"><?php echo render_or_fallback($seller_row['seller_type'] ?? null, true); ?></span>
+                            </div>
+                            <div class="detail-item detail-name">
+                                <span class="detail-label"><?php echo t('name'); ?>:</span>
+                                <span class="detail-value"><?php echo render_or_fallback($seller_row['seller_name'] ?? null); ?></span>
+                            </div>
+                            <div class="detail-item detail-phone">
+                                <span class="detail-label"><?php echo t('phone'); ?>:</span>
+                                <span class="detail-value"><?php echo $seller_phone_html !== null ? $seller_phone_html : htmlspecialchars(t('undefined')); ?></span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="detail-item detail-name">
-                        <span class="detail-label"><?php echo t('name'); ?>:</span>
-                        <span class="detail-value"><?php echo render_or_fallback($seller_name_raw); ?></span>
-                    </div>
-                    <div class="detail-item detail-phone">
-                        <span class="detail-label"><?php echo t('phone'); ?>:</span>
-                        <span class="detail-value"><?php echo $seller_phone_html !== null ? $seller_phone_html : htmlspecialchars(t('undefined')); ?></span>
-                    </div>
+                <?php endforeach; ?>
                 </div>
-                <?php endif; ?>
+            </div>
+            <?php endif; ?>
 
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'manager'): ?>
 <div class="property-section">

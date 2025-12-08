@@ -7,6 +7,28 @@ require_once __DIR__ . '/db.php'; // Database connection
 require_once __DIR__ . '/security.php';
 
 ensure_secure_session_started();
+/**
+ * Ensure property_sellers table exists to store multiple sellers per property.
+ */
+function ensurePropertySellersTable(mysqli $conn)
+{
+    static $created = false;
+    if ($created) {
+        return;
+    }
+    $sql = "CREATE TABLE IF NOT EXISTS property_sellers (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        property_id INT NOT NULL,
+        seller_type VARCHAR(255) NULL,
+        seller_name VARCHAR(255) NULL,
+        seller_phone VARCHAR(50) NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_property (property_id),
+        CONSTRAINT fk_property_sellers_property FOREIGN KEY (property_id) REFERENCES Properties(PropertyID) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+    $conn->query($sql);
+    $created = true;
+}
 
 // Check permissions - only manager and admin can add properties
 check_permission('manage_properties');
@@ -65,6 +87,7 @@ if ($result = $conn->query($sql_employees)) {
 
 $errors = [];
 $success_message = '';
+$seller_entries = [];
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $t_start = microtime(true);
@@ -72,11 +95,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = t('invalid_csrf_token');
     }
     // Idempotency guard (120s window)
+    $raw_seller_phone = $_POST['seller_phone'] ?? '';
+    $first_seller_phone = is_array($raw_seller_phone) ? ($raw_seller_phone[0] ?? '') : $raw_seller_phone;
     $fp_fields = [
         $_SESSION['listing_context'] ?? '',
         $_POST['title'] ?? '',
         $_POST['location'] ?? '',
-        $_POST['seller_phone'] ?? '',
+        $first_seller_phone,
         $_POST['sales_manager_phone'] ?? '',
         $_POST['salesperson_phone'] ?? ''
     ];
@@ -133,21 +158,63 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $price_installments = filter_input(INPUT_POST, 'price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $meter_price_cash = filter_input(INPUT_POST, 'meter_price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $meter_price_installments = filter_input(INPUT_POST, 'meter_price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $seller_type = trim($_POST['seller_type'] ?? '');
-    if ($seller_type === '') { $seller_type = null; }
-    if ($seller_type !== null && !in_array($seller_type, allowed_seller_types(), true)) {
-        $seller_type = normalize_seller_type_for_db($conn, $seller_type);
+    // Multi-seller parsing
+    $posted_seller_types = $_POST['seller_type'] ?? [];
+    $posted_seller_names = $_POST['seller_name'] ?? [];
+    $posted_seller_phones = $_POST['seller_phone'] ?? [];
+    if (!is_array($posted_seller_types)) { $posted_seller_types = [$posted_seller_types]; }
+    if (!is_array($posted_seller_names)) { $posted_seller_names = [$posted_seller_names]; }
+    if (!is_array($posted_seller_phones)) { $posted_seller_phones = [$posted_seller_phones]; }
+    $max_sellers = max(count($posted_seller_types), count($posted_seller_names), count($posted_seller_phones));
+    for ($i = 0; $i < $max_sellers; $i++) {
+        $stype = trim($posted_seller_types[$i] ?? '');
+        $sname = trim($posted_seller_names[$i] ?? '');
+        $sphone = trim($posted_seller_phones[$i] ?? '');
+        if ($stype === '' && $sname === '' && $sphone === '') {
+            continue;
+        }
+        if ($stype !== '' && !in_array($stype, allowed_seller_types(), true)) {
+            $stype = normalize_seller_type_for_db($conn, $stype);
+        }
+        $seller_entries[] = [
+            'seller_type' => ($stype === '') ? null : $stype,
+            'seller_name' => ($sname === '') ? null : $sname,
+            'seller_phone' => ($sphone === '') ? null : $sphone,
+        ];
     }
-    $seller_name = trim($_POST['seller_name'] ?? null);
-    $seller_phone = trim($_POST['seller_phone'] ?? null);
+    if (empty($seller_entries)) {
+        $seller_entries[] = ['seller_type' => null, 'seller_name' => null, 'seller_phone' => null];
+    }
+    $primary_seller = $seller_entries[0];
+    $seller_type = $primary_seller['seller_type'];
+    $seller_name = $primary_seller['seller_name'];
+    $seller_phone = $primary_seller['seller_phone'];
 
     // تحقق من أن أرقام الهواتف المطلوبة هي 11 رقم بالضبط
     function isValidEgyptianPhone($phone) {
         $phone = preg_replace('/[^0-9]/', '', $phone);
         return strlen($phone) === 11;
     }
-    if (empty($seller_phone) || !isValidEgyptianPhone($seller_phone)) {
-        $errors[] = 'يجب أن يكون رقم هاتف البائع 11 رقم.';
+    $valid_seller_found = false;
+    foreach ($seller_entries as $idx => $seller_row) {
+        $phone_val = $seller_row['seller_phone'] ?? '';
+        $name_val = $seller_row['seller_name'] ?? '';
+        if ($phone_val === null || trim($phone_val) === '') {
+            $errors[] = 'يجب إدخال رقم هاتف لكل بائع.';
+            continue;
+        }
+        if (!isValidEgyptianPhone($phone_val)) {
+            $errors[] = 'يجب أن يكون رقم هاتف البائع (' . ($idx + 1) . ') 11 رقم.';
+            continue;
+        }
+        if ($name_val === null || trim($name_val) === '') {
+            $errors[] = 'يجب إدخال اسم البائع (' . ($idx + 1) . ').';
+            continue;
+        }
+        $valid_seller_found = true;
+    }
+    if (!$valid_seller_found) {
+        $errors[] = 'يجب إضافة بائع واحد على الأقل مع رقم هاتف صحيح.';
     }
     if (empty($sales_manager_phone) || !isValidEgyptianPhone($sales_manager_phone)) {
         $errors[] = 'يجب أن يكون رقم هاتف مدير المبيعات 11 رقم.';
@@ -202,6 +269,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $t_before_execute = microtime(true);
     if ($stmt->execute()) {
             $new_property_id = $conn->insert_id;
+            ensurePropertySellersTable($conn);
+            if ($seller_entries) {
+                $insSeller = $conn->prepare("INSERT INTO property_sellers (property_id, seller_type, seller_name, seller_phone) VALUES (?, ?, ?, ?)");
+                if ($insSeller) {
+                    foreach ($seller_entries as $row) {
+                        $stype = $row['seller_type'];
+                        $sname = $row['seller_name'];
+                        $sphone = $row['seller_phone'];
+                        $insSeller->bind_param("isss", $new_property_id, $stype, $sname, $sphone);
+                        $insSeller->execute();
+                    }
+                    $insSeller->close();
+                }
+            }
             $_SESSION['last_add_property_fp'] = ['fp'=>$submission_fp,'ts'=>$now_ts];
             error_log(sprintf('TIMING add_coastal: prepare/bind=%.3fs exec=%.3fs',
                 $t_before_execute - $t_prepare_start,
@@ -530,6 +611,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             position: static;
             margin-left: auto;
         }
+        .seller-row {
+            border: 1px dashed #dcdcdc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            background-color: #fafafa;
+        }
+        .seller-row .remove-seller {
+            margin-top: 10px;
+        }
     </style>
     <!-- Map provider: Google Maps -->
     <script src="session_timeout.js" defer></script>
@@ -554,6 +645,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <p><?php echo htmlspecialchars($success_message); ?></p>
         </div>
     <?php endif; ?>
+<?php
+    $seller_entries_for_render = $seller_entries;
+    if (empty($seller_entries_for_render)) {
+        $seller_entries_for_render[] = ['seller_type' => $seller_type ?? '', 'seller_name' => $seller_name ?? '', 'seller_phone' => $seller_phone ?? ''];
+    }
+?>
 
     <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" class="form-container" enctype="multipart/form-data" data-prevent-multi-submit="1" data-property-id="0" data-csrf-token="<?php echo $csrf_token; ?>">
         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
@@ -772,31 +869,69 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
 
         <!-- Owner/Seller Information Section -->
-        <div class="form-section">
+        <div class="form-section" id="seller-section">
             <h3><?php echo t("owner_information"); ?></h3>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="seller_type"><?php echo t("seller_type"); ?>:</label>
-                    <select id="seller_type" name="seller_type" class="form-input">
-                        <option value=""><?php echo t('select_seller_type'); ?></option>
-                        <option value="مالك" <?php echo (($_POST['seller_type'] ?? '') == 'مالك') ? 'selected' : ''; ?>><?php echo t('seller_type_owner'); ?></option>
-                        <option value="وسيط" <?php echo (($_POST['seller_type'] ?? '') == 'وسيط') ? 'selected' : ''; ?>><?php echo t('seller_type_broker'); ?></option>
-                        <option value="وكيل" <?php echo (($_POST['seller_type'] ?? '') == 'وكيل') ? 'selected' : ''; ?>><?php echo t('seller_type_agent'); ?></option>
-                        <option value="بواب" <?php echo (($_POST['seller_type'] ?? '') == 'بواب') ? 'selected' : ''; ?>><?php echo t('seller_type_doorman'); ?></option>
-                        <option value="شركة مطورة" <?php echo (($_POST['seller_type'] ?? '') == 'شركة مطورة') ? 'selected' : ''; ?>><?php echo t('seller_type_developer_company'); ?></option>
-                        <option value="شركة تشطيب" <?php echo (($_POST['seller_type'] ?? '') == 'شركة تشطيب') ? 'selected' : ''; ?>><?php echo t('seller_type_finishing_company'); ?></option>
-                        <option value="شركة تسويق" <?php echo (($_POST['seller_type'] ?? '') == 'شركة تسويق') ? 'selected' : ''; ?>><?php echo t('seller_type_marketing_company'); ?></option>
-                    </select>
+            <div id="seller-entries">
+                <?php foreach ($seller_entries_for_render as $idx => $seller_row): ?>
+                <div class="seller-row">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label><?php echo t("seller_type"); ?>:</label>
+                            <select name="seller_type[]" class="form-input seller-type-input">
+                                <option value=""><?php echo t('select_seller_type'); ?></option>
+                                <option value="مالك" <?php echo (($seller_row['seller_type'] ?? '') == 'مالك') ? 'selected' : ''; ?>><?php echo t('seller_type_owner'); ?></option>
+                                <option value="وسيط" <?php echo (($seller_row['seller_type'] ?? '') == 'وسيط') ? 'selected' : ''; ?>><?php echo t('seller_type_broker'); ?></option>
+                                <option value="وكيل" <?php echo (($seller_row['seller_type'] ?? '') == 'وكيل') ? 'selected' : ''; ?>><?php echo t('seller_type_agent'); ?></option>
+                                <option value="بواب" <?php echo (($seller_row['seller_type'] ?? '') == 'بواب') ? 'selected' : ''; ?>><?php echo t('seller_type_doorman'); ?></option>
+                                <option value="شركة مطورة" <?php echo (($seller_row['seller_type'] ?? '') == 'شركة مطورة') ? 'selected' : ''; ?>><?php echo t('seller_type_developer_company'); ?></option>
+                                <option value="شركة تشطيب" <?php echo (($seller_row['seller_type'] ?? '') == 'شركة تشطيب') ? 'selected' : ''; ?>><?php echo t('seller_type_finishing_company'); ?></option>
+                                <option value="شركة تسويق" <?php echo (($seller_row['seller_type'] ?? '') == 'شركة تسويق') ? 'selected' : ''; ?>><?php echo t('seller_type_marketing_company'); ?></option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><?php echo t("seller_name"); ?></label>
+                            <input type="text" name="seller_name[]" class="form-input" value="<?php echo htmlspecialchars($seller_row["seller_name"] ?? ""); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label><?php echo t("seller_phone"); ?></label>
+                            <input type="tel" name="seller_phone[]" class="form-input seller-phone-input" value="<?php echo htmlspecialchars($seller_row["seller_phone"] ?? ""); ?>">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-danger remove-seller" style="<?php echo $idx === 0 ? 'display:none;' : ''; ?>"><?php echo t('remove') ?: 'حذف'; ?></button>
                 </div>
-                <div class="form-group">
-                    <label for="seller_name"><?php echo t("seller_name"); ?></label>
-                    <input type="text" id="seller_name" name="seller_name" class="form-input" value="<?php echo htmlspecialchars($_POST["seller_name"] ?? ""); ?>">
-                </div>
-                <div class="form-group">
-                    <label for="seller_phone"><?php echo t("seller_phone"); ?></label>
-                    <input type="tel" id="seller_phone" name="seller_phone" class="form-input" value="<?php echo htmlspecialchars($_POST["seller_phone"] ?? ""); ?>">
-                </div>
+                <?php endforeach; ?>
             </div>
+            <div style="margin-top:10px;">
+                <button type="button" class="btn btn-secondary" id="add-seller-row">+ <?php echo t('add_seller') ?: 'إضافة بائع آخر'; ?></button>
+            </div>
+            <template id="seller-row-template">
+                <div class="seller-row">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label><?php echo t("seller_type"); ?>:</label>
+                            <select name="seller_type[]" class="form-input seller-type-input">
+                                <option value=""><?php echo t('select_seller_type'); ?></option>
+                                <option value="مالك"><?php echo t('seller_type_owner'); ?></option>
+                                <option value="وسيط"><?php echo t('seller_type_broker'); ?></option>
+                                <option value="وكيل"><?php echo t('seller_type_agent'); ?></option>
+                                <option value="بواب"><?php echo t('seller_type_doorman'); ?></option>
+                                <option value="شركة مطورة"><?php echo t('seller_type_developer_company'); ?></option>
+                                <option value="شركة تشطيب"><?php echo t('seller_type_finishing_company'); ?></option>
+                                <option value="شركة تسويق"><?php echo t('seller_type_marketing_company'); ?></option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><?php echo t("seller_name"); ?></label>
+                            <input type="text" name="seller_name[]" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label><?php echo t("seller_phone"); ?></label>
+                            <input type="tel" name="seller_phone[]" class="form-input seller-phone-input">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-danger remove-seller"><?php echo t('remove') ?: 'حذف'; ?></button>
+                </div>
+            </template>
         </div>
 
         <!-- Unified Media Upload Section -->
@@ -1130,18 +1265,60 @@ function validatePhoneInput(input) {
         input.setCustomValidity('');
     }
 }
-var sellerPhoneInput = document.getElementById('seller_phone');
-var salesManagerPhoneInput = document.getElementById('sales_manager_phone');
-var salespersonPhoneInput = document.getElementById('salesperson_phone');
-if (sellerPhoneInput) {
-    sellerPhoneInput.addEventListener('input', function(){ validatePhoneInput(sellerPhoneInput); });
+
+function attachPhoneValidationToList() {
+    var sellerPhones = document.querySelectorAll('.seller-phone-input');
+    sellerPhones.forEach(function(input){
+        input.removeEventListener('input', input._validateHandler || function(){});
+        var handler = function(){ validatePhoneInput(input); };
+        input._validateHandler = handler;
+        input.addEventListener('input', handler);
+    });
+    var salesManagerPhoneInput = document.getElementById('sales_manager_phone');
+    var salespersonPhoneInput = document.getElementById('salesperson_phone');
+    if (salesManagerPhoneInput && !salesManagerPhoneInput._handlerAttached) {
+        salesManagerPhoneInput.addEventListener('input', function(){ validatePhoneInput(salesManagerPhoneInput); });
+        salesManagerPhoneInput._handlerAttached = true;
+    }
+    if (salespersonPhoneInput && !salespersonPhoneInput._handlerAttached) {
+        salespersonPhoneInput.addEventListener('input', function(){ validatePhoneInput(salespersonPhoneInput); });
+        salespersonPhoneInput._handlerAttached = true;
+    }
 }
-if (salesManagerPhoneInput) {
-    salesManagerPhoneInput.addEventListener('input', function(){ validatePhoneInput(salesManagerPhoneInput); });
-}
-if (salespersonPhoneInput) {
-    salespersonPhoneInput.addEventListener('input', function(){ validatePhoneInput(salespersonPhoneInput); });
-}
+
+document.addEventListener('DOMContentLoaded', function () {
+    var addSellerBtn = document.getElementById('add-seller-row');
+    var sellerContainer = document.getElementById('seller-entries');
+    var template = document.getElementById('seller-row-template');
+
+    function addSellerRow() {
+        if (!template || !sellerContainer) { return; }
+        var clone = document.importNode(template.content, true);
+        sellerContainer.appendChild(clone);
+        refreshSellerControls();
+    }
+
+    function refreshSellerControls() {
+        var rows = sellerContainer ? sellerContainer.querySelectorAll('.seller-row') : [];
+        rows.forEach(function(row, idx){
+            var removeBtn = row.querySelector('.remove-seller');
+            if (removeBtn) {
+                removeBtn.style.display = (idx === 0) ? 'none' : 'inline-block';
+                removeBtn.onclick = function(){
+                    row.remove();
+                    refreshSellerControls();
+                };
+            }
+        });
+        attachPhoneValidationToList();
+    }
+
+    if (addSellerBtn) {
+        addSellerBtn.addEventListener('click', addSellerRow);
+    }
+
+    refreshSellerControls();
+});
 </script>
 
 </body>

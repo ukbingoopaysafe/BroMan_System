@@ -22,6 +22,29 @@ require_once 'media_functions.php'; // Media helper functions
 // Flash helper (used by view_property.php to show short-lived messages)
 require_once __DIR__ . '/flash.php';
 
+/**
+ * Ensure property_sellers table exists to store multiple sellers per property.
+ */
+function ensurePropertySellersTable(mysqli $conn)
+{
+    static $created = false;
+    if ($created) {
+        return;
+    }
+    $sql = "CREATE TABLE IF NOT EXISTS property_sellers (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        property_id INT NOT NULL,
+        seller_type VARCHAR(255) NULL,
+        seller_name VARCHAR(255) NULL,
+        seller_phone VARCHAR(50) NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_property (property_id),
+        CONSTRAINT fk_property_sellers_property FOREIGN KEY (property_id) REFERENCES Properties(PropertyID) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+    $conn->query($sql);
+    $created = true;
+}
+
 // Generate CSRF token
 $csrf_token = generateCSRFToken();
 
@@ -53,6 +76,7 @@ $net_area = $loading_percentage = null;
 $price_cash = $price_installments = $meter_price_cash = $meter_price_installments = null;
 $seller_type = $seller_name = $seller_phone = "";
 $latitude = $longitude = null;
+$property_sellers = [];
 
 $errors = []; // Array to hold errors
 
@@ -141,6 +165,18 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $seller_type = $row["seller_type"] ?? null;
                 $seller_name = $row["seller_name"] ?? null;
                 $seller_phone = $row["seller_phone"] ?? null;
+                // Load multi-sellers from property_sellers table
+                $seller_stmt = $conn->prepare("SELECT seller_type, seller_name, seller_phone FROM property_sellers WHERE property_id = ? ORDER BY id ASC");
+                if ($seller_stmt) {
+                    $seller_stmt->bind_param('i', $property_id);
+                    if ($seller_stmt->execute()) {
+                        $seller_res = $seller_stmt->get_result();
+                        while ($s = $seller_res->fetch_assoc()) {
+                            $property_sellers[] = $s;
+                        }
+                    }
+                    $seller_stmt->close();
+                }
             } else {
                 $_SESSION["error_message"] = t('property_not_found');
                 header("Location: index_properties.php");
@@ -267,12 +303,35 @@ if ($att_stmt) {
     
     // New Phase 2 fields
     $year_built_posted = isset($_POST['year_built']) ? trim($_POST['year_built']) : null;
-    $seller_type_posted = isset($_POST['seller_type']) ? trim($_POST['seller_type']) : null;
-    if ($seller_type_posted !== null && $seller_type_posted === '') { $seller_type_posted = null; }
-    // Validate against allowed UI list; normalize to DB value if needed
-    if ($seller_type_posted !== null && !in_array($seller_type_posted, allowed_seller_types(), true)) {
-        $seller_type_posted = normalize_seller_type_for_db($conn, $seller_type_posted);
+    // Multi-seller parsing
+    $posted_seller_types = $_POST['seller_type'] ?? [];
+    $posted_seller_names = $_POST['seller_name'] ?? [];
+    $posted_seller_phones = $_POST['seller_phone'] ?? [];
+    if (!is_array($posted_seller_types)) { $posted_seller_types = [$posted_seller_types]; }
+    if (!is_array($posted_seller_names)) { $posted_seller_names = [$posted_seller_names]; }
+    if (!is_array($posted_seller_phones)) { $posted_seller_phones = [$posted_seller_phones]; }
+    $seller_entries_post = [];
+    $max_sellers = max(count($posted_seller_types), count($posted_seller_names), count($posted_seller_phones));
+    for ($i = 0; $i < $max_sellers; $i++) {
+        $stype = trim($posted_seller_types[$i] ?? '');
+        $sname = trim($posted_seller_names[$i] ?? '');
+        $sphone = trim($posted_seller_phones[$i] ?? '');
+        if ($stype === '' && $sname === '' && $sphone === '') {
+            continue;
+        }
+        if ($stype !== '' && !in_array($stype, allowed_seller_types(), true)) {
+            $stype = normalize_seller_type_for_db($conn, $stype);
+        }
+        $seller_entries_post[] = [
+            'seller_type' => ($stype === '') ? null : $stype,
+            'seller_name' => ($sname === '') ? null : $sname,
+            'seller_phone' => ($sphone === '') ? null : $sphone,
+        ];
     }
+    if (empty($seller_entries_post)) {
+        $seller_entries_post[] = ['seller_type' => null, 'seller_name' => null, 'seller_phone' => null];
+    }
+    $seller_type_posted = $seller_entries_post[0]['seller_type'];
     $unit_floor_posted = isset($_POST['unit_floor']) ? trim($_POST['unit_floor']) : null;
     $net_area_posted = isset($_POST['net_area']) && trim($_POST['net_area']) !== '' ? filter_input(INPUT_POST, 'net_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $loading_percentage_posted = isset($_POST['loading_percentage']) && trim($_POST['loading_percentage']) !== '' ? filter_input(INPUT_POST, 'loading_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
@@ -280,9 +339,8 @@ if ($att_stmt) {
     $price_installments_posted = isset($_POST['price_installments']) && trim($_POST['price_installments']) !== '' ? filter_input(INPUT_POST, 'price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $meter_price_cash_posted = isset($_POST['meter_price_cash']) && trim($_POST['meter_price_cash']) !== '' ? filter_input(INPUT_POST, 'meter_price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $meter_price_installments_posted = isset($_POST['meter_price_installments']) && trim($_POST['meter_price_installments']) !== '' ? filter_input(INPUT_POST, 'meter_price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
-    $seller_type_posted = isset($_POST['seller_type']) ? trim($_POST['seller_type']) : null;
-    $seller_name_posted = isset($_POST['seller_name']) ? trim($_POST['seller_name']) : null;
-    $seller_phone_posted = isset($_POST['seller_phone']) ? trim($_POST['seller_phone']) : null;
+    $seller_name_posted = $seller_entries_post[0]['seller_name'] ?? null;
+    $seller_phone_posted = $seller_entries_post[0]['seller_phone'] ?? null;
     $bedrooms_posted = isset($_POST['bedrooms']) ? filter_input(INPUT_POST, 'bedrooms', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) : null;
     $bathrooms_posted = isset($_POST['bathrooms']) ? filter_input(INPUT_POST, 'bathrooms', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) : null;
    
@@ -346,8 +404,26 @@ if ($att_stmt) {
         $phone = preg_replace('/[^0-9]/', '', $phone);
         return strlen($phone) === 11;
     }
-    if (!empty($seller_phone_posted) && !isValidEgyptianPhone($seller_phone_posted)) {
-        $errors['seller_phone'] = 'يجب أن يكون رقم هاتف البائع 11 رقم.';
+    $valid_seller_found = false;
+    foreach ($seller_entries_post as $idx => $row) {
+        $phone_val = $row['seller_phone'] ?? '';
+        $name_val = $row['seller_name'] ?? '';
+        if ($phone_val === null || trim($phone_val) === '') {
+            $errors['seller_phone_' . $idx] = 'يجب إدخال رقم هاتف لكل بائع.';
+            continue;
+        }
+        if (!isValidEgyptianPhone($phone_val)) {
+            $errors['seller_phone_' . $idx] = 'يجب أن يكون رقم هاتف البائع (' . ($idx + 1) . ') 11 رقم.';
+            continue;
+        }
+        if ($name_val === null || trim($name_val) === '') {
+            $errors['seller_name_' . $idx] = 'يجب إدخال اسم البائع (' . ($idx + 1) . ').';
+            continue;
+        }
+        $valid_seller_found = true;
+    }
+    if (!$valid_seller_found) {
+        $errors['seller_phone'] = 'يجب إضافة بائع واحد على الأقل مع رقم هاتف صحيح.';
     }
     if (!empty($sales_manager_phone_posted) && !isValidEgyptianPhone($sales_manager_phone_posted)) {
         $errors['sales_manager_phone'] = 'يجب أن يكون رقم هاتف مدير المبيعات 11 رقم.';
@@ -457,6 +533,27 @@ if ($att_stmt) {
                 if (function_exists('moveTempUploadsToProperty')) {
                     $moved = moveTempUploadsToProperty($property_id, session_id(), $conn);
                     error_log('Moved temp uploads after edit for session ' . session_id() . ': ' . json_encode($moved));
+                }
+
+                // Sync multi-sellers table
+                ensurePropertySellersTable($conn);
+                // Clear existing rows then insert posted sellers
+                if ($delStmt = $conn->prepare("DELETE FROM property_sellers WHERE property_id = ?")) {
+                    $delStmt->bind_param('i', $property_id);
+                    $delStmt->execute();
+                    $delStmt->close();
+                }
+                if (!empty($seller_entries_post)) {
+                    if ($insSeller = $conn->prepare("INSERT INTO property_sellers (property_id, seller_type, seller_name, seller_phone) VALUES (?, ?, ?, ?)")) {
+                        foreach ($seller_entries_post as $row) {
+                            $stype = $row['seller_type'];
+                            $sname = $row['seller_name'];
+                            $sphone = $row['seller_phone'];
+                            $insSeller->bind_param("isss", $property_id, $stype, $sname, $sphone);
+                            $insSeller->execute();
+                        }
+                        $insSeller->close();
+                    }
                 }
 
                 // Get the new property data after update for change tracking
@@ -775,6 +872,16 @@ if ($att_stmt) {
             color: #fff;
             border-radius: 3px;
         }
+        .seller-row {
+            border: 1px dashed #dcdcdc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            background-color: #fafafa;
+        }
+        .seller-row .remove-seller {
+            margin-top: 10px;
+        }
         /* On hover slightly raise the item */
         .existing-media-item:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.06); transform: translateY(-2px); transition: all 120ms ease; }
     </style>
@@ -900,6 +1007,18 @@ if ($att_stmt) {
             echo "<div class='alert alert-danger'>" . $_SESSION['error_message'] . "</div>";
             unset($_SESSION['error_message']);
         }
+        ?>
+
+        <?php
+            // Prepare seller rows for rendering in the form
+            $seller_entries_for_render = $seller_entries_post ?? $property_sellers;
+            if (empty($seller_entries_for_render)) {
+                $seller_entries_for_render[] = [
+                    'seller_type' => $seller_type ?? '',
+                    'seller_name' => $seller_name ?? '',
+                    'seller_phone' => $seller_phone ?? ''
+                ];
+            }
         ?>
 
         <!-- Unified Media Upload Section -->
@@ -1255,31 +1374,69 @@ if ($att_stmt) {
             </div>
 
             <!-- Owner/Seller Information Section -->
-            <div class="form-section">
+            <div class="form-section" id="seller-section">
                 <h3><?php echo t("owner_information"); ?></h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="seller_type"><?php echo t("seller_type"); ?>:</label>
-                        <select id="seller_type" name="seller_type" class="form-input">
-                            <option value=""><?php echo t('select_seller_type'); ?></option>
-                            <option value="مالك" <?php echo ($seller_type == 'مالك') ? 'selected' : ''; ?>><?php echo t('seller_type_owner'); ?></option>
-                            <option value="وسيط" <?php echo ($seller_type == 'وسيط') ? 'selected' : ''; ?>><?php echo t('seller_type_broker'); ?></option>
-                            <option value="وكيل" <?php echo ($seller_type == 'وكيل') ? 'selected' : ''; ?>><?php echo t('seller_type_agent'); ?></option>
-                            <option value="بواب" <?php echo ($seller_type == 'بواب') ? 'selected' : ''; ?>><?php echo t('seller_type_doorman'); ?></option>
-                            <option value="شركة مطورة" <?php echo ($seller_type == 'شركة مطورة') ? 'selected' : ''; ?>><?php echo t('seller_type_developer_company'); ?></option>
-                            <option value="شركة تشطيب" <?php echo ($seller_type == 'شركة تشطيب') ? 'selected' : ''; ?>><?php echo t('seller_type_finishing_company'); ?></option>
-                            <option value="شركة تسويق" <?php echo ($seller_type == 'شركة تسويق') ? 'selected' : ''; ?>><?php echo t('seller_type_marketing_company'); ?></option>
-                        </select>
+                <div id="seller-entries">
+                    <?php foreach ($seller_entries_for_render as $idx => $seller_row): ?>
+                    <div class="seller-row">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label><?php echo t("seller_type"); ?>:</label>
+                                <select name="seller_type[]" class="form-input seller-type-input">
+                                    <option value=""><?php echo t('select_seller_type'); ?></option>
+                                    <option value="مالك" <?php echo (($seller_row['seller_type'] ?? '') == 'مالك') ? 'selected' : ''; ?>><?php echo t('seller_type_owner'); ?></option>
+                                    <option value="وسيط" <?php echo (($seller_row['seller_type'] ?? '') == 'وسيط') ? 'selected' : ''; ?>><?php echo t('seller_type_broker'); ?></option>
+                                    <option value="وكيل" <?php echo (($seller_row['seller_type'] ?? '') == 'وكيل') ? 'selected' : ''; ?>><?php echo t('seller_type_agent'); ?></option>
+                                    <option value="بواب" <?php echo (($seller_row['seller_type'] ?? '') == 'بواب') ? 'selected' : ''; ?>><?php echo t('seller_type_doorman'); ?></option>
+                                    <option value="شركة مطورة" <?php echo (($seller_row['seller_type'] ?? '') == 'شركة مطورة') ? 'selected' : ''; ?>><?php echo t('seller_type_developer_company'); ?></option>
+                                    <option value="شركة تشطيب" <?php echo (($seller_row['seller_type'] ?? '') == 'شركة تشطيب') ? 'selected' : ''; ?>><?php echo t('seller_type_finishing_company'); ?></option>
+                                    <option value="شركة تسويق" <?php echo (($seller_row['seller_type'] ?? '') == 'شركة تسويق') ? 'selected' : ''; ?>><?php echo t('seller_type_marketing_company'); ?></option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label><?php echo t("seller_name"); ?></label>
+                                <input type="text" name="seller_name[]" class="form-input" value="<?php echo htmlspecialchars($seller_row["seller_name"] ?? ""); ?>">
+                            </div>
+                            <div class="form-group">
+                                <label><?php echo t("seller_phone"); ?></label>
+                                <input type="tel" name="seller_phone[]" class="form-input seller-phone-input" value="<?php echo htmlspecialchars($seller_row["seller_phone"] ?? ""); ?>">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-danger remove-seller" style="<?php echo $idx === 0 ? 'display:none;' : ''; ?>"><?php echo t('remove') ?: 'حذف'; ?></button>
                     </div>
-                    <div class="form-group">
-                        <label for="seller_name"><?php echo t("seller_name"); ?></label>
-                        <input type="text" id="seller_name" name="seller_name" class="form-input" value="<?php echo htmlspecialchars($seller_name); ?>">
-                    </div>
-                    <div class="form-group">
-                        <label for="seller_phone"><?php echo t("seller_phone"); ?></label>
-                        <input type="tel" id="seller_phone" name="seller_phone" class="form-input" value="<?php echo htmlspecialchars($seller_phone); ?>">
-                    </div>
+                    <?php endforeach; ?>
                 </div>
+                <div style="margin-top:10px;">
+                    <button type="button" class="btn btn-secondary" id="add-seller-row">+ <?php echo t('add_seller') ?: 'إضافة بائع آخر'; ?></button>
+                </div>
+                <template id="seller-row-template">
+                    <div class="seller-row">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label><?php echo t("seller_type"); ?>:</label>
+                                <select name="seller_type[]" class="form-input seller-type-input">
+                                    <option value=""><?php echo t('select_seller_type'); ?></option>
+                                    <option value="مالك"><?php echo t('seller_type_owner'); ?></option>
+                                    <option value="وسيط"><?php echo t('seller_type_broker'); ?></option>
+                                    <option value="وكيل"><?php echo t('seller_type_agent'); ?></option>
+                                    <option value="بواب"><?php echo t('seller_type_doorman'); ?></option>
+                                    <option value="شركة مطورة"><?php echo t('seller_type_developer_company'); ?></option>
+                                    <option value="شركة تشطيب"><?php echo t('seller_type_finishing_company'); ?></option>
+                                    <option value="شركة تسويق"><?php echo t('seller_type_marketing_company'); ?></option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label><?php echo t("seller_name"); ?></label>
+                                <input type="text" name="seller_name[]" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label><?php echo t("seller_phone"); ?></label>
+                                <input type="tel" name="seller_phone[]" class="form-input seller-phone-input">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-danger remove-seller"><?php echo t('remove') ?: 'حذف'; ?></button>
+                    </div>
+                </template>
             </div>
 
             <div class="form-actions">
@@ -1664,18 +1821,60 @@ if ($att_stmt) {
             input.setCustomValidity('');
         }
     }
-    var sellerPhoneInput = document.getElementById('seller_phone');
-    var salesManagerPhoneInput = document.getElementById('sales_manager_phone');
-    var salespersonPhoneInput = document.getElementById('salesperson_phone');
-    if (sellerPhoneInput) {
-        sellerPhoneInput.addEventListener('input', function(){ validatePhoneInput(sellerPhoneInput); });
+
+    function attachPhoneValidationToList() {
+        var sellerPhones = document.querySelectorAll('.seller-phone-input');
+        sellerPhones.forEach(function(input){
+            input.removeEventListener('input', input._validateHandler || function(){});
+            var handler = function(){ validatePhoneInput(input); };
+            input._validateHandler = handler;
+            input.addEventListener('input', handler);
+        });
+        var salesManagerPhoneInput = document.getElementById('sales_manager_phone');
+        var salespersonPhoneInput = document.getElementById('salesperson_phone');
+        if (salesManagerPhoneInput && !salesManagerPhoneInput._handlerAttached) {
+            salesManagerPhoneInput.addEventListener('input', function(){ validatePhoneInput(salesManagerPhoneInput); });
+            salesManagerPhoneInput._handlerAttached = true;
+        }
+        if (salespersonPhoneInput && !salespersonPhoneInput._handlerAttached) {
+            salespersonPhoneInput.addEventListener('input', function(){ validatePhoneInput(salespersonPhoneInput); });
+            salespersonPhoneInput._handlerAttached = true;
+        }
     }
-    if (salesManagerPhoneInput) {
-        salesManagerPhoneInput.addEventListener('input', function(){ validatePhoneInput(salesManagerPhoneInput); });
-    }
-    if (salespersonPhoneInput) {
-        salespersonPhoneInput.addEventListener('input', function(){ validatePhoneInput(salespersonPhoneInput); });
-    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var addSellerBtn = document.getElementById('add-seller-row');
+        var sellerContainer = document.getElementById('seller-entries');
+        var template = document.getElementById('seller-row-template');
+
+        function addSellerRow() {
+            if (!template || !sellerContainer) { return; }
+            var clone = document.importNode(template.content, true);
+            sellerContainer.appendChild(clone);
+            refreshSellerControls();
+        }
+
+        function refreshSellerControls() {
+            var rows = sellerContainer ? sellerContainer.querySelectorAll('.seller-row') : [];
+            rows.forEach(function(row, idx){
+                var removeBtn = row.querySelector('.remove-seller');
+                if (removeBtn) {
+                    removeBtn.style.display = (idx === 0) ? 'none' : 'inline-block';
+                    removeBtn.onclick = function(){
+                        row.remove();
+                        refreshSellerControls();
+                    };
+                }
+            });
+            attachPhoneValidationToList();
+        }
+
+        if (addSellerBtn) {
+            addSellerBtn.addEventListener('click', addSellerRow);
+        }
+
+        refreshSellerControls();
+    });
     </script>
     <script src="prevent_double_submit.js"></script>
 </body>
