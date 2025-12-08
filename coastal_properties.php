@@ -9,15 +9,8 @@ require_once 'permissions.php'; // Include permissions system
 require_once __DIR__ . '/property_image_helper.php'; // Include image helper functions
 
 // Check permissions - all logged in users can view properties
+$current_mode = require_listing_context();
 check_permission('view_properties');
-
-// Enforce mode selection - redirect to dashboard if no mode is set
-if (!isset($_SESSION['listing_context']) || ($_SESSION['listing_context'] !== 'Primary' && $_SESSION['listing_context'] !== 'Resale')) {
-    header('Location: dashboard.php');
-    exit();
-}
-
-$current_mode = $_SESSION['listing_context'];
 
 // Define the Property Type ID for this page (Assuming 2 is Coastal - VERIFY IN DB)
 const CURRENT_PROPERTY_TYPE_ID = 2;
@@ -285,6 +278,13 @@ if ($stmt = $conn->prepare($sql)) {
 // Function to format price for display
 function formatDisplayPrice($row)
 {
+    if (isset($row['listing_type']) && $row['listing_type'] === 'Rental') {
+        if (!empty($row['monthly_rent']) && is_numeric($row['monthly_rent'])) {
+            return number_format(floatval($row['monthly_rent']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('per_month');
+        } elseif (!empty($row['yearly_rent']) && is_numeric($row['yearly_rent'])) {
+            return number_format(floatval($row['yearly_rent']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('per_year');
+        }
+    }
     if (!empty($row['price_cash']) && is_numeric($row['price_cash'])) {
         return number_format(floatval($row['price_cash']), 0, '.', ',') . ' ' . t('currency');
     } elseif (!empty($row['price_installments']) && is_numeric($row['price_installments'])) {

@@ -6,7 +6,8 @@ require_once __DIR__ . '/session_check.php';
 require_once __DIR__ . '/property_image_helper.php';
 require_once __DIR__ . '/security.php';
 
-if (!is_logged_in() || !can_manage_properties()) {
+$current_mode = require_listing_context();
+if (!can_manage_properties($current_mode)) {
     $_SESSION["error_message"] = t('not_authorized');
     header("Location: dashboard.php");
     exit;
@@ -172,7 +173,10 @@ $total_rows = 0;
 
 if ($active_phone) {
     // Fetch single group details with review status
-    $sql = "SELECT g.normalized_phone, g.properties_count, g.property_ids, g.phone_roles,
+    $sql = "SELECT g.normalized_phone,
+                   COUNT(p.PropertyID) AS properties_count,
+                   GROUP_CONCAT(DISTINCT p.PropertyID ORDER BY p.PropertyID SEPARATOR ',') AS property_ids,
+                   g.phone_roles,
                    MIN(p.duplicate_status) AS min_status,
                    MAX(p.duplicate_status) AS max_status,
                    SUM(CASE WHEN p.duplicate_status = 1 THEN 1 ELSE 0 END) AS needs_review_count,
@@ -181,9 +185,10 @@ if ($active_phone) {
             JOIN v_property_phones_normalized v ON v.normalized_phone = g.normalized_phone
             JOIN properties p ON p.PropertyID = v.PropertyID
             WHERE g.normalized_phone = ?
-            GROUP BY g.normalized_phone, g.properties_count, g.property_ids, g.phone_roles";
+              AND p.listing_type = ?
+            GROUP BY g.normalized_phone, g.phone_roles";
     if ($stmt = $conn->prepare($sql)) {
-        $stmt->bind_param('s', $active_phone);
+        $stmt->bind_param('ss', $active_phone, $current_mode);
         $stmt->execute();
         $res = $stmt->get_result();
         $group = $res->fetch_assoc();
@@ -201,9 +206,9 @@ if ($active_phone) {
                                 e.FullName AS employee_name
                          FROM properties p
                          LEFT JOIN employees e ON p.EmployeeID = e.EmployeeID
-                         WHERE p.PropertyID IN ($in) ORDER BY p.PropertyID DESC";
+                         WHERE p.PropertyID IN ($in) AND p.listing_type = ? ORDER BY p.PropertyID DESC";
                 $stmt2 = $conn->prepare($sql2);
-                $stmt2->bind_param($types, ...$ids);
+                $stmt2->bind_param($types . 's', ...array_merge($ids, [$current_mode]));
                 $stmt2->execute();
                 $res2 = $stmt2->get_result();
                 while ($row = $res2->fetch_assoc()) {
@@ -223,7 +228,7 @@ if ($active_phone) {
     if ($status_filter === 'needs_review') {
         $having_clause = " HAVING SUM(CASE WHEN p.duplicate_status = 1 THEN 1 ELSE 0 END) > 0";
     } elseif ($status_filter === 'reviewed') {
-        $having_clause = " HAVING SUM(CASE WHEN p.duplicate_status = 2 THEN 1 ELSE 0 END) = g.properties_count AND g.properties_count > 0";
+        $having_clause = " HAVING SUM(CASE WHEN p.duplicate_status = 2 THEN 1 ELSE 0 END) = COUNT(*) AND COUNT(*) > 0";
     }
     
     // Build ORDER BY clause
@@ -234,20 +239,20 @@ if ($active_phone) {
             $order_clause = "ORDER BY 
                 CASE 
                     WHEN SUM(CASE WHEN p.duplicate_status = 1 THEN 1 ELSE 0 END) > 0 THEN 1 
-                    WHEN SUM(CASE WHEN p.duplicate_status = 2 THEN 1 ELSE 0 END) = g.properties_count THEN 2 
+                    WHEN SUM(CASE WHEN p.duplicate_status = 2 THEN 1 ELSE 0 END) = COUNT(*) THEN 2 
                     ELSE 3 
                 END " . $sort_dir . ", 
-                g.properties_count DESC, 
+                COUNT(*) DESC, 
                 g.normalized_phone ASC";
             break;
         case 'properties_count':
-            $order_clause = "ORDER BY g.properties_count " . $sort_dir . ", g.normalized_phone ASC";
+            $order_clause = "ORDER BY COUNT(*) " . $sort_dir . ", g.normalized_phone ASC";
             break;
         case 'date':
             $order_clause = "ORDER BY MAX(p.DateAdded) " . $sort_dir . ", g.normalized_phone ASC";
             break;
         default:
-            $order_clause = "ORDER BY g.properties_count DESC, g.normalized_phone ASC";
+            $order_clause = "ORDER BY COUNT(*) DESC, g.normalized_phone ASC";
     }
     
     // Count total groups with filter
@@ -257,18 +262,24 @@ if ($active_phone) {
                       FROM v_duplicate_property_phone_groups g
                       JOIN v_property_phones_normalized v ON v.normalized_phone = g.normalized_phone
                       JOIN properties p ON p.PropertyID = v.PropertyID
-                      GROUP BY g.normalized_phone, g.properties_count, g.property_ids, g.phone_roles
+                      WHERE p.listing_type = ?
+                      GROUP BY g.normalized_phone, g.phone_roles
                       $having_clause
                   ) AS filtered_groups";
-    $count_res = $conn->query($count_sql);
-    if ($count_res) {
-        $total_rows = (int)$count_res->fetch_assoc()['c'];
+    if ($stmt_count = $conn->prepare($count_sql)) {
+        $stmt_count->bind_param('s', $current_mode);
+        if ($stmt_count->execute()) {
+            $res_count = $stmt_count->get_result();
+            $row_count = $res_count->fetch_assoc();
+            $total_rows = (int)($row_count['c'] ?? 0);
+        }
+        $stmt_count->close();
     }
     
     // Factual summary: employees, listing types, locations, date range, review status
     $sql = "SELECT g.normalized_phone,
-                   g.properties_count,
-                   g.property_ids,
+                   COUNT(p.PropertyID) AS properties_count,
+                   GROUP_CONCAT(DISTINCT p.PropertyID ORDER BY p.PropertyID SEPARATOR ',') AS property_ids,
                    g.phone_roles,
                    MIN(p.DateAdded) AS first_added,
                    MAX(p.DateAdded) AS last_added,
@@ -283,12 +294,13 @@ if ($active_phone) {
             JOIN v_property_phones_normalized v ON v.normalized_phone = g.normalized_phone
             JOIN properties p ON p.PropertyID = v.PropertyID
             LEFT JOIN employees e ON p.EmployeeID = e.EmployeeID
-            GROUP BY g.normalized_phone, g.properties_count, g.property_ids, g.phone_roles
+            WHERE p.listing_type = ?
+            GROUP BY g.normalized_phone, g.phone_roles
             $having_clause
             $order_clause
             LIMIT ? OFFSET ?";
     if ($stmt = $conn->prepare($sql)) {
-        $stmt->bind_param('ii', $per_page, $offset);
+        $stmt->bind_param('sii', $current_mode, $per_page, $offset);
         $stmt->execute();
         $res = $stmt->get_result();
         while ($row = $res->fetch_assoc()) {

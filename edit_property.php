@@ -7,15 +7,8 @@ require_once 'permissions.php'; // Include permissions system
 require_once __DIR__ . '/property_changes_tracker.php'; // Include property changes tracker
 
 // Check permissions - only manager and admin can edit properties
+$current_mode = require_listing_context();
 check_permission('manage_properties');
-
-// Enforce mode selection - redirect to dashboard if no mode is set
-if (!isset($_SESSION['listing_context']) || ($_SESSION['listing_context'] !== 'Primary' && $_SESSION['listing_context'] !== 'Resale')) {
-    header('Location: dashboard.php');
-    exit();
-}
-
-$current_mode = $_SESSION['listing_context'];
 
 require_once 'db.php'; // Database connection
 require_once 'media_functions.php'; // Media helper functions
@@ -73,7 +66,7 @@ $floors_count = null;
 $sales_manager_name = $sales_manager_phone = $salesperson_name = $salesperson_phone = "";
 $year_built = $unit_floor = "";
 $net_area = $loading_percentage = null;
-$price_cash = $price_installments = $meter_price_cash = $meter_price_installments = null;
+$price_cash = $price_installments = $monthly_rent = $yearly_rent = $meter_price_cash = $meter_price_installments = null;
 $seller_type = $seller_name = $seller_phone = "";
 $latitude = $longitude = null;
 $property_sellers = [];
@@ -152,6 +145,18 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $listing_type = $row["listing_type"] ?? 'Primary';
                 $latitude = $row["latitude"] ?? '';
                 $longitude = $row["longitude"] ?? '';
+
+                if (!is_mode_allowed_for_role($listing_type)) {
+                    $_SESSION["error_message"] = t('mode_not_allowed_for_role');
+                    header("Location: dashboard.php");
+                    exit();
+                }
+
+                if (!is_manager() && $listing_type !== $current_mode) {
+                    $_SESSION["error_message"] = t('mode_not_allowed');
+                    header("Location: dashboard.php");
+                    exit();
+                }
                 
                 // New Phase 2 fields
                 $year_built = $row["year_built"] ?? null;
@@ -160,6 +165,8 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $loading_percentage = $row["loading_percentage"] ?? null;
                 $price_cash = $row["price_cash"] ?? null;
                 $price_installments = $row["price_installments"] ?? null;
+                $monthly_rent = $row["monthly_rent"] ?? null;
+                $yearly_rent = $row["yearly_rent"] ?? null;
                 $meter_price_cash = $row["meter_price_cash"] ?? null;
                 $meter_price_installments = $row["meter_price_installments"] ?? null;
                 $seller_type = $row["seller_type"] ?? null;
@@ -337,6 +344,8 @@ if ($att_stmt) {
     $loading_percentage_posted = isset($_POST['loading_percentage']) && trim($_POST['loading_percentage']) !== '' ? filter_input(INPUT_POST, 'loading_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $price_cash_posted = isset($_POST['price_cash']) && trim($_POST['price_cash']) !== '' ? filter_input(INPUT_POST, 'price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $price_installments_posted = isset($_POST['price_installments']) && trim($_POST['price_installments']) !== '' ? filter_input(INPUT_POST, 'price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
+    $monthly_rent_posted = isset($_POST['monthly_rent']) && trim($_POST['monthly_rent']) !== '' ? filter_input(INPUT_POST, 'monthly_rent', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
+    $yearly_rent_posted = isset($_POST['yearly_rent']) && trim($_POST['yearly_rent']) !== '' ? filter_input(INPUT_POST, 'yearly_rent', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $meter_price_cash_posted = isset($_POST['meter_price_cash']) && trim($_POST['meter_price_cash']) !== '' ? filter_input(INPUT_POST, 'meter_price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $meter_price_installments_posted = isset($_POST['meter_price_installments']) && trim($_POST['meter_price_installments']) !== '' ? filter_input(INPUT_POST, 'meter_price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $seller_name_posted = $seller_entries_post[0]['seller_name'] ?? null;
@@ -443,6 +452,7 @@ if ($att_stmt) {
             sales_manager_name = ?, sales_manager_phone = ?, salesperson_name = ?, salesperson_phone = ?,
             year_built = ?, unit_floor = ?, net_area = ?, loading_percentage = ?, 
             price_cash = ?, price_installments = ?, meter_price_cash = ?, meter_price_installments = ?, 
+            monthly_rent = ?, yearly_rent = ?,
             seller_type = ?, seller_name = ?, seller_phone = ?,
             latitude = ?, longitude = ?
             WHERE PropertyID = ?";
@@ -461,6 +471,8 @@ if ($att_stmt) {
             $loading_percentage_val = empty($loading_percentage_posted) ? null : $loading_percentage_posted;
             $price_cash_val = empty($price_cash_posted) ? null : $price_cash_posted;
             $price_installments_val = empty($price_installments_posted) ? null : $price_installments_posted;
+            $monthly_rent_val = empty($monthly_rent_posted) ? null : $monthly_rent_posted;
+            $yearly_rent_val = empty($yearly_rent_posted) ? null : $yearly_rent_posted;
             $meter_price_cash_val = empty($meter_price_cash_posted) ? null : $meter_price_cash_posted;
             $meter_price_installments_val = empty($meter_price_installments_posted) ? null : $meter_price_installments_posted;
             $latitude_val = empty($latitude_posted) ? null : $latitude_posted;
@@ -471,8 +483,8 @@ if ($att_stmt) {
             // temporary debug logging removed
 
             // Build types string programmatically to avoid manual counting mistakes
-            // 37 's' for the parameters and final 'i' for PropertyID (total 38)
-            $types = str_repeat('s', 37) . 'i';
+            // 39 's' for the parameters and final 'i' for PropertyID (total 40)
+            $types = str_repeat('s', 39) . 'i';
             $stmt_update->bind_param(
                 $types,
                 $property_type_id_posted,
@@ -508,6 +520,8 @@ if ($att_stmt) {
                 $price_installments_val,
                 $meter_price_cash_val,
                 $meter_price_installments_val,
+                $monthly_rent_val,
+                $yearly_rent_val,
                 $seller_type_posted,
                 $seller_name_posted,
                 $seller_phone_posted,
@@ -1307,6 +1321,14 @@ if ($att_stmt) {
                     <div class="form-group">
                         <label for="price_installments"><?php echo t('price_installments'); ?>:</label>
                         <input type="number" step="0.01" id="price_installments" name="price_installments" class="form-input" value="<?php echo htmlspecialchars($price_installments); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="monthly_rent"><?php echo t('monthly_rent'); ?>:</label>
+                        <input type="number" step="0.01" id="monthly_rent" name="monthly_rent" class="form-input" value="<?php echo htmlspecialchars($monthly_rent); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="yearly_rent"><?php echo t('yearly_rent'); ?>:</label>
+                        <input type="number" step="0.01" id="yearly_rent" name="yearly_rent" class="form-input" value="<?php echo htmlspecialchars($yearly_rent); ?>">
                     </div>
                     <div class="form-group">
                         <label for="meter_price_cash"><?php echo t('meter_price_cash'); ?>:</label>

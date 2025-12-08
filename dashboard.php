@@ -1,15 +1,18 @@
 <?php
-require_once __DIR__ . 
-'/lang/translate.php'; // Include translation handler
+require_once __DIR__ . '/lang/translate.php'; // Include translation handler
 require_once 'session_check.php'; // Include session timeout check
 require_once 'permissions.php'; // Include permissions system
 
 require_once 'db.php'; // Include database connection
 
+$allowed_modes = get_allowed_modes_for_role(get_user_role());
+$current_listing_mode = $_SESSION['listing_context'] ?? null;
+
 // Fetch statistics for the dashboard
 $stats = [
     'primary_count' => 0,
     'resale_count' => 0,
+    'rental_count' => 0,
     'total_employees' => 0,
     'duplicates_needs_review' => 0,
 ];
@@ -17,12 +20,14 @@ $stats = [
 // Get Primary and Resale property counts
 $sql_properties = "SELECT
     SUM(CASE WHEN listing_type = 'Primary' THEN 1 ELSE 0 END) AS primary_count,
-    SUM(CASE WHEN listing_type = 'Resale' THEN 1 ELSE 0 END) AS resale_count
+    SUM(CASE WHEN listing_type = 'Resale' THEN 1 ELSE 0 END) AS resale_count,
+    SUM(CASE WHEN listing_type = 'Rental' THEN 1 ELSE 0 END) AS rental_count
 FROM properties";
 if ($result = $conn->query($sql_properties)) {
     $row = $result->fetch_assoc();
     $stats['primary_count'] = $row['primary_count'] ?? 0;
     $stats['resale_count'] = $row['resale_count'] ?? 0;
+    $stats['rental_count'] = $row['rental_count'] ?? 0;
     $result->free();
 } else {
     error_log("Error fetching property counts: " . $conn->error);
@@ -40,24 +45,34 @@ if (can_manage_employees()) {
     }
 }
 
-// Get duplicate groups that need review (if can manage properties)
-if (can_manage_properties()) {
+// Get duplicate groups that need review (filtered by the selected mode only)
+if (!empty($current_listing_mode)) {
     $sql_duplicates = "SELECT COUNT(*) AS count
                        FROM (
                            SELECT g.normalized_phone
                            FROM v_duplicate_property_phone_groups g
                            JOIN v_property_phones_normalized v ON v.normalized_phone = g.normalized_phone
                            JOIN properties p ON p.PropertyID = v.PropertyID
-                           GROUP BY g.normalized_phone, g.properties_count, g.property_ids, g.phone_roles
+                           WHERE p.listing_type = ?
+                           GROUP BY g.normalized_phone, g.phone_roles
                            HAVING SUM(CASE WHEN p.duplicate_status = 1 THEN 1 ELSE 0 END) > 0
                        ) AS needs_review_groups";
-    if ($result = $conn->query($sql_duplicates)) {
-        $row = $result->fetch_assoc();
-        $stats['duplicates_needs_review'] = (int)($row['count'] ?? 0);
-        $result->free();
+    if ($stmt_dup = $conn->prepare($sql_duplicates)) {
+        $stmt_dup->bind_param('s', $current_listing_mode);
+        if ($stmt_dup->execute()) {
+            $res_dup = $stmt_dup->get_result();
+            $row = $res_dup->fetch_assoc();
+            $stats['duplicates_needs_review'] = (int)($row['count'] ?? 0);
+        } else {
+            error_log("Error executing duplicates count: " . $stmt_dup->error);
+        }
+        $stmt_dup->close();
     } else {
-        error_log("Error fetching duplicate groups count: " . $conn->error);
+        error_log("Error preparing duplicates count: " . $conn->error);
     }
+} else {
+    // No mode selected yet: hide/skip duplicates count
+    $stats['duplicates_needs_review'] = 0;
 }
 
 ?>
@@ -139,18 +154,30 @@ if (can_manage_properties()) {
         <!-- Operating Mode Selection -->
         <h2 style="text-align:center; margin-top: 40px; margin-bottom: 20px;"><?php echo t('choose_operating_mode'); ?></h2>
         <div class="stats-grid">
-            <div class="stat-card">
-                <a href="set_mode.php?mode=Primary">
-                    <h3><?php echo t('primary_properties'); ?></h3>
-                    <p><?php echo $stats['primary_count']; ?></p>
-                </a>
-            </div>
-            <div class="stat-card">
-                <a href="set_mode.php?mode=Resale">
-                    <h3><?php echo t('resale_properties'); ?></h3>
-                    <p><?php echo $stats['resale_count']; ?></p>
-                </a>
-            </div>
+            <?php if (in_array('Primary', $allowed_modes, true)): ?>
+                <div class="stat-card">
+                    <a href="set_mode.php?mode=Primary">
+                        <h3><?php echo t('primary_properties'); ?></h3>
+                        <p><?php echo $stats['primary_count']; ?></p>
+                    </a>
+                </div>
+            <?php endif; ?>
+            <?php if (in_array('Resale', $allowed_modes, true)): ?>
+                <div class="stat-card">
+                    <a href="set_mode.php?mode=Resale">
+                        <h3><?php echo t('resale_properties'); ?></h3>
+                        <p><?php echo $stats['resale_count']; ?></p>
+                    </a>
+                </div>
+            <?php endif; ?>
+            <?php if (in_array('Rental', $allowed_modes, true)): ?>
+                <div class="stat-card">
+                    <a href="set_mode.php?mode=Rental">
+                        <h3><?php echo t('rental_properties'); ?></h3>
+                        <p><?php echo $stats['rental_count']; ?></p>
+                    </a>
+                </div>
+            <?php endif; ?>
             <?php if (can_manage_employees()): ?>
             <div class="stat-card">
                  <a href="employees_list.php">
@@ -159,7 +186,7 @@ if (can_manage_properties()) {
                  </a>
             </div>
             <?php endif; ?>
-            <?php if (can_manage_properties()): ?>
+            <?php if (can_manage_properties() && !empty($current_listing_mode)): ?>
             <div class="stat-card" style="border-left: 4px solid #ffc107;">
                  <a href="admin_duplicate_properties.php?status_filter=needs_review">
                     <h3><?php echo t('duplicates_needs_review'); ?></h3>

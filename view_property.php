@@ -4,15 +4,13 @@ session_start();
 error_log("FLASH-DEBUG view_property ON LOAD session=" . session_id() . " name=" . session_name() . " save_path=" . session_save_path() . " flash=" . var_export(
     		session_status() === PHP_SESSION_ACTIVE ? ($_SESSION['flash_messages'] ?? null) : null, true
     ) . " legacy=" . var_export($_SESSION['success_message'] ?? null, true));
-require_once __DIR__ . 
-'/lang/translate.php'; // Include translation handler
+require_once __DIR__ . '/lang/translate.php'; // Include translation handler
 require_once 'session_check.php'; // Include session timeout check
+require_once 'permissions.php';
 
-// Check if the user is logged in, if not then redirect to login page
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("Location: login.php");
-    exit;
-}
+// Enforce authentication and mode access
+$current_mode = require_listing_context();
+check_permission('view_properties');
 
 require_once __DIR__ . '/db.php'; // Include database connection using absolute path
 require_once __DIR__ . '/media_functions.php'; // Include media helper functions
@@ -47,6 +45,18 @@ if ($stmt = $conn->prepare($sql)) {
         $result = $stmt->get_result();
         if ($result->num_rows == 1) {
             $property = $result->fetch_assoc();
+            // Block access if the property listing type is not allowed for the current role
+            if (!is_mode_allowed_for_role($property['listing_type'])) {
+                $_SESSION["error_message"] = t('mode_not_allowed_for_role');
+                header("Location: dashboard.php");
+                exit;
+            }
+            // Prevent cross-mode access for non-managers
+            if (!is_manager() && $property['listing_type'] !== $current_mode) {
+                $_SESSION["error_message"] = t('mode_not_allowed');
+                header("Location: dashboard.php");
+                exit;
+            }
             // Debug session data
             error_log("Session data in view_property.php: " . print_r($_SESSION, true));
             // Log the property visit ONLY if not redirected from add/edit property (avoid logging after adding/editing)
@@ -126,6 +136,13 @@ if ($seller_stmt) {
 // Format price for display
 function formatPrice($property)
 {
+    if (isset($property['listing_type']) && $property['listing_type'] === 'Rental') {
+        if (!empty($property['monthly_rent']) && is_numeric($property['monthly_rent'])) {
+            return number_format(floatval($property['monthly_rent']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('per_month');
+        } elseif (!empty($property['yearly_rent']) && is_numeric($property['yearly_rent'])) {
+            return number_format(floatval($property['yearly_rent']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('per_year');
+        }
+    }
     if (!empty($property['price_cash']) && is_numeric($property['price_cash'])) {
         return number_format(floatval($property['price_cash']), 0, '.', ',') . ' ' . t('currency');
     } elseif (!empty($property['price_installments']) && is_numeric($property['price_installments'])) {
@@ -852,6 +869,18 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('price_installments'); ?>:</span>
                         <span class="detail-value"><?php echo number_format($property['price_installments'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['monthly_rent'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('monthly_rent'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['monthly_rent'], 0, '.', ','); ?> <?php echo t('currency'); ?> / <?php echo t('per_month'); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['yearly_rent'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('yearly_rent'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['yearly_rent'], 0, '.', ','); ?> <?php echo t('currency'); ?> / <?php echo t('per_year'); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['meter_price_cash'])): ?>

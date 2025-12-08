@@ -3,7 +3,13 @@
 function getPageTitle() {
     $current_page = basename($_SERVER['PHP_SELF']);
     $current_mode = $_SESSION['listing_context'] ?? '';
-    $mode_text = ($current_mode === 'Primary') ? t('primary_properties') : t('resale_properties');
+    if ($current_mode === 'Primary') {
+        $mode_text = t('primary_properties');
+    } elseif ($current_mode === 'Resale') {
+        $mode_text = t('resale_properties');
+    } else {
+        $mode_text = t('rental_properties');
+    }
     
     switch ($current_page) {
         case 'index_properties.php':

@@ -66,7 +66,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Validate Role
     if (empty($_POST["role"])) {
         $role_err = "Please select a role.";
-    } elseif (!in_array($_POST["role"], ["admin", "user", "manager"])) {
+    } elseif (!in_array($_POST["role"], ["admin", "user", "manager", "rental_admin", "rental_user"])) {
         $role_err = "Invalid role selected.";
     } else {
         $role = $_POST["role"];
@@ -154,8 +154,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <label for="role"><?php echo t('role'); ?>:</label>
                     <select id="role" name="role" class="form-input <?php echo (!empty($role_err)) ? 'is-invalid' : ''; ?>" required>
                         <option value=""><?php echo t('select_role'); ?></option>
-                        <option value="user" <?php echo ($role == "user") ? "selected" : ""; ?>><?php echo t('user_role'); ?></option>
-                        <option value="admin" <?php echo ($role == "admin") ? "selected" : ""; ?>><?php echo t('admin_role'); ?></option>
+                        <option value="user" <?php echo ($role == "user") ? "selected" : ""; ?>><?php echo t('primary_resale_user_role'); ?></option>
+                        <option value="admin" <?php echo ($role == "admin") ? "selected" : ""; ?>><?php echo t('primary_resale_admin_role'); ?></option>
+                        <option value="rental_user" <?php echo ($role == "rental_user") ? "selected" : ""; ?>><?php echo t('rental_user_role'); ?></option>
+                        <option value="rental_admin" <?php echo ($role == "rental_admin") ? "selected" : ""; ?>><?php echo t('rental_admin_role'); ?></option>
                         <option value="manager" <?php echo ($role == "manager") ? "selected" : ""; ?>><?php echo t('manager_role'); ?></option>
                     </select>
                     <?php if (!empty($role_err)): ?><span class="error-message"><?php echo htmlspecialchars($role_err); ?></span><?php endif; ?>

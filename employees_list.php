@@ -145,12 +145,19 @@ if ($stmt = $conn->prepare($sql)) {
                     </thead>
                     <tbody>
                         <?php foreach ($employees as $employee): ?>
+                            <?php
+                                $role_value = $employee['Role'];
+                                // Use existing helpers to present localized role names
+                                $display_role = (get_lang_code() === 'ar')
+                                    ? get_role_name_ar($role_value)
+                                    : get_role_name_en($role_value);
+                            ?>
                             <tr>
                                 <!-- Use ACTUAL schema column names -->
                                 <td><?php echo htmlspecialchars($employee['EmployeeID']); ?></td>
                                 <td><?php echo htmlspecialchars($employee['FullName']); ?></td>
                                 <td><?php echo htmlspecialchars($employee['Username']); ?></td>
-                                <td><?php echo t(htmlspecialchars($employee['Role'])); // Translate role?></td> 
+                                <td><?php echo htmlspecialchars($display_role); ?></td> 
                                 <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($employee['DateJoined']))); ?></td>
                                 <td class="actions">
                                     <!-- Corrected ID parameter -->

@@ -31,18 +31,11 @@ function ensurePropertySellersTable(mysqli $conn)
 }
 
 // Check permissions - only manager and admin can add properties
+$current_mode = require_listing_context();
 check_permission('manage_properties');
 
 // Ensure a CSRF token variable is available for the form/uploader
 $csrf_token = generateCSRFToken();
-
-// Enforce mode selection - redirect to dashboard if no mode is set
-if (!isset($_SESSION['listing_context']) || ($_SESSION['listing_context'] !== 'Primary' && $_SESSION['listing_context'] !== 'Resale')) {
-    header('Location: dashboard.php');
-    exit();
-}
-
-$current_mode = $_SESSION['listing_context'];
 
 // --- Fetch Lookups (Similar to add_residential) ---
 $property_types = [];
@@ -156,6 +149,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $loading_percentage = filter_input(INPUT_POST, 'loading_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $price_cash = filter_input(INPUT_POST, 'price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $price_installments = filter_input(INPUT_POST, 'price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $monthly_rent = filter_input(INPUT_POST, 'monthly_rent', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $yearly_rent = filter_input(INPUT_POST, 'yearly_rent', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $meter_price_cash = filter_input(INPUT_POST, 'meter_price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $meter_price_installments = filter_input(INPUT_POST, 'meter_price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     // Multi-seller parsing
@@ -223,19 +218,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = 'يجب أن يكون رقم هاتف مسؤول المبيعات 11 رقم.';
     }
 
-    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, year_built, unit_floor, net_area, loading_percentage, price_cash, price_installments, meter_price_cash, meter_price_installments, seller_type, seller_name, seller_phone, DateAdded) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, year_built, unit_floor, net_area, loading_percentage, price_cash, price_installments, monthly_rent, yearly_rent, meter_price_cash, meter_price_installments, seller_type, seller_name, seller_phone, latitude, longitude, DateAdded) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     $t_prepare_start = microtime(true);
     if ($stmt = $conn->prepare($sql)) {
         // Build bind-vars in same order as INSERT and force phone-like fields to be strings
         $bind_vars = [
-            $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $year_built, $unit_floor, $net_area, $loading_percentage, $price_cash, $price_installments, $meter_price_cash, $meter_price_installments, $seller_type, $seller_name, $seller_phone
+            $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $year_built, $unit_floor, $net_area, $loading_percentage, $price_cash, $price_installments, $monthly_rent, $yearly_rent, $meter_price_cash, $meter_price_installments, $seller_type, $seller_name, $seller_phone, $latitude, $longitude, date('Y-m-d H:i:s')
         ];
 
         // Parallel keys for forced typing
         $bind_keys = [
-            'property_type_id', 'title', 'description', 'location', 'area', 'bedrooms', 'status', 'listing_type', 'employee_id', 'unit_design', 'finishing_type_id', 'compound_area', 'down_payment_percentage', 'payment_years', 'delivery_date', 'project_name', 'min_area', 'max_area', 'avg_area', 'district', 'governorate', 'company_name', 'floors_count', 'sales_manager_name', 'sales_manager_phone', 'salesperson_name', 'salesperson_phone', 'year_built', 'unit_floor', 'net_area', 'loading_percentage', 'price_cash', 'price_installments', 'meter_price_cash', 'meter_price_installments', 'seller_type', 'seller_name', 'seller_phone'
+            'property_type_id', 'title', 'description', 'location', 'area', 'bedrooms', 'status', 'listing_type', 'employee_id', 'unit_design', 'finishing_type_id', 'compound_area', 'down_payment_percentage', 'payment_years', 'delivery_date', 'project_name', 'min_area', 'max_area', 'avg_area', 'district', 'governorate', 'company_name', 'floors_count', 'sales_manager_name', 'sales_manager_phone', 'salesperson_name', 'salesperson_phone', 'year_built', 'unit_floor', 'net_area', 'loading_percentage', 'price_cash', 'price_installments', 'monthly_rent', 'yearly_rent', 'meter_price_cash', 'meter_price_installments', 'seller_type', 'seller_name', 'seller_phone', 'latitude', 'longitude', 'date_added'
         ];
 
         $force_string_fields = [
@@ -668,7 +663,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="form-grid">
                 <div class="form-group">
                     <label><?php echo t('listing_type'); ?>:</label>
-                    <div class="form-display"><?php echo ($current_mode === 'Primary') ? t('primary_properties') : t('resale_properties'); ?></div>
+                    <div class="form-display">
+                        <?php
+                            if ($current_mode === 'Primary') {
+                                echo t('primary_properties');
+                            } elseif ($current_mode === 'Resale') {
+                                echo t('resale_properties');
+                            } else {
+                                echo t('rental_properties');
+                            }
+                        ?>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="project_name"><?php echo t('project_name'); ?>:</label>
@@ -816,6 +821,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="form-group">
                     <label for="meter_price_cash"><?php echo t('meter_price_cash'); ?>:</label>
                     <input type="number" step="0.01" id="meter_price_cash" name="meter_price_cash" class="form-input" value="<?php echo htmlspecialchars($_POST['meter_price_cash'] ?? ''); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="monthly_rent"><?php echo t('monthly_rent'); ?>:</label>
+                    <input type="number" step="0.01" id="monthly_rent" name="monthly_rent" class="form-input" value="<?php echo htmlspecialchars($_POST['monthly_rent'] ?? ''); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="yearly_rent"><?php echo t('yearly_rent'); ?>:</label>
+                    <input type="number" step="0.01" id="yearly_rent" name="yearly_rent" class="form-input" value="<?php echo htmlspecialchars($_POST['yearly_rent'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
                     <label for="meter_price_installments"><?php echo t('meter_price_installments'); ?>:</label>
