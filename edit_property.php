@@ -181,6 +181,7 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $seller_type = $row["seller_type"] ?? null;
                 $seller_name = $row["seller_name"] ?? null;
                 $seller_phone = $row["seller_phone"] ?? null;
+                $currency = $row["currency"] ?? 'EGP'; // Initialize currency
                 // Load multi-sellers from property_sellers table
                 $seller_stmt = $conn->prepare("SELECT seller_type, seller_name, seller_phone FROM property_sellers WHERE property_id = ? ORDER BY id ASC");
                 if ($seller_stmt) {
@@ -399,6 +400,7 @@ if ($att_stmt) {
     // Elevators
     $elevators_source = $is_commercial_type ? 'elevators_commercial' : 'elevators';
     $elevators_posted = isset($_POST[$elevators_source]) ? filter_input(INPUT_POST, $elevators_source, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) : null;
+    $currency = $_POST['currency'] ?? 'EGP';
    
     // --- Validation ---
     // Context-aware validation based on property type
@@ -527,7 +529,7 @@ if ($att_stmt) {
             price_cash = ?, price_installments = ?, meter_price_cash = ?, meter_price_installments = ?, 
             monthly_rent = ?, daily_rent = ?, yearly_rent = ?,
             seller_type = ?, seller_name = ?, seller_phone = ?,
-            latitude = ?, longitude = ?, Bathrooms = ?, balconies = ?, elevators = ?
+            latitude = ?, longitude = ?, Bathrooms = ?, balconies = ?, elevators = ?, currency = ?
             WHERE PropertyID = ?";
 
         if ($stmt_update = $conn->prepare($sql_update)) {
@@ -561,8 +563,8 @@ if ($att_stmt) {
             // temporary debug logging removed
 
             // Build types string programmatically
-            // 44 's' for the parameters and final 'i' for PropertyID (total 45)
-            $types = str_repeat('s', 44) . 'i';
+            // 45 's' for parameters (incl currency) and final 'i' for PropertyID (total 46)
+            $types = str_repeat('s', 45) . 'i';
             $stmt_update->bind_param(
                 $types,
                 $property_type_id_posted,
@@ -609,6 +611,7 @@ if ($att_stmt) {
                 $bathrooms_val, // Added
                 $balconies_val, // Added
                 $elevators_val, // Added
+                $currency,
                 $property_id
             );
 
@@ -1443,6 +1446,13 @@ if ($att_stmt) {
             <div class="form-section">
                 <h3><?php echo t('pricing_and_payment'); ?></h3>
                 <div class="form-grid">
+                    <div class="form-group">
+                        <label for="currency"><?php echo t('currency'); ?>:</label>
+                        <select id="currency" name="currency">
+                            <option value="EGP" <?php echo ($currency == 'EGP') ? 'selected' : ''; ?>><?php echo t('EGP'); ?></option>
+                            <option value="USD" <?php echo ($currency == 'USD') ? 'selected' : ''; ?>><?php echo t('USD'); ?></option>
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label for="price_cash"><?php echo t('price_cash'); ?>:</label>
                         <input type="number" step="0.01" id="price_cash" name="price_cash" class="form-input" value="<?php echo htmlspecialchars($price_cash); ?>">

@@ -47,6 +47,8 @@ return [
     'Resale' => 'إعادة بيع (Resale)',
     'Rent' => 'إيجار (Rent)',
     'Rental' => 'إيجار (Rent)', // Alias
+    'EGP' => 'جنيه مصري',
+    'USD' => 'دولار ($)',
 
     // Login Page
     'login_page_title' => 'تسجيل الدخول',
@@ -174,7 +176,7 @@ return [
     'payment_years' => 'فترة السداد (بالسنوات)',
     'year' => 'سنة',
     'floors_count' => 'عدد الأدوار',
-    'currency' => 'ج.م',
+    'currency' => 'العملة',
     'years' => 'سنوات',
     
     // Advanced Filters Specific
@@ -377,7 +379,7 @@ return [
     'description' => 'الوصف',
     'assign_to_client' => 'تعيين للعميل',
     'unit_address_optional' => 'عنوان الوحدة',
-    'unit_price_egp' => 'سعر الوحدة (EGP)',
+    'unit_price_egp' => 'سعر الوحدة',
     'unit_area_sqm' => 'مساحة الوحدة (م²)',
     'payment_period' => 'فترة السداد',
     'area_and_specifications' => 'المساحة والمواصفات',
@@ -390,10 +392,10 @@ return [
     'unit_floor' => 'دور الوحدة',
     'net_area' => 'المساحة الصافية (م²)',
     'loading_percentage' => 'نسبة التحميل (%)',
-    'price_cash' => 'السعر نقداً (جنيه)',
-    'price_installments' => 'السعر بالتقسيط (جنيه)',
-    'meter_price_cash' => 'سعر المتر المربع - نقداً (جنيه)',
-    'meter_price_installments' => 'سعر المتر المربع - بالتقسيط (جنيه)',
+    'price_cash' => 'السعر نقداً',
+    'price_installments' => 'السعر بالتقسيط',
+    'meter_price_cash' => 'سعر المتر المربع - نقداً',
+    'meter_price_installments' => 'سعر المتر المربع - بالتقسيط',
     'seller_type' => 'نوع البائع',
     'seller_name' => 'اسم البائع',
     'seller_phone' => 'هاتف البائع',

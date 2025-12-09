@@ -167,7 +167,7 @@ return [
     'payment_years' => 'Payment Years (years)',
     'year' => 'year',
     'floors_count' => 'Floors Count',
-    'currency' => 'EGP',
+    'currency' => 'Currency',
     'years' => 'years',
     
     // Advanced Filters Specific
@@ -383,10 +383,10 @@ return [
     'unit_floor' => 'Unit Floor',
     'net_area' => 'Net Area (sqm)',
     'loading_percentage' => 'Loading Percentage (%)',
-    'price_cash' => 'Cash Price (EGP)',
-    'price_installments' => 'Installments Price (EGP)',
-    'meter_price_cash' => 'Price per Square Meter - Cash (EGP)',
-    'meter_price_installments' => 'Price per Square Meter - Installments (EGP)',
+    'price_cash' => 'Cash Price',
+    'price_installments' => 'Installments Price',
+    'meter_price_cash' => 'Price per Square Meter - Cash',
+    'meter_price_installments' => 'Price per Square Meter - Installments',
     'seller_type' => 'Seller Type',
     'seller_name' => 'Seller Name',
     'seller_phone' => 'Seller Phone',

@@ -281,23 +281,29 @@ if ($stmt = $conn->prepare($sql)) {
 // Function to format price for display
 function formatDisplayPrice($row)
 {
+    $curr = isset($row['currency']) ? t($row['currency']) : t('EGP');
+
+    // Rental mode: prioritize rent values
     if (isset($row['listing_type']) && $row['listing_type'] === 'Rental') {
         if (!empty($row['monthly_rent']) && is_numeric($row['monthly_rent'])) {
-            return number_format(floatval($row['monthly_rent']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('per_month');
+            return number_format(floatval($row['monthly_rent']), 0, '.', ',') . ' ' . $curr . ' / ' . t('per_month');
+        } elseif (!empty($row['daily_rent']) && is_numeric($row['daily_rent'])) {
+            return number_format(floatval($row['daily_rent']), 0, '.', ',') . ' ' . $curr . ' / ' . t('per_day');
         } elseif (!empty($row['yearly_rent']) && is_numeric($row['yearly_rent'])) {
-            return number_format(floatval($row['yearly_rent']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('per_year');
+            return number_format(floatval($row['yearly_rent']), 0, '.', ',') . ' ' . $curr . ' / ' . t('per_year');
         }
     }
+    // Prefer cash price, then installments price. If neither exist, try meter_price * Area as estimate.
     if (!empty($row['price_cash']) && is_numeric($row['price_cash'])) {
-        return number_format(floatval($row['price_cash']), 0, '.', ',') . ' ' . t('currency');
+        return number_format(floatval($row['price_cash']), 0, '.', ',') . ' ' . $curr;
     } elseif (!empty($row['price_installments']) && is_numeric($row['price_installments'])) {
-        return number_format(floatval($row['price_installments']), 0, '.', ',') . ' ' . t('currency');
+        return number_format(floatval($row['price_installments']), 0, '.', ',') . ' ' . $curr;
     } elseif (!empty($row['meter_price_cash']) && is_numeric($row['meter_price_cash']) && !empty($row['Area']) && is_numeric($row['Area'])) {
         $est = floatval($row['meter_price_cash']) * floatval($row['Area']);
-        return t('estimated') . ': ' . number_format($est, 0, '.', ',') . ' ' . t('currency');
+        return t('estimated') . ': ' . number_format($est, 0, '.', ',') . ' ' . $curr;
     } elseif (!empty($row['meter_price_installments']) && is_numeric($row['meter_price_installments']) && !empty($row['Area']) && is_numeric($row['Area'])) {
         $est = floatval($row['meter_price_installments']) * floatval($row['Area']);
-        return t('estimated') . ': ' . number_format($est, 0, '.', ',') . ' ' . t('currency');
+        return t('estimated') . ': ' . number_format($est, 0, '.', ',') . ' ' . $curr;
     }
     return t('price_not_specified');
 }
@@ -699,7 +705,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
                     <?php foreach ($properties as $property): ?>
                         <tr class="property-row" data-property-id="<?php echo $property['PropertyID']; ?>">
                             <td class="cell-id">
-                                <strong><?php echo (int)$property['PropertyID']; ?></strong>
+                                <strong><?php echo (int)($property['friendly_id'] ?? $property['PropertyID']); ?></strong>
                             </td>
                             <td class="cell-project">
                                 <?php

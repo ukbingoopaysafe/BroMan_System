@@ -866,46 +866,50 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
             <div class="property-section">
                 <h2><?php echo t('pricing_and_area'); ?></h2>
                 <div class="detail-grid">
+                    <?php 
+                    $currency_code = $property['currency'] ?? 'EGP';
+                    $currency_label = t($currency_code);
+                    ?>
                     <?php if (!empty($property['price_cash'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('price_cash'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['price_cash'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
+                        <span class="detail-value"><?php echo number_format($property['price_cash'], 0, '.', ','); ?> <?php echo $currency_label; ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['price_installments'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('price_installments'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['price_installments'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
+                        <span class="detail-value"><?php echo number_format($property['price_installments'], 0, '.', ','); ?> <?php echo $currency_label; ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['monthly_rent'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('monthly_rent'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['monthly_rent'], 0, '.', ','); ?> <?php echo t('currency'); ?> / <?php echo t('per_month'); ?></span>
+                        <span class="detail-value"><?php echo number_format($property['monthly_rent'], 0, '.', ','); ?> <?php echo $currency_label; ?> / <?php echo t('per_month'); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['daily_rent'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('daily_rent'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['daily_rent'], 0, '.', ','); ?> <?php echo t('currency'); ?> / <?php echo t('per_day'); ?></span>
+                        <span class="detail-value"><?php echo number_format($property['daily_rent'], 0, '.', ','); ?> <?php echo $currency_label; ?> / <?php echo t('per_day'); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['yearly_rent'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('yearly_rent'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['yearly_rent'], 0, '.', ','); ?> <?php echo t('currency'); ?> / <?php echo t('per_year'); ?></span>
+                        <span class="detail-value"><?php echo number_format($property['yearly_rent'], 0, '.', ','); ?> <?php echo $currency_label; ?> / <?php echo t('per_year'); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['meter_price_cash'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('meter_price_cash'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['meter_price_cash'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
+                        <span class="detail-value"><?php echo number_format($property['meter_price_cash'], 0, '.', ','); ?> <?php echo $currency_label; ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['meter_price_installments'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('meter_price_installments'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['meter_price_installments'], 0, '.', ','); ?> <?php echo t('currency'); ?></span>
+                        <span class="detail-value"><?php echo number_format($property['meter_price_installments'], 0, '.', ','); ?> <?php echo $currency_label; ?></span>
                     </div>
                     <?php endif; ?>
 
