@@ -148,6 +148,8 @@ return [
     'date_added' => 'تاريخ الإضافة',
     'assigned_client' => 'العميل المعين',
     'added_by_employee' => 'أضيف بواسطة الموظف',
+    'salesperson_name' => 'اسم مسؤول المبيعات',
+    'salesperson_phone' => 'رقم هاتف مسؤول المبيعات',
     'min_price' => 'الحد الأدنى للسعر',
     'max_price' => 'الحد الأقصى للسعر',
     'avg_price' => 'متوسط السعر',
@@ -177,6 +179,7 @@ return [
     'year' => 'سنة',
     'floors_count' => 'عدد الأدوار',
     'currency' => 'العملة',
+    'all_currencies' => 'جميع العملات',
     'years' => 'سنوات',
     
     // Advanced Filters Specific

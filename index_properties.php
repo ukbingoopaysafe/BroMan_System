@@ -56,6 +56,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     $max_price_filter = isset($_GET['max_price']) && is_numeric($_GET['max_price']) ? trim($_GET['max_price']) : '';
     $min_area_filter = isset($_GET['min_area']) && is_numeric($_GET['min_area']) ? trim($_GET['min_area']) : '';
     $max_area_filter = isset($_GET['max_area']) && is_numeric($_GET['max_area']) ? trim($_GET['max_area']) : '';
+    $currency_filter = isset($_GET['currency_filter']) ? trim($_GET['currency_filter']) : '';
     $down_payment_filter = isset($_GET['down_payment']) ? trim($_GET['down_payment']) : '';
     $payment_period_filter = isset($_GET['payment_period']) ? trim($_GET['payment_period']) : '';
 }
@@ -235,6 +236,13 @@ if (!empty($payment_period_filter)) {
     $sql_where[] = "p.payment_years = ?";
     $params[] = $payment_period_filter;
     $types .= "d"; // treat payment_years as decimal/double
+}
+
+// Add currency filter
+if (!empty($currency_filter)) {
+    $sql_where[] = "p.currency = ?";
+    $params[] = $currency_filter;
+    $types .= "s";
 }
 
 // Combine SQL parts
@@ -490,6 +498,14 @@ function getPropertyTypeBadge($typeId, $typeName) {
                                 <?php echo htmlspecialchars($yb); ?>
                             </option>
                         <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label for="currency"><?php echo t('currency'); ?>:</label>
+                    <select id="currency" name="currency_filter" class="form-control">
+                        <option value=""><?php echo t('all_currencies') ?? t('all'); ?></option>
+                        <option value="EGP" <?php echo $currency_filter === 'EGP' ? 'selected' : ''; ?>><?php echo t('EGP'); ?></option>
+                        <option value="USD" <?php echo $currency_filter === 'USD' ? 'selected' : ''; ?>><?php echo t('USD'); ?></option>
                     </select>
                 </div>
             </div>

@@ -144,6 +144,8 @@ return [
     'date_added' => 'Date Added',
     'assigned_client' => 'Assigned Client',
     'added_by_employee' => 'Added by Employee',
+    'salesperson_name' => 'Salesperson Name',
+    'salesperson_phone' => 'Salesperson Phone',
     'min_price' => 'Min Price',
     'max_price' => 'Max Price',
     'avg_price' => 'Average Price',
@@ -168,6 +170,7 @@ return [
     'year' => 'year',
     'floors_count' => 'Floors Count',
     'currency' => 'Currency',
+    'all_currencies' => 'All Currencies',
     'years' => 'years',
     
     // Advanced Filters Specific
