@@ -54,6 +54,10 @@ $property_id = null;
 $property_type_id = null;
 $title = $description = $location = $status = "";
 $area = null;
+$rooms = null; // Added
+$bathrooms = null; // Added
+$balconies = null; // Added
+$elevators = null; // Added
 $unit_design = "";
 $finishing_type_id = null;
 $compound_area = $down_payment_percentage = null;
@@ -122,6 +126,10 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $description = $row["Description"];
                 $location = $row["Location"];
                 $area = $row["Area"];
+                $rooms = $row["Bedrooms"]; // Mapped to rooms
+                $bathrooms = $row["Bathrooms"];
+                $balconies = $row["balconies"];
+                $elevators = $row["elevators"];
                 $status = $row["Status"];
                 $unit_design = $row["unit_design"];
                 $finishing_type_id = $row["finishing_type_id"];
@@ -243,6 +251,10 @@ if ($att_stmt) {
         'Description' => $description,
         'Location' => $location,
         'Area' => $area,
+        'Bedrooms' => $rooms, // Added
+        'Bathrooms' => $bathrooms, // Added
+        'balconies' => $balconies, // Added
+        'elevators' => $elevators, // Added
         'Status' => $status,
         'unit_design' => $unit_design,
         'compound_area' => $compound_area,
@@ -288,7 +300,12 @@ if ($att_stmt) {
     // Price column removed from schema
     $area_posted = isset($_POST["area"]) && trim($_POST["area"]) !== "" ? trim($_POST["area"]) : null;
     $status_posted = isset($_POST["status"]) ? trim($_POST["status"]) : "available";
-    $unit_design_posted = isset($_POST['unit_design']) && trim($_POST['unit_design']) !== '' ? trim($_POST['unit_design']) : null;
+    // Determine property type category for field selection
+    $is_commercial_type = in_array($property_type_id_posted, [3, 4, 5, 6]);
+
+    // Unit Design
+    $unit_design_source = $is_commercial_type ? 'unit_design_commercial' : 'unit_design';
+    $unit_design_posted = isset($_POST[$unit_design_source]) && trim($_POST[$unit_design_source]) !== '' ? trim($_POST[$unit_design_source]) : null;
     $finishing_type_id_posted = isset($_POST['finishing_type_id']) && trim($_POST['finishing_type_id']) !== '' ? trim($_POST['finishing_type_id']) : null;
     $compound_area_posted = isset($_POST['compound_area']) && trim($_POST['compound_area']) !== '' ? trim($_POST['compound_area']) : null;
     $down_payment_percentage_posted = isset($_POST['down_payment_percentage']) && trim($_POST['down_payment_percentage']) !== '' ? trim($_POST['down_payment_percentage']) : null;
@@ -353,8 +370,21 @@ if ($att_stmt) {
     $meter_price_installments_posted = isset($_POST['meter_price_installments']) && trim($_POST['meter_price_installments']) !== '' ? filter_input(INPUT_POST, 'meter_price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $seller_name_posted = $seller_entries_post[0]['seller_name'] ?? null;
     $seller_phone_posted = $seller_entries_post[0]['seller_phone'] ?? null;
-    $bedrooms_posted = isset($_POST['bedrooms']) ? filter_input(INPUT_POST, 'bedrooms', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) : null;
-    $bathrooms_posted = isset($_POST['bathrooms']) ? filter_input(INPUT_POST, 'bathrooms', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) : null;
+    // Bedrooms/Rooms
+    $rooms_source = $is_commercial_type ? 'rooms_commercial' : 'rooms';
+    $bedrooms_posted = isset($_POST[$rooms_source]) ? filter_input(INPUT_POST, $rooms_source, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) : null;
+
+    // Bathrooms
+    $bathrooms_source = $is_commercial_type ? 'bathrooms_commercial' : 'bathrooms';
+    $bathrooms_posted = isset($_POST[$bathrooms_source]) ? filter_input(INPUT_POST, $bathrooms_source, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) : null;
+
+    // Balconies
+    $balconies_source = $is_commercial_type ? 'balconies_commercial' : 'balconies';
+    $balconies_posted = isset($_POST[$balconies_source]) ? filter_input(INPUT_POST, $balconies_source, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) : null;
+
+    // Elevators
+    $elevators_source = $is_commercial_type ? 'elevators_commercial' : 'elevators';
+    $elevators_posted = isset($_POST[$elevators_source]) ? filter_input(INPUT_POST, $elevators_source, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) : null;
    
     // --- Validation ---
     // Context-aware validation based on property type
@@ -371,9 +401,9 @@ if ($att_stmt) {
     // Property type specific validation
     if ($property_type_id == 1 || $property_type_id == 2) // If Residential or Coastal
     {
-        if (empty($unit_design_posted)) {
-            $errors['unit_design'] = t('unit_design_required');
-        }
+        // if (empty($unit_design_posted)) {
+        //     $errors['unit_design'] = t('unit_design_required');
+        // }
         if (empty($finishing_type_id_posted)) {
             $errors['finishing_type_id'] = t('finishing_type_required');
         }
@@ -385,8 +415,17 @@ if ($att_stmt) {
     if ($area_posted !== null && (!is_numeric($area_posted) || $area_posted < 0)) {
         $errors["area"] = t("enter_valid_area");
     }
+    if ($bedrooms_posted !== null && !filter_var($bedrooms_posted, FILTER_VALIDATE_INT, ["options" => ["min_range" => 0]])) {
+        $errors["bedrooms"] = t("enter_valid_bedrooms");
+    }
     if ($bathrooms_posted !== null && !filter_var($bathrooms_posted, FILTER_VALIDATE_INT, ["options" => ["min_range" => 0]])) {
         $errors["bathrooms"] = t("enter_valid_bathrooms");
+    }
+    if ($balconies_posted !== null && !filter_var($balconies_posted, FILTER_VALIDATE_INT, ["options" => ["min_range" => 0]])) {
+        $errors["balconies"] = t("enter_valid_balconies");
+    }
+    if ($elevators_posted !== null && !filter_var($elevators_posted, FILTER_VALIDATE_INT, ["options" => ["min_range" => 0]])) {
+        $errors["elevators"] = t("enter_valid_elevators");
     }
     if ($compound_area_posted !== null && (!is_numeric($compound_area_posted) || $compound_area_posted < 0)) {
         $errors["compound_area"] = t("invalid_compound_area");
@@ -447,7 +486,7 @@ if ($att_stmt) {
     // If no errors, proceed with update
     if (empty($errors)) {
         $sql_update = "UPDATE Properties SET 
-            PropertyTypeID = ?, Title = ?, Description = ?, Location = ?, Area = ?,
+            PropertyTypeID = ?, Title = ?, Description = ?, Location = ?, Area = ?, Bedrooms = ?,
             Status = ?, unit_design = ?, finishing_type_id = ?, 
             compound_area = ?, down_payment_percentage = ?, payment_years = ?, delivery_date = ?, 
             ProjectName = ?, min_area = ?, max_area = ?, avg_area = ?, 
@@ -457,12 +496,16 @@ if ($att_stmt) {
             price_cash = ?, price_installments = ?, meter_price_cash = ?, meter_price_installments = ?, 
             monthly_rent = ?, daily_rent = ?, yearly_rent = ?,
             seller_type = ?, seller_name = ?, seller_phone = ?,
-            latitude = ?, longitude = ?
+            latitude = ?, longitude = ?, Bathrooms = ?, balconies = ?, elevators = ?
             WHERE PropertyID = ?";
 
         if ($stmt_update = $conn->prepare($sql_update)) {
             // Convert empty strings to null for numeric fields
             $area_val = empty($area_posted) ? null : $area_posted;
+            $bedrooms_val = empty($bedrooms_posted) ? null : $bedrooms_posted; // Added
+            $bathrooms_val = empty($bathrooms_posted) ? null : $bathrooms_posted; // Added
+            $balconies_val = empty($balconies_posted) ? null : $balconies_posted; // Added
+            $elevators_val = empty($elevators_posted) ? null : $elevators_posted; // Added
             $compound_area_val = empty($compound_area_posted) ? null : $compound_area_posted;
             $down_payment_val = empty($down_payment_percentage_posted) ? null : $down_payment_percentage_posted;
             $payment_years_val = empty($payment_years_posted) ? null : $payment_years_posted;
@@ -487,8 +530,8 @@ if ($att_stmt) {
             // temporary debug logging removed
 
             // Build types string programmatically
-            // 40 's' for the parameters and final 'i' for PropertyID (total 41)
-            $types = str_repeat('s', 40) . 'i';
+            // 44 's' for the parameters and final 'i' for PropertyID (total 45)
+            $types = str_repeat('s', 44) . 'i';
             $stmt_update->bind_param(
                 $types,
                 $property_type_id_posted,
@@ -496,7 +539,7 @@ if ($att_stmt) {
                 $description_posted,
                 $location_posted,
                 $area_val,
-
+                $bedrooms_val, // Added
                 $status_posted,
                 $unit_design_posted,
                 $finishing_type_id_val,
@@ -532,6 +575,9 @@ if ($att_stmt) {
                 $seller_phone_posted,
                 $latitude_val,
                 $longitude_val,
+                $bathrooms_val, // Added
+                $balconies_val, // Added
+                $elevators_val, // Added
                 $property_id
             );
 
@@ -1178,10 +1224,38 @@ if ($att_stmt) {
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="unit_design"><?php echo t('unit_design'); ?>: *</label>
-                            <input type="text" id="unit_design" name="unit_design" class="form-input" value="<?php echo htmlspecialchars($unit_design); ?>" required>
+                            <label for="unit_design"><?php echo t('unit_design'); ?>:</label>
+                            <input type="text" id="unit_design" name="unit_design" class="form-input" value="<?php echo htmlspecialchars($unit_design); ?>">
                             <?php if (isset($errors['unit_design'])) {
                                 echo "<span class='error-message'>" . $errors['unit_design'] . "</span>";
+                            } ?>
+                        </div>
+                        <div class="form-group">
+                            <label for="rooms"><?php echo t('rooms'); ?>:</label>
+                            <input type="number" id="rooms" name="rooms" class="form-input" value="<?php echo htmlspecialchars($rooms); ?>">
+                             <?php if (isset($errors['bedrooms'])) {
+                                echo "<span class='error-message'>" . $errors['bedrooms'] . "</span>";
+                            } ?>
+                        </div>
+                        <div class="form-group">
+                            <label for="bathrooms"><?php echo t('bathrooms'); ?>:</label>
+                            <input type="number" id="bathrooms" name="bathrooms" class="form-input" value="<?php echo htmlspecialchars($bathrooms); ?>">
+                            <?php if (isset($errors['bathrooms'])) {
+                                echo "<span class='error-message'>" . $errors['bathrooms'] . "</span>";
+                            } ?>
+                        </div>
+                        <div class="form-group">
+                            <label for="balconies"><?php echo t('balconies'); ?>:</label>
+                            <input type="number" id="balconies" name="balconies" class="form-input" value="<?php echo htmlspecialchars($balconies); ?>">
+                            <?php if (isset($errors['balconies'])) {
+                                echo "<span class='error-message'>" . $errors['balconies'] . "</span>";
+                            } ?>
+                        </div>
+                        <div class="form-group">
+                            <label for="elevators"><?php echo t('elevators'); ?>:</label>
+                            <input type="number" id="elevators" name="elevators" class="form-input" value="<?php echo htmlspecialchars($elevators); ?>">
+                            <?php if (isset($errors['elevators'])) {
+                                echo "<span class='error-message'>" . $errors['elevators'] . "</span>";
                             } ?>
                         </div>
                         <div class="form-group">
@@ -1236,12 +1310,30 @@ if ($att_stmt) {
                             } ?>
                         </div>
                         <!-- إضافة خانة نموذج الوحدة -->
+                        <!-- إضافة خانة نموذج الوحدة -->
                         <div class="form-group">
                             <label for="unit_design_commercial"><?php echo t('unit_design'); ?>:</label>
-                            <input type="text" id="unit_design_commercial" name="unit_design" class="form-input" value="<?php echo htmlspecialchars($unit_design); ?>">
+                            <input type="text" id="unit_design_commercial" name="unit_design_commercial" class="form-input" value="<?php echo htmlspecialchars($unit_design); ?>">
                             <?php if (isset($errors['unit_design'])) {
                                 echo "<span class='error-message'>" . $errors['unit_design'] . "</span>";
                             } ?>
+                        </div>
+                        <!-- New Fields for Commercial/Other -->
+                        <div class="form-group">
+                            <label for="rooms_commercial"><?php echo t('rooms'); ?>:</label>
+                            <input type="number" id="rooms_commercial" name="rooms_commercial" class="form-input" value="<?php echo htmlspecialchars($rooms); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label for="bathrooms_commercial"><?php echo t('bathrooms'); ?>:</label>
+                            <input type="number" id="bathrooms_commercial" name="bathrooms_commercial" class="form-input" value="<?php echo htmlspecialchars($bathrooms); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label for="balconies_commercial"><?php echo t('balconies'); ?>:</label>
+                            <input type="number" id="balconies_commercial" name="balconies_commercial" class="form-input" value="<?php echo htmlspecialchars($balconies); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label for="elevators_commercial"><?php echo t('elevators'); ?>:</label>
+                            <input type="number" id="elevators_commercial" name="elevators_commercial" class="form-input" value="<?php echo htmlspecialchars($elevators); ?>">
                         </div>
                         <div class="form-group">
                             <label for="finishing_type_id_commercial"><?php echo t('finishing_type'); ?>:</label>
@@ -1716,6 +1808,17 @@ if ($att_stmt) {
                     if (unitFloorCommercial) unitFloorCommercial.disabled = true;
                     if (floorsCountCommercial) floorsCountCommercial.disabled = true;
                 }
+                
+                // Force remove required attribute from unit_design if present (safeguard)
+                const unitDesign = document.getElementById('unit_design');
+                if (unitDesign && unitDesign.hasAttribute('required')) {
+                    unitDesign.removeAttribute('required');
+                }
+                const unitDesignComm = document.getElementById('unit_design_commercial');
+                 if (unitDesignComm && unitDesignComm.hasAttribute('required')) {
+                    unitDesignComm.removeAttribute('required');
+                }
+
             }
 
             // Initial call to set correct fields based on loaded property type

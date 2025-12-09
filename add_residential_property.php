@@ -130,8 +130,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $max_area = filter_input(INPUT_POST, 'max_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $avg_area = filter_input(INPUT_POST, 'avg_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $area = filter_input(INPUT_POST, 'area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-    $bedrooms = null; // Bedrooms field removed from this form
-    // Bathrooms column removed from schema
+    $area = filter_input(INPUT_POST, 'area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $rooms = filter_input(INPUT_POST, 'rooms', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+    $bathrooms = filter_input(INPUT_POST, 'bathrooms', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+    $balconies = filter_input(INPUT_POST, 'balconies', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+    $elevators = filter_input(INPUT_POST, 'elevators', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+
     $finishing_type_id = filter_input(INPUT_POST, 'finishing_type_id', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     // Price columns removed from schema
     $down_payment_percentage = filter_input(INPUT_POST, 'down_payment_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
@@ -233,21 +237,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = 'يجب أن يكون رقم هاتف مسؤول المبيعات 11 رقم.';
     }
 
-    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, year_built, unit_floor, net_area, loading_percentage, price_cash, price_installments, monthly_rent, daily_rent, yearly_rent, meter_price_cash, meter_price_installments, seller_type, seller_name, seller_phone, latitude, longitude, DateAdded) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, year_built, unit_floor, net_area, loading_percentage, price_cash, price_installments, monthly_rent, daily_rent, yearly_rent, meter_price_cash, meter_price_installments, seller_type, seller_name, seller_phone, latitude, longitude, Bathrooms, balconies, elevators, DateAdded) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     $t_prepare_start = microtime(true);
     if ($stmt = $conn->prepare($sql)) {
         // Dynamically build types string from variable values to avoid manual mismatch
         // Define bind variables in the same order as the INSERT statement
         $bind_vars = [
-            $property_type_id, $title, $description, $location, $area, $bedrooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $year_built, $unit_floor, $net_area, $loading_percentage, $price_cash, $price_installments, $monthly_rent, $daily_rent, $yearly_rent, $meter_price_cash, $meter_price_installments, $seller_type, $seller_name, $seller_phone, $latitude, $longitude, date('Y-m-d H:i:s')
+            $property_type_id, $title, $description, $location, $area, $rooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $year_built, $unit_floor, $net_area, $loading_percentage, $price_cash, $price_installments, $monthly_rent, $daily_rent, $yearly_rent, $meter_price_cash, $meter_price_installments, $seller_type, $seller_name, $seller_phone, $latitude, $longitude, $bathrooms, $balconies, $elevators, date('Y-m-d H:i:s')
         ];
 
         // Parallel array of parameter names so we can force certain fields (like phone numbers)
         // to always be bound as strings which preserves leading zeros.
         $bind_keys = [
-            'property_type_id', 'title', 'description', 'location', 'area', 'bedrooms', 'status', 'listing_type', 'employee_id', 'unit_design', 'finishing_type_id', 'compound_area', 'down_payment_percentage', 'payment_years', 'delivery_date', 'project_name', 'min_area', 'max_area', 'avg_area', 'district', 'governorate', 'company_name', 'floors_count', 'sales_manager_name', 'sales_manager_phone', 'salesperson_name', 'salesperson_phone', 'year_built', 'unit_floor', 'net_area', 'loading_percentage', 'price_cash', 'price_installments', 'monthly_rent', 'daily_rent', 'yearly_rent', 'meter_price_cash', 'meter_price_installments', 'seller_type', 'seller_name', 'seller_phone', 'latitude', 'longitude', 'date_added'
+            'property_type_id', 'title', 'description', 'location', 'area', 'rooms', 'status', 'listing_type', 'employee_id', 'unit_design', 'finishing_type_id', 'compound_area', 'down_payment_percentage', 'payment_years', 'delivery_date', 'project_name', 'min_area', 'max_area', 'avg_area', 'district', 'governorate', 'company_name', 'floors_count', 'sales_manager_name', 'sales_manager_phone', 'salesperson_name', 'salesperson_phone', 'year_built', 'unit_floor', 'net_area', 'loading_percentage', 'price_cash', 'price_installments', 'monthly_rent', 'daily_rent', 'yearly_rent', 'meter_price_cash', 'meter_price_installments', 'seller_type', 'seller_name', 'seller_phone', 'latitude', 'longitude', 'bathrooms', 'balconies', 'elevators', 'date_added'
         ];
 
         // Fields that MUST be treated as strings even if they look numeric.
@@ -798,8 +802,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input type="number" id="floors_count" name="floors_count" class="form-input" value="<?php echo htmlspecialchars($_POST['floors_count'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
-                    <label for="unit_design"><?php echo t('unit_design'); ?>: *</label>
-                    <input type="text" id="unit_design" name="unit_design" class="form-input" value="<?php echo htmlspecialchars($_POST['unit_design'] ?? ''); ?>" required>
+                    <label for="unit_design"><?php echo t('unit_design'); ?>:</label>
+                    <input type="text" id="unit_design" name="unit_design" class="form-input" value="<?php echo htmlspecialchars($_POST['unit_design'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
                     <label for="finishing_type_id"><?php echo t('finishing_type'); ?>: *</label>
@@ -826,8 +830,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <label for="unit_floor"><?php echo t('unit_floor'); ?>:</label>
                     <input type="text" id="unit_floor" name="unit_floor" class="form-input" value="<?php echo htmlspecialchars($_POST['unit_floor'] ?? ''); ?>">
                 </div>
-                <!-- Removed bedrooms field as requested -->
-                <!-- Bathrooms field removed from schema -->
+                <div class="form-group">
+                    <label for="rooms"><?php echo t('rooms'); ?>:</label>
+                    <input type="number" id="rooms" name="rooms" class="form-input" value="<?php echo htmlspecialchars($_POST['rooms'] ?? ''); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="bathrooms"><?php echo t('bathrooms'); ?>:</label>
+                    <input type="number" id="bathrooms" name="bathrooms" class="form-input" value="<?php echo htmlspecialchars($_POST['bathrooms'] ?? ''); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="balconies"><?php echo t('balconies'); ?>:</label>
+                    <input type="number" id="balconies" name="balconies" class="form-input" value="<?php echo htmlspecialchars($_POST['balconies'] ?? ''); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="elevators"><?php echo t('elevators'); ?>:</label>
+                    <input type="number" id="elevators" name="elevators" class="form-input" value="<?php echo htmlspecialchars($_POST['elevators'] ?? ''); ?>">
+                </div>
             </div>
         </div>
 

@@ -959,6 +959,30 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                         <span class="detail-value"><?php echo htmlspecialchars($property['UnitDesignName']); ?></span>
                     </div>
                     <?php endif; ?>
+                    <?php if (!empty($property['Bedrooms'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('rooms'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['Bedrooms']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['Bathrooms'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('bathrooms'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['Bathrooms']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['balconies'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('balconies'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['balconies']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['elevators'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('elevators'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['elevators']); ?></span>
+                    </div>
+                    <?php endif; ?>
                     <?php if (!empty($property['FinishingTypeName'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('finishing_type'); ?>:</span>
