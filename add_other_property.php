@@ -135,9 +135,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $status = trim($_POST['status'] ?? 'available');
     $employee_id = $_SESSION['employee_id'] ?? null;
     $sales_manager_name = trim($_POST['sales_manager_name'] ?? null);
-    $sales_manager_phone = trim($_POST['sales_manager_phone'] ?? null);
+    
+    // Concatenate Sales Manager Phone
+    $sm_code = $_POST['sales_manager_phone_code'] ?? '';
+    $sm_number = $_POST['sales_manager_phone_number'] ?? '';
+    $sales_manager_phone = ($sm_code !== '' && $sm_number !== '') ? $sm_code . $sm_number : null;
+
     $salesperson_name = trim($_POST['salesperson_name'] ?? null);
-    $salesperson_phone = trim($_POST['salesperson_phone'] ?? null);
+    
+    // Concatenate Salesperson Phone
+    $sp_code = $_POST['salesperson_phone_code'] ?? '';
+    $sp_number = $_POST['salesperson_phone_number'] ?? '';
+    $salesperson_phone = ($sp_code !== '' && $sp_number !== '') ? $sp_code . $sp_number : null;
     $delivery_date = !empty($delivery_date_str) ? $delivery_date_str : null;
     
     // New Phase 2 fields
@@ -163,7 +172,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     for ($i = 0; $i < $max_sellers; $i++) {
         $stype = trim($posted_seller_types[$i] ?? '');
         $sname = trim($posted_seller_names[$i] ?? '');
-        $sphone = trim($posted_seller_phones[$i] ?? '');
+        
+        // Combine code and number for phone
+        $code = $_POST['seller_phone_code'][$i] ?? '';
+        $number = $_POST['seller_phone_number'][$i] ?? '';
+        $sphone = ($code !== '' && $number !== '') ? $code . $number : '';
         if ($stype === '' && $sname === '' && $sphone === '') {
             continue;
         }
@@ -186,10 +199,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $latitude = filter_input(INPUT_POST, 'latitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $longitude = filter_input(INPUT_POST, 'longitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
 
-    // تحقق من أن أرقام الهواتف المطلوبة هي 11 رقم بالضبط
-    function isValidEgyptianPhone($phone) {
-        $phone = preg_replace('/[^0-9]/', '', $phone);
-        return strlen($phone) === 11;
+    // Phone validation: relaxed strict 11-digit check for international numbers
+    // But enforce it for Egyptian numbers (detected by starting with +20 or 20 or 01)
+    function isValidPhoneFormat($phone) {
+        $clean = preg_replace('/[^0-9]/', '', $phone);
+        // If it starts with 20 (Egypt country code)
+        if (strpos($clean, '20') === 0 && strlen($clean) === 12) { // 20 + 10 digits
+             return true; 
+        }
+        // If it starts with 20 but wrong length
+        if (strpos($clean, '20') === 0) {
+             return strlen($clean) === 12; // Must be 12 digits total (2 for code + 10 for number)
+        }
+        // Otherwise checks for reasonable length (e.g., 8-15)
+        return strlen($clean) >= 8 && strlen($clean) <= 15;
     }
     $valid_seller_found = false;
     foreach ($seller_entries as $idx => $seller_row) {
@@ -199,8 +222,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $errors[] = 'يجب إدخال رقم هاتف لكل بائع.';
             continue;
         }
-        if (!isValidEgyptianPhone($phone_val)) {
-            $errors[] = 'يجب أن يكون رقم هاتف البائع (' . ($idx + 1) . ') 11 رقم.';
+        if (!isValidPhoneFormat($phone_val)) {
+            $errors[] = 'رقم هاتف البائع (' . ($idx + 1) . ') غير صحيح (يجب أن يكون متوافقاً مع مفتاح الدولة).';
             continue;
         }
         if ($name_val === null || trim($name_val) === '') {
@@ -212,11 +235,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!$valid_seller_found) {
         $errors[] = 'يجب إضافة بائع واحد على الأقل مع رقم هاتف صحيح.';
     }
-    if (empty($sales_manager_phone) || !isValidEgyptianPhone($sales_manager_phone)) {
-        $errors[] = 'يجب أن يكون رقم هاتف مدير المبيعات 11 رقم.';
+    if (!empty($sales_manager_phone) && !isValidPhoneFormat($sales_manager_phone)) {
+        $errors[] = 'رقم هاتف مدير المبيعات غير صحيح.';
     }
-    if (empty($salesperson_phone) || !isValidEgyptianPhone($salesperson_phone)) {
-        $errors[] = 'يجب أن يكون رقم هاتف مسؤول المبيعات 11 رقم.';
+    if (!empty($salesperson_phone) && !isValidPhoneFormat($salesperson_phone)) {
+        $errors[] = 'رقم هاتف مسؤول المبيعات غير صحيح.';
     }
 
     $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, year_built, unit_floor, net_area, loading_percentage, price_cash, price_installments, monthly_rent, daily_rent, yearly_rent, meter_price_cash, meter_price_installments, seller_type, seller_name, seller_phone, latitude, longitude, Bathrooms, balconies, elevators, DateAdded) 
@@ -882,21 +905,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="form-section">
             <h3><?php echo t("sales_information"); ?></h3>
             <div class="form-grid">
-                <div>
+                <div class="form-group">
                     <label for="sales_manager_name"><?php echo t("sales_manager_name_label"); ?></label>
                     <input type="text" id="sales_manager_name" name="sales_manager_name" class="form-input" value="<?php echo htmlspecialchars($_POST["sales_manager_name"] ?? ""); ?>">
                 </div>
-                <div>
+                <div class="form-group">
                     <label for="sales_manager_phone"><?php echo t("sales_manager_phone_label"); ?></label>
-                    <input type="tel" id="sales_manager_phone" name="sales_manager_phone" class="form-input <?php echo isset($errors["sales_manager_phone"]) ? "is-invalid" : ""; ?>" value="<?php echo htmlspecialchars($_POST["sales_manager_phone"] ?? ""); ?>">
+                    <div class="phone-input-group" style="display:flex; gap:10px;">
+                        <select name="sales_manager_phone_code" id="sales_manager_phone_code" class="form-input" style="width:120px;"></select>
+                        <input type="text" name="sales_manager_phone_number" id="sales_manager_phone_number" class="form-input <?php echo isset($errors["sales_manager_phone"]) ? "is-invalid" : ""; ?>" data-initial-code="+20" value="<?php echo htmlspecialchars($_POST["sales_manager_phone_number"] ?? ""); ?>">
+                    </div>
                 </div>
-                <div>
+                <div class="form-group">
                     <label for="salesperson_name"><?php echo t("salesperson_name_label"); ?></label>
                     <input type="text" id="salesperson_name" name="salesperson_name" class="form-input" value="<?php echo htmlspecialchars($_POST["salesperson_name"] ?? ""); ?>">
                 </div>
-                <div>
+                <div class="form-group">
                     <label for="salesperson_phone"><?php echo t("salesperson_phone_label"); ?></label>
-                    <input type="tel" id="salesperson_phone" name="salesperson_phone" class="form-input <?php echo isset($errors["salesperson_phone"]) ? "is-invalid" : ""; ?>" value="<?php echo htmlspecialchars($_POST["salesperson_phone"] ?? ""); ?>">
+                    <div class="phone-input-group" style="display:flex; gap:10px;">
+                        <select name="salesperson_phone_code" id="salesperson_phone_code" class="form-input" style="width:120px;"></select>
+                        <input type="text" name="salesperson_phone_number" id="salesperson_phone_number" class="form-input <?php echo isset($errors["salesperson_phone"]) ? "is-invalid" : ""; ?>" data-initial-code="+20" value="<?php echo htmlspecialchars($_POST["salesperson_phone_number"] ?? ""); ?>">
+                    </div>
                 </div>
             </div>
         </div>
@@ -933,7 +962,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </div>
                         <div class="form-group">
                             <label><?php echo t("seller_phone"); ?></label>
-                            <input type="tel" name="seller_phone[]" class="form-input seller-phone-input" value="<?php echo htmlspecialchars($seller_row["seller_phone"] ?? ""); ?>">
+                             <?php 
+                                // Generate unique IDs for first row
+                                $sCodeId = "seller_phone_code_0";
+                                $sNumId = "seller_phone_number_0";
+                            ?>
+                            <div class="phone-input-group" style="display:flex; gap:10px;">
+                                <select name="seller_phone_code[]" id="<?php echo $sCodeId; ?>" class="form-input seller-phone-code" style="width:120px;"></select>
+                                <input type="text" name="seller_phone_number[]" id="<?php echo $sNumId; ?>" class="form-input seller-phone-number" data-initial-code="+20">
+                            </div>
                         </div>
                     </div>
                     <button type="button" class="btn btn-danger remove-seller" style="<?php echo $idx === 0 ? 'display:none;' : ''; ?>"><?php echo t('remove') ?: 'حذف'; ?></button>
@@ -965,7 +1002,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </div>
                         <div class="form-group">
                             <label><?php echo t("seller_phone"); ?></label>
-                            <input type="tel" name="seller_phone[]" class="form-input seller-phone-input">
+                            <div class="phone-input-group" style="display:flex; gap:10px;">
+                                <select name="seller_phone_code[]" class="form-input seller-phone-code" style="width:120px;"></select>
+                                <input type="text" name="seller_phone_number[]" class="form-input seller-phone-number" data-initial-code="+20">
+                            </div>
                         </div>
                     </div>
                     <button type="button" class="btn btn-danger remove-seller"><?php echo t('remove') ?: 'حذف'; ?></button>
@@ -1103,48 +1143,61 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<script src="js/phone_validation.js?v=<?php echo time(); ?>"></script>
 <script>
-// تحقق من أن خانات الهاتف المطلوبة هي 11 رقم
-function validatePhoneInput(input) {
-    var value = input.value.replace(/[^0-9]/g, '');
-    if (value.length === 0) {
-        input.setCustomValidity('');
-    } else if (value.length !== 11) {
-        input.setCustomValidity('يجب أن يكون رقم الهاتف 11 رقم');
-    } else {
-        input.setCustomValidity('');
+document.addEventListener('DOMContentLoaded', function() {
+    // Init Sales Manager Phone
+    const smCode = document.getElementById('sales_manager_phone_code');
+    const smNum = document.getElementById('sales_manager_phone_number');
+    if (smCode && smNum) {
+        smCode.innerHTML = getCountryOptionsHtml('+20');
+        setupPhoneValidation('sales_manager_phone_code', 'sales_manager_phone_number');
     }
-}
-function attachPhoneValidationToList() {
-    var sellerPhones = document.querySelectorAll('.seller-phone-input');
-    sellerPhones.forEach(function(input){
-        input.removeEventListener('input', input._validateHandler || function(){});
-        var handler = function(){ validatePhoneInput(input); };
-        input._validateHandler = handler;
-        input.addEventListener('input', handler);
-    });
-    var salesManagerPhoneInput = document.getElementById('sales_manager_phone');
-    var salespersonPhoneInput = document.getElementById('salesperson_phone');
-    if (salesManagerPhoneInput && !salesManagerPhoneInput._handlerAttached) {
-        salesManagerPhoneInput.addEventListener('input', function(){ validatePhoneInput(salesManagerPhoneInput); });
-        salesManagerPhoneInput._handlerAttached = true;
-    }
-    if (salespersonPhoneInput && !salespersonPhoneInput._handlerAttached) {
-        salespersonPhoneInput.addEventListener('input', function(){ validatePhoneInput(salespersonPhoneInput); });
-        salespersonPhoneInput._handlerAttached = true;
-    }
-}
 
-document.addEventListener('DOMContentLoaded', function () {
+    // Init Salesperson Phone
+    const spCode = document.getElementById('salesperson_phone_code');
+    const spNum = document.getElementById('salesperson_phone_number');
+    if (spCode && spNum) {
+        spCode.innerHTML = getCountryOptionsHtml('+20');
+        setupPhoneValidation('salesperson_phone_code', 'salesperson_phone_number');
+    }
+
+    // Init First Seller
+    const sCode = document.getElementById('seller_phone_code_0');
+    const sNum = document.getElementById('seller_phone_number_0');
+    if (sCode && sNum) {
+        sCode.innerHTML = getCountryOptionsHtml('+20');
+        setupPhoneValidation('seller_phone_code_0', 'seller_phone_number_0');
+    }
+
+    // Handle Dynamic Seller Addition
     var addSellerBtn = document.getElementById('add-seller-row');
     var sellerContainer = document.getElementById('seller-entries');
     var template = document.getElementById('seller-row-template');
 
     function addSellerRow() {
         if (!template || !sellerContainer) { return; }
+        
         var clone = document.importNode(template.content, true);
         sellerContainer.appendChild(clone);
+        
         refreshSellerControls();
+        
+        // Init phone for the new row
+        const rows = document.querySelectorAll('#seller-entries .seller-row');
+        const lastRow = rows[rows.length - 1];
+        
+        const codeSelect = lastRow.querySelector('.seller-phone-code');
+        const numInput = lastRow.querySelector('.seller-phone-number');
+        
+        if (codeSelect && numInput) {
+             const uniqueId = Date.now();
+             codeSelect.id = `seller_phone_code_new_${uniqueId}`;
+             numInput.id = `seller_phone_number_new_${uniqueId}`;
+             
+             codeSelect.innerHTML = getCountryOptionsHtml('+20');
+             setupPhoneValidation(codeSelect.id, numInput.id);
+        }
     }
 
     function refreshSellerControls() {
@@ -1159,14 +1212,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 };
             }
         });
-        attachPhoneValidationToList();
     }
 
     if (addSellerBtn) {
-        addSellerBtn.addEventListener('click', addSellerRow);
+        addSellerBtn.replaceWith(addSellerBtn.cloneNode(true));
+        document.getElementById('add-seller-row').addEventListener('click', addSellerRow);
     }
-
-    refreshSellerControls();
 });
 </script>
 

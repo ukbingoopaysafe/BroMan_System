@@ -321,9 +321,18 @@ if ($att_stmt) {
     $company_name_posted = isset($_POST['company_name']) ? trim($_POST['company_name']) : null;
     $floors_count_posted = isset($_POST["floors_count"]) && trim($_POST["floors_count"]) !== '' ? trim($_POST["floors_count"]) : null;
     $sales_manager_name_posted = isset($_POST['sales_manager_name']) ? trim($_POST['sales_manager_name']) : null;
-    $sales_manager_phone_posted = isset($_POST['sales_manager_phone']) ? trim($_POST['sales_manager_phone']) : null;
+    
+    // Concatenate Sales Manager Phone
+    $sm_code = $_POST['sales_manager_phone_code'] ?? '';
+    $sm_number = $_POST['sales_manager_phone_number'] ?? '';
+    $sales_manager_phone_posted = ($sm_code !== '' && $sm_number !== '') ? $sm_code . $sm_number : null;
+
     $salesperson_name_posted = isset($_POST['salesperson_name']) ? trim($_POST['salesperson_name']) : null;
-    $salesperson_phone_posted = isset($_POST['salesperson_phone']) ? trim($_POST['salesperson_phone']) : null;
+    
+    // Concatenate Salesperson Phone
+    $sp_code = $_POST['salesperson_phone_code'] ?? '';
+    $sp_number = $_POST['salesperson_phone_number'] ?? '';
+    $salesperson_phone_posted = ($sp_code !== '' && $sp_number !== '') ? $sp_code . $sp_number : null;
     $latitude_posted = isset($_POST['latitude']) && trim($_POST['latitude']) !== '' ? filter_input(INPUT_POST, 'latitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $longitude_posted = isset($_POST['longitude']) && trim($_POST['longitude']) !== '' ? filter_input(INPUT_POST, 'longitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     
@@ -341,7 +350,12 @@ if ($att_stmt) {
     for ($i = 0; $i < $max_sellers; $i++) {
         $stype = trim($posted_seller_types[$i] ?? '');
         $sname = trim($posted_seller_names[$i] ?? '');
-        $sphone = trim($posted_seller_phones[$i] ?? '');
+        
+        // Combine code and number for phone
+        $code = $_POST['seller_phone_code'][$i] ?? '';
+        $number = $_POST['seller_phone_number'][$i] ?? '';
+        $sphone = ($code !== '' && $number !== '') ? $code . $number : '';
+        
         if ($stype === '' && $sname === '' && $sphone === '') {
             continue;
         }
@@ -450,10 +464,27 @@ if ($att_stmt) {
         $errors['floors_count'] = t('invalid_floors_count');
     }
 
-    // تحقق من أن أرقام الهواتف المطلوبة هي 11 رقم فقط إذا تم إدخالها
-    function isValidEgyptianPhone($phone) {
-        $phone = preg_replace('/[^0-9]/', '', $phone);
-        return strlen($phone) === 11;
+    // Phone validation: relaxed strict 11-digit check for international numbers
+    // But enforce it for Egyptian numbers (detected by starting with +20 or 20 or 01)
+    function isValidPhoneFormat($phone) {
+        $clean = preg_replace('/[^0-9]/', '', $phone);
+        // If it starts with 20 (Egypt country code)
+        if (strpos($clean, '20') === 0 && strlen($clean) === 12) { // 20 + 10 digits
+             return true; 
+        }
+        // If it starts with 20 but wrong length
+        if (strpos($clean, '20') === 0) {
+             return strlen($clean) === 12; // Must be 12 digits total (2 for code + 10 for number)
+        }
+        // Otherwise checks for reasonable length (e.g., 8-15)
+        return strlen($clean) >= 8 && strlen($clean) <= 15;
+    }
+
+    // Helper to check specific Egyptian format if we want strictness on +20 prefix:
+    // User saves +2010xxxxxx. Clean is 2010xxxxxx (12 digits).
+    function isValidEqyptianMobile($phone) {
+        $clean = preg_replace('/[^0-9]/', '', $phone);
+        return strpos($clean, '201') === 0 && strlen($clean) === 12;
     }
     $valid_seller_found = false;
     foreach ($seller_entries_post as $idx => $row) {
@@ -463,8 +494,8 @@ if ($att_stmt) {
             $errors['seller_phone_' . $idx] = 'يجب إدخال رقم هاتف لكل بائع.';
             continue;
         }
-        if (!isValidEgyptianPhone($phone_val)) {
-            $errors['seller_phone_' . $idx] = 'يجب أن يكون رقم هاتف البائع (' . ($idx + 1) . ') 11 رقم.';
+        if (!isValidPhoneFormat($phone_val)) {
+            $errors['seller_phone_' . $idx] = 'رقم الهاتف غير صحيح (يجب أن يكون متوافقاً مع مفتاح الدولة).';
             continue;
         }
         if ($name_val === null || trim($name_val) === '') {
@@ -476,11 +507,11 @@ if ($att_stmt) {
     if (!$valid_seller_found) {
         $errors['seller_phone'] = 'يجب إضافة بائع واحد على الأقل مع رقم هاتف صحيح.';
     }
-    if (!empty($sales_manager_phone_posted) && !isValidEgyptianPhone($sales_manager_phone_posted)) {
-        $errors['sales_manager_phone'] = 'يجب أن يكون رقم هاتف مدير المبيعات 11 رقم.';
+    if (!empty($sales_manager_phone_posted) && !isValidPhoneFormat($sales_manager_phone_posted)) {
+        $errors['sales_manager_phone'] = 'رقم هاتف مدير المبيعات غير صحيح.';
     }
-    if (!empty($salesperson_phone_posted) && !isValidEgyptianPhone($salesperson_phone_posted)) {
-        $errors['salesperson_phone'] = 'يجب أن يكون رقم هاتف مسؤول المبيعات 11 رقم.';
+    if (!empty($salesperson_phone_posted) && !isValidPhoneFormat($salesperson_phone_posted)) {
+        $errors['salesperson_phone'] = 'رقم هاتف مسؤول المبيعات غير صحيح.';
     }
 
     // If no errors, proceed with update
@@ -1482,18 +1513,58 @@ if ($att_stmt) {
                         <label for="sales_manager_name"><?php echo t("sales_manager_name_label"); ?></label>
                         <input type="text" id="sales_manager_name" name="sales_manager_name" class="form-input" value="<?php echo htmlspecialchars($sales_manager_name); ?>">
                     </div>
-                    <div class="form-group">
-                        <label for="sales_manager_phone"><?php echo t("sales_manager_phone_label"); ?></label>
-                        <input type="tel" id="sales_manager_phone" name="sales_manager_phone" class="form-input" value="<?php echo htmlspecialchars($sales_manager_phone); ?>">
+                    <!-- Split Phone Fields for Sales Manager -->
+                 <?php
+                     // Helper to ensure phone logic is consistent
+                     // We need to parse $sales_manager_phone into code and number
+                     // We can use a simple inline JS or PHP helper? 
+                     // Actually better to handle via JS on load, but we need initial values for inputs.
+                     // PHP Parsing:
+                     function parsePhoneForInput($fullPhone) {
+                         $codes = ['+20', '+966', '+971', '+965', '+974', '+973', '+968', '+1', '+44'];
+                         $fullPhone = trim($fullPhone ?? '');
+                         if ($fullPhone === '') return ['code' => '+20', 'number' => ''];
+                         
+                         foreach ($codes as $c) {
+                             if (strpos($fullPhone, $c) === 0) {
+                                 return ['code' => $c, 'number' => substr($fullPhone, strlen($c))];
+                             }
+                         }
+                         // Egyptian local fallback: 01xxxx -> +20, 1xxxx
+                         if (strpos($fullPhone, '01') === 0 && strlen($fullPhone) === 11) {
+                             return ['code' => '+20', 'number' => substr($fullPhone, 1)];
+                         }
+                         // Default fallback
+                         return ['code' => 'other', 'number' => $fullPhone]; 
+                     }
+
+                     $parsedSM = parsePhoneForInput($sales_manager_phone);
+                     $parsedSP = parsePhoneForInput($salesperson_phone);
+                 ?>
+                
+                <div class="form-group">
+                    <label for="sales_manager_phone"><?php echo t("sales_manager_phone"); ?></label>
+                    <div class="phone-input-group" style="display:flex; gap:10px;">
+                        <select name="sales_manager_phone_code" id="sales_manager_phone_code" class="form-input" style="width:120px;">
+                            <!-- Options populated by JS or hardcoded? JS is source of truth. -->
+                             <!-- We will let JS populate options, but we need to set selected value via dataset or JS init -->
+                        </select>
+                        <input type="text" name="sales_manager_phone_number" id="sales_manager_phone_number" class="form-input" value="<?php echo htmlspecialchars($parsedSM['number']); ?>" data-initial-code="<?php echo htmlspecialchars($parsedSM['code']); ?>">
                     </div>
-                    <div class="form-group">
-                        <label for="salesperson_name"><?php echo t("salesperson_name_label"); ?></label>
-                        <input type="text" id="salesperson_name" name="salesperson_name" class="form-input" value="<?php echo htmlspecialchars($salesperson_name); ?>">
+                </div>
+
+                <div class="form-group">
+                    <label for="salesperson_name"><?php echo t("salesperson_name"); ?></label>
+                     <input type="text" name="salesperson_name" id="salesperson_name" class="form-input" value="<?php echo htmlspecialchars($salesperson_name); ?>">
+                </div>
+
+                <div class="form-group">
+                    <label for="salesperson_phone"><?php echo t("salesperson_phone"); ?></label>
+                    <div class="phone-input-group" style="display:flex; gap:10px;">
+                         <select name="salesperson_phone_code" id="salesperson_phone_code" class="form-input" style="width:120px;"></select>
+                         <input type="text" name="salesperson_phone_number" id="salesperson_phone_number" class="form-input" value="<?php echo htmlspecialchars($parsedSP['number']); ?>" data-initial-code="<?php echo htmlspecialchars($parsedSP['code']); ?>">
                     </div>
-                    <div class="form-group">
-                        <label for="salesperson_phone"><?php echo t("salesperson_phone_label"); ?></label>
-                        <input type="tel" id="salesperson_phone" name="salesperson_phone" class="form-input" value="<?php echo htmlspecialchars($salesperson_phone); ?>">
-                    </div>
+                </div>
                 </div>
             </div>
 
@@ -1523,7 +1594,16 @@ if ($att_stmt) {
                             </div>
                             <div class="form-group">
                                 <label><?php echo t("seller_phone"); ?></label>
-                                <input type="tel" name="seller_phone[]" class="form-input seller-phone-input" value="<?php echo htmlspecialchars($seller_row["seller_phone"] ?? ""); ?>">
+                                <?php 
+                                    $parsedSeller = parsePhoneForInput($seller_row["seller_phone"]); 
+                                    // Generate unique IDs for current row
+                                    $sCodeId = "seller_phone_code_" . $idx;
+                                    $sNumId = "seller_phone_number_" . $idx;
+                                ?>
+                                <div class="phone-input-group" style="display:flex; gap:10px;">
+                                    <select name="seller_phone_code[]" id="<?php echo $sCodeId; ?>" class="form-input seller-phone-code" style="width:120px;"></select>
+                                    <input type="text" name="seller_phone_number[]" id="<?php echo $sNumId; ?>" class="form-input seller-phone-number" value="<?php echo htmlspecialchars($parsedSeller['number']); ?>" data-initial-code="<?php echo htmlspecialchars($parsedSeller['code']); ?>">
+                                </div>
                             </div>
                         </div>
                         <button type="button" class="btn btn-danger remove-seller" style="<?php echo $idx === 0 ? 'display:none;' : ''; ?>"><?php echo t('remove') ?: 'حذف'; ?></button>
@@ -1555,7 +1635,10 @@ if ($att_stmt) {
                             </div>
                             <div class="form-group">
                                 <label><?php echo t("seller_phone"); ?></label>
-                                <input type="tel" name="seller_phone[]" class="form-input seller-phone-input">
+                                <div class="phone-input-group" style="display:flex; gap:10px;">
+                                    <select name="seller_phone_code[]" class="form-input seller-phone-code" style="width:120px;"></select>
+                                    <input type="text" name="seller_phone_number[]" class="form-input seller-phone-number">
+                                </div>
                             </div>
                         </div>
                         <button type="button" class="btn btn-danger remove-seller"><?php echo t('remove') ?: 'حذف'; ?></button>
@@ -1944,74 +2027,67 @@ if ($att_stmt) {
             }
         });
     </script>
+
+    <script src="prevent_double_submit.js"></script>
+    <script src="js/phone_validation.js?v=<?php echo time(); ?>"></script>
     <script>
-    // تحقق من أن خانات الهاتف المطلوبة هي 11 رقم
-    function validatePhoneInput(input) {
-        var value = input.value.replace(/[^0-9]/g, '');
-        if (value.length === 0) {
-            input.setCustomValidity('');
-        } else if (value.length !== 11) {
-            input.setCustomValidity('يجب أن يكون رقم الهاتف 11 رقم');
-        } else {
-            input.setCustomValidity('');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Init Sales Manager Phone
+        const smCode = document.getElementById('sales_manager_phone_code');
+        const smNum = document.getElementById('sales_manager_phone_number');
+        if (smCode && smNum) {
+            smCode.innerHTML = getCountryOptionsHtml(smNum.dataset.initialCode || '+20');
+            setupPhoneValidation('sales_manager_phone_code', 'sales_manager_phone_number');
         }
-    }
 
-    function attachPhoneValidationToList() {
-        var sellerPhones = document.querySelectorAll('.seller-phone-input');
-        sellerPhones.forEach(function(input){
-            input.removeEventListener('input', input._validateHandler || function(){});
-            var handler = function(){ validatePhoneInput(input); };
-            input._validateHandler = handler;
-            input.addEventListener('input', handler);
+        // Init Salesperson Phone
+        const spCode = document.getElementById('salesperson_phone_code');
+        const spNum = document.getElementById('salesperson_phone_number');
+        if (spCode && spNum) {
+            spCode.innerHTML = getCountryOptionsHtml(spNum.dataset.initialCode || '+20');
+            setupPhoneValidation('salesperson_phone_code', 'salesperson_phone_number');
+        }
+
+        // Init Existing Sellers
+        document.querySelectorAll('.seller-row').forEach((row, index) => {
+            const codeSelect = row.querySelector('.seller-phone-code');
+            const numInput = row.querySelector('.seller-phone-number');
+            if (codeSelect && numInput) {
+                // Ensure they have IDs for validation setup (if not using template ID logic)
+                // Existing PHP loop gave them IDs, but let's be robust
+                if (!codeSelect.id) codeSelect.id = `seller_phone_code_row_${index}`;
+                if (!numInput.id) numInput.id = `seller_phone_number_row_${index}`;
+                
+                codeSelect.innerHTML = getCountryOptionsHtml(numInput.dataset.initialCode || '+20');
+                setupPhoneValidation(codeSelect.id, numInput.id);
+            }
         });
-        var salesManagerPhoneInput = document.getElementById('sales_manager_phone');
-        var salespersonPhoneInput = document.getElementById('salesperson_phone');
-        if (salesManagerPhoneInput && !salesManagerPhoneInput._handlerAttached) {
-            salesManagerPhoneInput.addEventListener('input', function(){ validatePhoneInput(salesManagerPhoneInput); });
-            salesManagerPhoneInput._handlerAttached = true;
-        }
-        if (salespersonPhoneInput && !salespersonPhoneInput._handlerAttached) {
-            salespersonPhoneInput.addEventListener('input', function(){ validatePhoneInput(salespersonPhoneInput); });
-            salespersonPhoneInput._handlerAttached = true;
-        }
-    }
 
-    document.addEventListener('DOMContentLoaded', function () {
-        var addSellerBtn = document.getElementById('add-seller-row');
-        var sellerContainer = document.getElementById('seller-entries');
-        var template = document.getElementById('seller-row-template');
-
-        function addSellerRow() {
-            if (!template || !sellerContainer) { return; }
-            var clone = document.importNode(template.content, true);
-            sellerContainer.appendChild(clone);
-            refreshSellerControls();
-        }
-
-        function refreshSellerControls() {
-            var rows = sellerContainer ? sellerContainer.querySelectorAll('.seller-row') : [];
-            rows.forEach(function(row, idx){
-                var removeBtn = row.querySelector('.remove-seller');
-                if (removeBtn) {
-                    removeBtn.style.display = (idx === 0) ? 'none' : 'inline-block';
-                    removeBtn.onclick = function(){
-                        row.remove();
-                        refreshSellerControls();
-                    };
-                }
-            });
-            attachPhoneValidationToList();
-        }
-
-        if (addSellerBtn) {
-            addSellerBtn.addEventListener('click', addSellerRow);
-        }
-
-        refreshSellerControls();
+        // Handle Dynamic Seller Addition
+        const addSellerBtn = document.getElementById('add-seller-row');
+        addSellerBtn.addEventListener('click', function() {
+             // Mutation observer or just wait for timeout? 
+             // The existing click handler adds the row. We need to init the new row.
+             // We can assume the new row is the last one in #seller-entries
+             setTimeout(() => {
+                 const rows = document.querySelectorAll('#seller-entries .seller-row');
+                 const lastRow = rows[rows.length - 1];
+                 const codeSelect = lastRow.querySelector('.seller-phone-code');
+                 const numInput = lastRow.querySelector('.seller-phone-number');
+                 
+                 if (codeSelect && numInput) {
+                     const uniqueId = Date.now();
+                     codeSelect.id = `seller_phone_code_new_${uniqueId}`;
+                     numInput.id = `seller_phone_number_new_${uniqueId}`;
+                     
+                     // Default to Egypt +20
+                     codeSelect.innerHTML = getCountryOptionsHtml('+20');
+                     setupPhoneValidation(codeSelect.id, numInput.id);
+                 }
+             }, 50); // Small delay to allow template injection
+        });
     });
     </script>
-    <script src="prevent_double_submit.js"></script>
 </body>
 </html>
 <?php 
