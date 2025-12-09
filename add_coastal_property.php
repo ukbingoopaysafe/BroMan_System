@@ -253,19 +253,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = 'رقم هاتف مسؤول المبيعات غير صحيح.';
     }
 
-    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, year_built, unit_floor, net_area, loading_percentage, price_cash, price_installments, monthly_rent, daily_rent, yearly_rent, meter_price_cash, meter_price_installments, seller_type, seller_name, seller_phone, latitude, longitude, Bathrooms, balconies, elevators, DateAdded) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    // Calculate friendly_id
+    $friendly_id = 1;
+    $stmt_max = $conn->prepare("SELECT MAX(friendly_id) as max_id FROM Properties WHERE listing_type = ?");
+    if ($stmt_max) {
+        $stmt_max->bind_param("s", $listing_type);
+        $stmt_max->execute();
+        $res_max = $stmt_max->get_result();
+        if ($row_max = $res_max->fetch_assoc()) {
+            $friendly_id = ((int)$row_max['max_id']) + 1;
+        }
+        $stmt_max->close();
+    }
+
+    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, year_built, unit_floor, net_area, loading_percentage, price_cash, price_installments, monthly_rent, daily_rent, yearly_rent, meter_price_cash, meter_price_installments, seller_type, seller_name, seller_phone, latitude, longitude, Bathrooms, balconies, elevators, DateAdded, friendly_id) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     $t_prepare_start = microtime(true);
     if ($stmt = $conn->prepare($sql)) {
         // Build bind-vars in same order as INSERT and force phone-like fields to be strings
         $bind_vars = [
-            $property_type_id, $title, $description, $location, $area, $rooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $year_built, $unit_floor, $net_area, $loading_percentage, $price_cash, $price_installments, $monthly_rent, $daily_rent, $yearly_rent, $meter_price_cash, $meter_price_installments, $seller_type, $seller_name, $seller_phone, $latitude, $longitude, $bathrooms, $balconies, $elevators, date('Y-m-d H:i:s')
+            $property_type_id, $title, $description, $location, $area, $rooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $year_built, $unit_floor, $net_area, $loading_percentage, $price_cash, $price_installments, $monthly_rent, $daily_rent, $yearly_rent, $meter_price_cash, $meter_price_installments, $seller_type, $seller_name, $seller_phone, $latitude, $longitude, $bathrooms, $balconies, $elevators, date('Y-m-d H:i:s'), $friendly_id
         ];
 
         // Parallel keys for forced typing
         $bind_keys = [
-            'property_type_id', 'title', 'description', 'location', 'area', 'rooms', 'status', 'listing_type', 'employee_id', 'unit_design', 'finishing_type_id', 'compound_area', 'down_payment_percentage', 'payment_years', 'delivery_date', 'project_name', 'min_area', 'max_area', 'avg_area', 'district', 'governorate', 'company_name', 'floors_count', 'sales_manager_name', 'sales_manager_phone', 'salesperson_name', 'salesperson_phone', 'year_built', 'unit_floor', 'net_area', 'loading_percentage', 'price_cash', 'price_installments', 'monthly_rent', 'daily_rent', 'yearly_rent', 'meter_price_cash', 'meter_price_installments', 'seller_type', 'seller_name', 'seller_phone', 'latitude', 'longitude', 'bathrooms', 'balconies', 'elevators', 'date_added'
+            'property_type_id', 'title', 'description', 'location', 'area', 'rooms', 'status', 'listing_type', 'employee_id', 'unit_design', 'finishing_type_id', 'compound_area', 'down_payment_percentage', 'payment_years', 'delivery_date', 'project_name', 'min_area', 'max_area', 'avg_area', 'district', 'governorate', 'company_name', 'floors_count', 'sales_manager_name', 'sales_manager_phone', 'salesperson_name', 'salesperson_phone', 'year_built', 'unit_floor', 'net_area', 'loading_percentage', 'price_cash', 'price_installments', 'monthly_rent', 'daily_rent', 'yearly_rent', 'meter_price_cash', 'meter_price_installments', 'seller_type', 'seller_name', 'seller_phone', 'latitude', 'longitude', 'bathrooms', 'balconies', 'elevators', 'date_added', 'friendly_id'
         ];
 
         $force_string_fields = [

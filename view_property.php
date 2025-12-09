@@ -676,7 +676,12 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
         }
         ?>
         <div class="page-header">
-            <h1><?php echo $page_title; ?></h1>
+            <h1>
+                <?php if(!empty($property['friendly_id'])): ?>
+                    <span style="color: #666; font-size: 0.8em;">#<?php echo $property['friendly_id']; ?></span> - 
+                <?php endif; ?>
+                <?php echo $page_title; ?>
+            </h1>
             <div class="actions">
                 <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'manager', 'rental_admin'])): ?>
                 <a href="edit_property.php?id=<?php echo $property_id; ?>" class="btn btn-primary"><i class="fas fa-edit"></i> <?php echo t('edit'); ?></a>
@@ -797,7 +802,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                 <div class="detail-grid">
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('property_id'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['PropertyID']); ?></span>
+                        <span class="detail-value">#<?php echo htmlspecialchars($property['friendly_id'] ?? $property['PropertyID']); ?></span>
                     </div>
                     <?php if (!empty($property['Title'])): ?>
                     <div class="detail-item">

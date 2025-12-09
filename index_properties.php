@@ -694,7 +694,7 @@ function getPropertyTypeBadge($typeId, $typeName) {
                     <?php foreach ($properties as $property): ?>
                         <tr class="property-row" data-property-id="<?php echo $property['PropertyID']; ?>">
                             <td class="cell-id">
-                                <strong><?php echo (int)$property['PropertyID']; ?></strong>
+                                <strong><?php echo (int)($property['friendly_id'] ?? $property['PropertyID']); ?></strong>
                             </td>
                             <td class="cell-project">
                                 <?php

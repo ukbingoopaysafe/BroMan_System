@@ -116,12 +116,35 @@ if (!function_exists('format_activity_details')) {
             $decoded = $details;
         }
 
+        // Helper to format listing type
+        $get_listing_type = function($d) {
+            $t = $d['listing_type'] ?? '';
+            if (!$t) return '';
+            // If Arabic, translate
+            if (function_exists('get_lang_code') && get_lang_code() === 'ar' && function_exists('t')) {
+                // Try translation key
+                $trans = t($t);
+                return ($trans !== $t) ? $trans : $t;
+            }
+            return $t;
+        };
+
+        // Helper to get ID display
+        $get_id_display = function($d) {
+            if (!empty($d['friendly_id'])) {
+                return '#' . $d['friendly_id'];
+            }
+            return $d['property_id'] ?? '';
+        };
+
         // Human-friendly formatting
         switch ($action) {
             case 'add_property':
-                if (is_array($decoded) && isset($decoded['property_id'])) {
-                    $id = $decoded['property_id'];
+                if (is_array($decoded) && (isset($decoded['property_id']) || isset($decoded['friendly_id']))) {
+                    $id_disp = $get_id_display($decoded);
                     $type = $decoded['type'] ?? null;
+                    $listing_type = $get_listing_type($decoded);
+                    
                     // If Arabic UI, return a translated, structured message
                     if (function_exists('get_lang_code') && get_lang_code() === 'ar') {
                         // Map common type keys to Arabic short labels
@@ -133,28 +156,39 @@ if (!function_exists('format_activity_details')) {
                         ];
                         $type_label = '';
                         if ($type !== null) {
-                            // support either type slug or full word
                             $lower = mb_strtolower((string)$type);
                             $type_label = $type_map_ar[$lower] ?? $type_map_ar[$type] ?? $type;
                         }
                         $parts = [];
                         $parts[] = sprintf('تمت إضافة عقار جديد');
-                        $parts[] = sprintf('رقم العقار: %s', $id);
+                        $parts[] = sprintf('رقم العقار: %s', $id_disp);
+                        if ($listing_type !== '') {
+                            $parts[] = sprintf('نظام القائمة: %s', $listing_type);
+                        }
                         if ($type_label !== '') {
                             $parts[] = sprintf('النوع: %s', $type_label);
                         }
-                        return implode(' ', $parts);
+                        return implode(' | ', $parts);
                     }
 
                     // Fallback to previous English format
-                    return $type ? sprintf("Added property #%s (%s)", $id, $type) : sprintf("Added property #%s", $id);
+                    $parts = [];
+                    $parts[] = sprintf("Added property %s", $id_disp);
+                    if ($listing_type) $parts[] = "Listing: $listing_type";
+                    if ($type) $parts[] = "Type: $type";
+                    return implode(' | ', $parts);
                 }
                 break;
             case 'edit_property':
                 if (is_array($decoded)) {
                     $header = '';
-                    if (isset($decoded['property_id'])) {
-                        $header = sprintf("تم تعديل العقار رقم %s", $decoded['property_id']);
+                    if (isset($decoded['property_id']) || isset($decoded['friendly_id'])) {
+                        $id_disp = $get_id_display($decoded);
+                        $listing_type = $get_listing_type($decoded);
+                        $header = sprintf("تم تعديل العقار رقم %s", $id_disp);
+                        if ($listing_type) {
+                            $header .= sprintf(" (%s)", $listing_type);
+                        }
                     }
                     if (isset($decoded['changes']) && is_array($decoded['changes'])) {
                         $body = implode("\n", $decoded['changes']);
@@ -175,22 +209,30 @@ if (!function_exists('format_activity_details')) {
                 }
                 break;
             case 'property_visit':
-                if (is_array($decoded) && isset($decoded['property_id'])) {
+                if (is_array($decoded) && (isset($decoded['property_id']) || isset($decoded['friendly_id']))) {
+                    $id_disp = $get_id_display($decoded);
                     $title = $decoded['property_title'] ?? '';
+                    $listing_type = $get_listing_type($decoded);
+                    
+                    $suffix = '';
+                    if ($listing_type) $suffix = " - $listing_type";
+
                     return get_lang_code() === 'ar' ? 
-                        sprintf("%s (العقار رقم: %d)", $title, $decoded['property_id']) :
-                        sprintf("%s (Property ID: %d)", $title, $decoded['property_id']);
+                        sprintf("%s (رقم العقار: %s%s)", $title, $id_disp, $suffix) :
+                        sprintf("%s (Property ID: %s%s)", $title, $id_disp, $suffix);
                 }
                 break;
             case 'delete_property':
-                if (is_array($decoded) && isset($decoded['property_id'])) {
-                    $id = $decoded['property_id'];
+                if (is_array($decoded) && (isset($decoded['property_id']) || isset($decoded['friendly_id']))) {
+                    $id_disp = $get_id_display($decoded);
                     $title = $decoded['property_title'] ?? '';
                     $type = $decoded['property_type'] ?? null;
+                    $listing_type = $get_listing_type($decoded);
                     
                     if (function_exists('get_lang_code') && get_lang_code() === 'ar') {
                         $parts = [];
-                        $parts[] = sprintf('تم حذف العقار رقم %s', $id);
+                        $parts[] = sprintf('تم حذف العقار رقم %s', $id_disp);
+                        if ($listing_type) $parts[] = $listing_type;
                         if ($title !== '') {
                             $parts[] = sprintf('العنوان: %s', $title);
                         }
@@ -202,7 +244,8 @@ if (!function_exists('format_activity_details')) {
                     
                     // English format
                     $parts = [];
-                    $parts[] = sprintf("Deleted property #%s", $id);
+                    $parts[] = sprintf("Deleted property %s", $id_disp);
+                    if ($listing_type) $parts[] = $listing_type;
                     if ($title !== '') {
                         $parts[] = sprintf("Title: %s", $title);
                     }

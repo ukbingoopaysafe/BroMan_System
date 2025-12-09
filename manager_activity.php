@@ -192,6 +192,69 @@ $export_label = t('export');
         <?php
             // Load all logs (recent). We'll group by employee and show expandable rows per user.
                 $logs = get_activity_logs($conn, null, 1000);
+                
+                // ---------------------------------------------------------
+                // Pre-fetch property details (friendly_id, listing_type) to replace internal PropertyID
+                // ---------------------------------------------------------
+                $log_pids = [];
+                // First pass: gather IDs
+                foreach ($logs as $k => $l) {
+                    $d = $l['details'];
+                    if (is_string($d)) {
+                        $d = json_decode($d, true);
+                        if (json_last_error() === JSON_ERROR_NONE) {
+                            $logs[$k]['details'] = $d; // keep as array for easier modification
+                        } else {
+                            $d = [];
+                        }
+                    }
+                    if (is_array($d) && !empty($d['property_id'])) {
+                        $log_pids[] = (int)$d['property_id'];
+                    }
+                }
+                
+                $log_pids = array_unique($log_pids);
+                $prop_lookup = [];
+                if (!empty($log_pids)) {
+                    // Safe batch query
+                    $chunks = array_chunk($log_pids, 200); // chunk to avoid query limits
+                    foreach ($chunks as $chunk) {
+                         $ids_str = implode(',', array_map('intval', $chunk));
+                         $res = $conn->query("SELECT PropertyID, friendly_id, listing_type, Title FROM properties WHERE PropertyID IN ($ids_str)");
+                         if ($res) {
+                             while ($row = $res->fetch_assoc()) {
+                                 $prop_lookup[(int)$row['PropertyID']] = $row;
+                             }
+                             $res->close();
+                         }
+                    }
+                }
+
+                // Second pass: Update log details with friendly info
+                foreach ($logs as $k => $l) {
+                    $d = $l['details']; // is now array or null/string
+                    if (is_array($d) && !empty($d['property_id'])) {
+                        $pid = (int)$d['property_id'];
+                        if (isset($prop_lookup[$pid])) {
+                            // Fetch friendly data
+                            $friendly = $prop_lookup[$pid]['friendly_id'];
+                            $type = $prop_lookup[$pid]['listing_type'];
+                            
+                            // Inject friendly info
+                            $d['friendly_id'] = $friendly;
+                            $d['listing_type'] = $type;
+                            
+                            // Also ensure title is present
+                            if (empty($d['property_title']) && !empty($prop_lookup[$pid]['Title'])) {
+                                $d['property_title'] = $prop_lookup[$pid]['Title'];
+                            }
+
+                            $logs[$k]['details'] = $d;
+                        }
+                    }
+                }
+                // ---------------------------------------------------------
+
                 // cleanup old active sessions once
                 require_once 'session_activity.php';
                 cleanup_old_sessions($conn);

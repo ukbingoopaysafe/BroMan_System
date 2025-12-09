@@ -43,6 +43,10 @@ return [
     'rental_properties' => 'عقارات الإيجار',
     'choose_operating_mode' => 'اختر وجهتك:',
     'listing_type' => 'نوع القائمة',
+    'Primary' => 'مشاريع جديدة (Primary)',
+    'Resale' => 'إعادة بيع (Resale)',
+    'Rent' => 'إيجار (Rent)',
+    'Rental' => 'إيجار (Rent)', // Alias
 
     // Login Page
     'login_page_title' => 'تسجيل الدخول',

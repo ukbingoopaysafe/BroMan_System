@@ -240,7 +240,7 @@ if ($employee_id > 0) {
         // build placeholders
         $placeholders = implode(',', array_fill(0, count($all_pids), '?'));
         // Prepare dynamic IN query using integer params
-        $sql = "SELECT PropertyID, Title FROM properties WHERE PropertyID IN (" . $placeholders . ")";
+        $sql = "SELECT PropertyID, Title, friendly_id, listing_type FROM properties WHERE PropertyID IN (" . $placeholders . ")";
         // mysqli prepared statements don't support binding a variable-length list easily; use a safe approach building types/references
         $types = str_repeat('i', count($all_pids));
         if ($stmt2 = $conn->prepare($sql)) {
@@ -252,14 +252,26 @@ if ($employee_id > 0) {
             call_user_func_array(array($stmt2, 'bind_param'), $refs);
             $stmt2->execute();
             $res2 = $stmt2->get_result();
-            while ($r2 = $res2->fetch_assoc()) { $titles_map[(int)$r2['PropertyID']] = $r2['Title']; }
+            while ($r2 = $res2->fetch_assoc()) { 
+                $titles_map[(int)$r2['PropertyID']] = [
+                    'title' => $r2['Title'],
+                    'friendly_id' => $r2['friendly_id'],
+                    'type' => $r2['listing_type']
+                ];
+            }
             $stmt2->close();
         } else {
             // fallback: query without prepare (safe because $all_pids are integers)
             $escaped = array_map('intval', $all_pids);
-            $sql2 = "SELECT PropertyID, Title FROM properties WHERE PropertyID IN (" . implode(',', $escaped) . ")";
+            $sql2 = "SELECT PropertyID, Title, friendly_id, listing_type FROM properties WHERE PropertyID IN (" . implode(',', $escaped) . ")";
             if ($res3 = $conn->query($sql2)) {
-                while ($r3 = $res3->fetch_assoc()) { $titles_map[(int)$r3['PropertyID']] = $r3['Title']; }
+                while ($r3 = $res3->fetch_assoc()) { 
+                    $titles_map[(int)$r3['PropertyID']] = [
+                        'title' => $r3['Title'],
+                        'friendly_id' => $r3['friendly_id'],
+                        'type' => $r3['listing_type']
+                    ];
+                }
                 $res3->close();
             }
         }
@@ -268,8 +280,11 @@ if ($employee_id > 0) {
     // Build combined props table: pid => ['title','visits','add','edit']
     $combined = [];
     foreach ($all_pids as $pid) {
+        $info = $titles_map[$pid] ?? null;
         $combined[$pid] = [
-            'title' => $titles_map[$pid] ?? (isset($prop_counts[$pid]['title']) ? $prop_counts[$pid]['title'] : ''),
+            'title' => $info ? $info['title'] : (isset($prop_counts[$pid]['title']) ? $prop_counts[$pid]['title'] : ''),
+            'friendly_id' => $info ? $info['friendly_id'] : null,
+            'type' => $info ? $info['type'] : null,
             'visits' => isset($prop_counts[$pid]['count']) ? $prop_counts[$pid]['count'] : 0,
             'added' => isset($top_added[$pid]['count']) ? $top_added[$pid]['count'] : 0,
             'edited' => isset($top_edited[$pid]['count']) ? $top_edited[$pid]['count'] : 0,
@@ -423,10 +438,18 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
                         <tr><th><?php echo (get_lang_code() === 'ar') ? 'رقم العقار' : 'Property ID'; ?></th><th><?php echo (get_lang_code() === 'ar') ? 'العنوان' : 'Title'; ?></th><th><?php echo (get_lang_code() === 'ar') ? 'عدد الزيارات' : 'Visits'; ?></th></tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($summary['property_counts'] as $pid => $info): ?>
+                    <?php foreach ($summary['property_counts'] as $pid => $info): 
+                        $lookup = $titles_map[$pid] ?? null;
+                        $display_title = $lookup['title'] ?? ($info['title'] ?? '-'); 
+                        $fid = $lookup['friendly_id'] ?? $pid;
+                        $ftype = $lookup['type'] ?? '';
+                    ?>
                         <tr>
-                            <td><?php echo (int)$pid; ?></td>
-                            <td><?php $display_title = $titles_map[$pid] ?? ($info['title'] ?? '-'); if ((int)$pid > 0) { echo '<a href="view_property.php?id=' . (int)$pid . '" target="_blank" rel="noopener">' . htmlspecialchars($display_title) . '</a>'; } else { echo htmlspecialchars($display_title); } ?></td>
+                            <td>
+                                <strong>#<?php echo htmlspecialchars($fid); ?></strong>
+                                <?php if($ftype): ?><span style="font-size:0.85em;color:#666"> (<?php echo htmlspecialchars($ftype); ?>)</span><?php endif; ?>
+                            </td>
+                            <td><?php if ((int)$pid > 0) { echo '<a href="view_property.php?id=' . (int)$pid . '" target="_blank" rel="noopener">' . htmlspecialchars($display_title) . '</a>'; } else { echo htmlspecialchars($display_title); } ?></td>
                             <td><?php echo (int)$info['count']; ?></td>
                         </tr>
                     <?php endforeach; ?>
@@ -449,10 +472,18 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
                         </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($added_props as $pid => $info): ?>
+                    <?php foreach ($added_props as $pid => $info): 
+                        $lookup = $titles_map[$pid] ?? null;
+                        $display_title = $lookup['title'] ?? ($info['title'] ?? '-'); 
+                        $fid = $lookup['friendly_id'] ?? $pid;
+                        $ftype = $lookup['type'] ?? '';
+                    ?>
                         <tr>
-                            <td><?php echo (int)$pid; ?></td>
-                            <td><?php $display_title = $titles_map[$pid] ?? ($info['title'] ?? '-'); if ((int)$pid > 0) { echo '<a href="view_property.php?id=' . (int)$pid . '" target="_blank" rel="noopener">' . htmlspecialchars($display_title) . '</a>'; } else { echo htmlspecialchars($display_title); } ?></td>
+                            <td>
+                                <strong>#<?php echo htmlspecialchars($fid); ?></strong>
+                                <?php if($ftype): ?><span style="font-size:0.85em;color:#666"> (<?php echo htmlspecialchars($ftype); ?>)</span><?php endif; ?>
+                            </td>
+                            <td><?php if ((int)$pid > 0) { echo '<a href="view_property.php?id=' . (int)$pid . '" target="_blank" rel="noopener">' . htmlspecialchars($display_title) . '</a>'; } else { echo htmlspecialchars($display_title); } ?></td>
                             <td><?php echo htmlspecialchars($info['added_at'] ? date('Y-m-d H:i:s', strtotime($info['added_at'])) : '-'); ?></td>
                         </tr>
                     <?php endforeach; ?>
@@ -477,10 +508,18 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
                         </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($edited_props as $pid => $info): ?>
+                    <?php foreach ($edited_props as $pid => $info): 
+                        $lookup = $titles_map[$pid] ?? null;
+                        $display_title = $lookup['title'] ?? ($info['title'] ?? '-'); 
+                        $fid = $lookup['friendly_id'] ?? $pid;
+                        $ftype = $lookup['type'] ?? '';
+                    ?>
                         <tr>
-                            <td><?php echo (int)$pid; ?></td>
-                            <td><?php $display_title = $titles_map[$pid] ?? ($info['title'] ?? '-'); if ((int)$pid > 0) { echo '<a href="view_property.php?id=' . (int)$pid . '" target="_blank" rel="noopener">' . htmlspecialchars($display_title) . '</a>'; } else { echo htmlspecialchars($display_title); } ?></td>
+                            <td>
+                                <strong>#<?php echo htmlspecialchars($fid); ?></strong>
+                                <?php if($ftype): ?><span style="font-size:0.85em;color:#666"> (<?php echo htmlspecialchars($ftype); ?>)</span><?php endif; ?>
+                            </td>
+                            <td><?php if ((int)$pid > 0) { echo '<a href="view_property.php?id=' . (int)$pid . '" target="_blank" rel="noopener">' . htmlspecialchars($display_title) . '</a>'; } else { echo htmlspecialchars($display_title); } ?></td>
                             <td><?php echo (int)($info['edits'] ?? 0); ?></td>
                             <td><?php echo htmlspecialchars($info['last_edited'] ? date('Y-m-d H:i:s', strtotime($info['last_edited'])) : '-'); ?></td>
                         </tr>
