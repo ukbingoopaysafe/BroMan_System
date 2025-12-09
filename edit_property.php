@@ -66,7 +66,7 @@ $floors_count = null;
 $sales_manager_name = $sales_manager_phone = $salesperson_name = $salesperson_phone = "";
 $year_built = $unit_floor = "";
 $net_area = $loading_percentage = null;
-$price_cash = $price_installments = $monthly_rent = $yearly_rent = $meter_price_cash = $meter_price_installments = null;
+$price_cash = $price_installments = $monthly_rent = $daily_rent = $yearly_rent = $meter_price_cash = $meter_price_installments = null;
 $seller_type = $seller_name = $seller_phone = "";
 $latitude = $longitude = null;
 $property_sellers = [];
@@ -166,6 +166,7 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $price_cash = $row["price_cash"] ?? null;
                 $price_installments = $row["price_installments"] ?? null;
                 $monthly_rent = $row["monthly_rent"] ?? null;
+                $daily_rent = $row["daily_rent"] ?? null;
                 $yearly_rent = $row["yearly_rent"] ?? null;
                 $meter_price_cash = $row["meter_price_cash"] ?? null;
                 $meter_price_installments = $row["meter_price_installments"] ?? null;
@@ -270,7 +271,8 @@ if ($att_stmt) {
         'meter_price_installments' => $meter_price_installments,
         'seller_type' => $seller_type,
         'seller_name' => $seller_name,
-        'seller_phone' => $seller_phone
+        'seller_phone' => $seller_phone,
+        'daily_rent' => $daily_rent
     ];
 
     $property_id_post = trim($_POST["property_id"]);
@@ -345,6 +347,7 @@ if ($att_stmt) {
     $price_cash_posted = isset($_POST['price_cash']) && trim($_POST['price_cash']) !== '' ? filter_input(INPUT_POST, 'price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $price_installments_posted = isset($_POST['price_installments']) && trim($_POST['price_installments']) !== '' ? filter_input(INPUT_POST, 'price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $monthly_rent_posted = isset($_POST['monthly_rent']) && trim($_POST['monthly_rent']) !== '' ? filter_input(INPUT_POST, 'monthly_rent', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
+    $daily_rent_posted = isset($_POST['daily_rent']) && trim($_POST['daily_rent']) !== '' ? filter_input(INPUT_POST, 'daily_rent', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $yearly_rent_posted = isset($_POST['yearly_rent']) && trim($_POST['yearly_rent']) !== '' ? filter_input(INPUT_POST, 'yearly_rent', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $meter_price_cash_posted = isset($_POST['meter_price_cash']) && trim($_POST['meter_price_cash']) !== '' ? filter_input(INPUT_POST, 'meter_price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $meter_price_installments_posted = isset($_POST['meter_price_installments']) && trim($_POST['meter_price_installments']) !== '' ? filter_input(INPUT_POST, 'meter_price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
@@ -452,7 +455,7 @@ if ($att_stmt) {
             sales_manager_name = ?, sales_manager_phone = ?, salesperson_name = ?, salesperson_phone = ?,
             year_built = ?, unit_floor = ?, net_area = ?, loading_percentage = ?, 
             price_cash = ?, price_installments = ?, meter_price_cash = ?, meter_price_installments = ?, 
-            monthly_rent = ?, yearly_rent = ?,
+            monthly_rent = ?, daily_rent = ?, yearly_rent = ?,
             seller_type = ?, seller_name = ?, seller_phone = ?,
             latitude = ?, longitude = ?
             WHERE PropertyID = ?";
@@ -472,6 +475,7 @@ if ($att_stmt) {
             $price_cash_val = empty($price_cash_posted) ? null : $price_cash_posted;
             $price_installments_val = empty($price_installments_posted) ? null : $price_installments_posted;
             $monthly_rent_val = empty($monthly_rent_posted) ? null : $monthly_rent_posted;
+            $daily_rent_val = empty($daily_rent_posted) ? null : $daily_rent_posted;
             $yearly_rent_val = empty($yearly_rent_posted) ? null : $yearly_rent_posted;
             $meter_price_cash_val = empty($meter_price_cash_posted) ? null : $meter_price_cash_posted;
             $meter_price_installments_val = empty($meter_price_installments_posted) ? null : $meter_price_installments_posted;
@@ -482,9 +486,9 @@ if ($att_stmt) {
 
             // temporary debug logging removed
 
-            // Build types string programmatically to avoid manual counting mistakes
-            // 39 's' for the parameters and final 'i' for PropertyID (total 40)
-            $types = str_repeat('s', 39) . 'i';
+            // Build types string programmatically
+            // 40 's' for the parameters and final 'i' for PropertyID (total 41)
+            $types = str_repeat('s', 40) . 'i';
             $stmt_update->bind_param(
                 $types,
                 $property_type_id_posted,
@@ -521,6 +525,7 @@ if ($att_stmt) {
                 $meter_price_cash_val,
                 $meter_price_installments_val,
                 $monthly_rent_val,
+                $daily_rent_val,
                 $yearly_rent_val,
                 $seller_type_posted,
                 $seller_name_posted,
@@ -604,7 +609,8 @@ if ($att_stmt) {
                     'meter_price_installments' => $meter_price_installments_val,
                     'seller_type' => $seller_type_posted,
                     'seller_name' => $seller_name_posted,
-                    'seller_phone' => $seller_phone_posted
+                    'seller_phone' => $seller_phone_posted,
+                    'daily_rent' => $daily_rent_val
                 ];
 
                 // Track and log changes
@@ -1325,6 +1331,10 @@ if ($att_stmt) {
                     <div class="form-group">
                         <label for="monthly_rent"><?php echo t('monthly_rent'); ?>:</label>
                         <input type="number" step="0.01" id="monthly_rent" name="monthly_rent" class="form-input" value="<?php echo htmlspecialchars($monthly_rent); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="daily_rent"><?php echo t('daily_rent'); ?>:</label>
+                        <input type="number" step="0.01" id="daily_rent" name="daily_rent" class="form-input" value="<?php echo htmlspecialchars($daily_rent); ?>">
                     </div>
                     <div class="form-group">
                         <label for="yearly_rent"><?php echo t('yearly_rent'); ?>:</label>

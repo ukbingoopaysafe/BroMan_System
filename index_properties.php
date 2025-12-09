@@ -275,6 +275,8 @@ function formatDisplayPrice($row)
     if (isset($row['listing_type']) && $row['listing_type'] === 'Rental') {
         if (!empty($row['monthly_rent']) && is_numeric($row['monthly_rent'])) {
             return number_format(floatval($row['monthly_rent']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('per_month');
+        } elseif (!empty($row['daily_rent']) && is_numeric($row['daily_rent'])) {
+            return number_format(floatval($row['daily_rent']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('per_day');
         } elseif (!empty($row['yearly_rent']) && is_numeric($row['yearly_rent'])) {
             return number_format(floatval($row['yearly_rent']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('per_year');
         }

@@ -139,6 +139,8 @@ function formatPrice($property)
     if (isset($property['listing_type']) && $property['listing_type'] === 'Rental') {
         if (!empty($property['monthly_rent']) && is_numeric($property['monthly_rent'])) {
             return number_format(floatval($property['monthly_rent']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('per_month');
+        } elseif (!empty($property['daily_rent']) && is_numeric($property['daily_rent'])) {
+            return number_format(floatval($property['daily_rent']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('per_day');
         } elseif (!empty($property['yearly_rent']) && is_numeric($property['yearly_rent'])) {
             return number_format(floatval($property['yearly_rent']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('per_year');
         }
@@ -676,7 +678,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
         <div class="page-header">
             <h1><?php echo $page_title; ?></h1>
             <div class="actions">
-                <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'manager'])): ?>
+                <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'manager', 'rental_admin'])): ?>
                 <a href="edit_property.php?id=<?php echo $property_id; ?>" class="btn btn-primary"><i class="fas fa-edit"></i> <?php echo t('edit'); ?></a>
                 <?php endif; ?>
                 <!-- WhatsApp share button -->
@@ -875,6 +877,12 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('monthly_rent'); ?>:</span>
                         <span class="detail-value"><?php echo number_format($property['monthly_rent'], 0, '.', ','); ?> <?php echo t('currency'); ?> / <?php echo t('per_month'); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['daily_rent'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('daily_rent'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['daily_rent'], 0, '.', ','); ?> <?php echo t('currency'); ?> / <?php echo t('per_day'); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['yearly_rent'])): ?>
@@ -1167,6 +1175,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                         'شركة تشطيب' => 'seller_type_finishing_company',
                         'شركة تسويق' => 'seller_type_marketing_company',
                         'Owner' => 'seller_type_owner',
+
                         'Broker' => 'seller_type_broker',
                         'Agent' => 'seller_type_agent',
                         'Doorman' => 'seller_type_doorman',
