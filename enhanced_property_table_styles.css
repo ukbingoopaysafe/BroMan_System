@@ -81,7 +81,6 @@ html[dir="rtl"] .properties-table thead th {
     justify-content: flex-end;
     align-items: center;
     flex-wrap: nowrap;
-    min-width: 200px;
     overflow: visible;
 }
 
@@ -99,7 +98,7 @@ html[dir="rtl"] .table-actions {
     text-decoration: none;
     color: white;
     border: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: all 0.2s ease;
     font-weight: 500;
     min-width: 60px;
@@ -112,30 +111,33 @@ html[dir="rtl"] .table-actions {
 
 .table-actions a:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     z-index: 20;
 }
 
 /* Enhanced Button Colors with Better Contrast */
-.table-actions a.btn-view { 
+.table-actions a.btn-view {
     background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
 }
-.table-actions a.btn-view:hover { 
+
+.table-actions a.btn-view:hover {
     background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
 }
 
-.table-actions a.btn-edit { 
+.table-actions a.btn-edit {
     background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
     color: #212529;
 }
-.table-actions a.btn-edit:hover { 
+
+.table-actions a.btn-edit:hover {
     background: linear-gradient(135deg, #e0a800 0%, #d39e00 100%);
 }
 
-.table-actions a.btn-delete { 
+.table-actions a.btn-delete {
     background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
 }
-.table-actions a.btn-delete:hover { 
+
+.table-actions a.btn-delete:hover {
     background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
 }
 
@@ -204,8 +206,7 @@ html[dir="rtl"] .table-actions {
 }
 
 .cell-project {
-    min-width: 200px;
-    max-width: 250px;
+    min-width: 120px;
 }
 
 .cell-project .project-title {
@@ -224,16 +225,19 @@ html[dir="rtl"] .table-actions {
 /* Ensure <strong> or other inline tags inserted by templates keep the same visual styling */
 .cell-project .project-title strong,
 .property-card .property-title strong {
-    font-weight: 600; /* match original project-title weight */
+    font-weight: 600;
+    /* match original project-title weight */
     font-size: inherit;
     color: inherit;
     line-height: inherit;
-    display: inline; /* don't force block behaviour */
+    display: inline;
+    /* don't force block behaviour */
 }
 
 /* The small subtitle used in card view when we print Title under project name */
 .project-card-sub {
-    font-size: 0.85rem; /* slightly smaller than main title, similar to .project-subtitle */
+    font-size: 0.85rem;
+    /* slightly smaller than main title, similar to .project-subtitle */
     color: #6c757d;
     line-height: 1.2;
     margin-top: 2px;
@@ -286,15 +290,16 @@ html[dir="rtl"] .table-actions {
 }
 
 .cell-actions {
-    width: 220px;
-    text-align: right;
+    width: 1%;
+    white-space: nowrap;
+    text-align: center;
     padding: 12px 8px !important;
     overflow: visible !important;
     position: relative;
 }
 
 html[dir="rtl"] .cell-actions {
-    text-align: left;
+    text-align: center;
 }
 
 /* ================================================== */
@@ -302,7 +307,7 @@ html[dir="rtl"] .cell-actions {
 /* ================================================== */
 
 /* Allow text wrapping in all cells */
-.properties-table td, 
+.properties-table td,
 .properties-table th {
     white-space: normal !important;
     word-wrap: break-word;
@@ -317,38 +322,40 @@ html[dir="rtl"] .cell-actions {
         border-left: none;
         border-right: none;
     }
-    
+
     .properties-table thead th,
     .properties-table tbody td {
         padding: 12px 8px;
         font-size: 0.8rem;
     }
-    
+
     .cell-project {
         min-width: 140px;
     }
-    
-    .cell-price, .cell-area {
+
+    .cell-price,
+    .cell-area {
         min-width: 90px;
     }
-    
-    .cell-location, .cell-company {
+
+    .cell-location,
+    .cell-company {
         min-width: 120px;
     }
-    
+
     .cell-payment {
         min-width: 130px;
     }
-    
+
     .cell-actions {
         width: 120px;
     }
-    
+
     .table-actions {
         flex-direction: column;
         gap: 4px;
     }
-    
+
     .table-actions a {
         padding: 6px 8px;
         font-size: 0.7rem;
@@ -366,7 +373,7 @@ html[dir="rtl"] .cell-actions {
     background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     border-radius: 12px;
     border: 1px solid #e9ecef;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 .filter-row {
@@ -460,7 +467,7 @@ html[dir="rtl"] .filter-buttons {
     border-radius: 8px;
     margin-top: 20px;
     border: 1px solid #e9ecef;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .advanced-filters.show {
@@ -473,6 +480,7 @@ html[dir="rtl"] .filter-buttons {
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -561,14 +569,14 @@ html[dir="rtl"] .view-toggle {
     overflow: hidden;
     transition: all 0.3s ease;
     background-color: #fff;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     display: flex;
     flex-direction: column;
 }
 
 .property-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
 }
 
 .property-card .property-image {
@@ -612,17 +620,18 @@ html[dir="rtl"] .view-toggle {
 /* ================================================== */
 
 @media print {
+
     .table-actions,
     .filter-section,
     .view-toggle,
     .navbar {
         display: none !important;
     }
-    
+
     .properties-table {
         font-size: 0.8rem;
     }
-    
+
     .properties-table thead th,
     .properties-table tbody td {
         padding: 8px 4px;
@@ -643,7 +652,8 @@ html[dir="rtl"] .view-toggle {
 .properties-table {
     table-layout: auto;
     width: 100%;
-    min-width: 1200px; /* Ensure minimum width for all columns */
+    min-width: 1200px;
+    /* Ensure minimum width for all columns */
 }
 
 .properties-table tbody tr {
@@ -677,13 +687,9 @@ html[dir="rtl"] .view-toggle {
     .properties-table {
         min-width: 1000px;
     }
-    
+
     .cell-actions {
-        width: 200px;
-    }
-    
-    .table-actions {
-        min-width: 180px;
+        width: 1%;
     }
 }
 
@@ -693,10 +699,9 @@ html[dir="rtl"] .view-toggle {
         font-size: 0.75rem;
         min-width: 50px;
     }
-    
+
     .table-actions {
         gap: 3px;
-        min-width: 160px;
     }
 }
 
@@ -759,7 +764,7 @@ html[dir="rtl"] .sort-icon {
 }
 
 /* Enhanced table header styling for sorting */
-.properties-table thead th.sortable {
+.properties-table thead th {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border-bottom: 2px solid var(--primary-color);
 }
@@ -767,7 +772,7 @@ html[dir="rtl"] .sort-icon {
 .properties-table thead th.sortable:hover {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Responsive sorting indicators */
@@ -776,7 +781,7 @@ html[dir="rtl"] .sort-icon {
         font-size: 10px;
         margin-left: 4px;
     }
-    
+
     html[dir="rtl"] .sort-icon {
         margin-left: 0;
         margin-right: 4px;
@@ -815,8 +820,13 @@ html[dir="rtl"] .sort-icon {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Sort indicator tooltip */
@@ -826,7 +836,7 @@ html[dir="rtl"] .sort-icon {
     bottom: 100%;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0,0,0,0.8);
+    background: rgba(0, 0, 0, 0.8);
     color: white;
     padding: 4px 8px;
     border-radius: 4px;
@@ -852,8 +862,15 @@ html[dir="rtl"] .sort-icon {
 }
 
 @keyframes sortPulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-}
+    0% {
+        transform: scale(1);
+    }
 
+    50% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}

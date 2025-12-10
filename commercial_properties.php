@@ -343,7 +343,7 @@ if ($stmt = $conn->prepare($sql)) {
         <form method="GET" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
             <input type="hidden" name="view" value="<?php echo htmlspecialchars($view_mode); ?>">
             
-            <!-- Basic Filters -->
+            <!-- Basic Filters (Row 1) -->
             <div class="filter-row">
                 <div class="filter-item">
                     <label for="search"><?php echo t('search'); ?>:</label>
@@ -372,6 +372,7 @@ if ($stmt = $conn->prepare($sql)) {
                 </div>
             </div>
 
+            <!-- Row 2 -->
             <div class="filter-row">
                 <div class="filter-item">
                     <label for="governorate"><?php echo t('governorate'); ?>:</label>
@@ -415,7 +416,11 @@ if ($stmt = $conn->prepare($sql)) {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="filter-item narrow">
+            </div>
+
+            <!-- Row 3: Currency, Bedrooms, Bathrooms, Balconies -->
+            <div class="filter-row">
+                <div class="filter-item">
                     <label for="currency"><?php echo t('currency'); ?>:</label>
                     <select id="currency" name="currency_filter" class="form-control">
                         <option value=""><?php echo t('all_currencies') ?? t('all'); ?></option>
@@ -423,7 +428,7 @@ if ($stmt = $conn->prepare($sql)) {
                         <option value="USD" <?php echo $currency_filter === 'USD' ? 'selected' : ''; ?>><?php echo t('USD'); ?></option>
                     </select>
                 </div>
-                <div class="filter-item narrow">
+                <div class="filter-item">
                     <label for="bedrooms"><?php echo t('bedrooms_short'); ?>:</label>
                     <select id="bedrooms" name="bedrooms" class="form-control">
                         <option value=""><?php echo t('all'); ?></option>
@@ -433,7 +438,7 @@ if ($stmt = $conn->prepare($sql)) {
                         <option value="6+" <?php echo $bedrooms_filter === '6+' ? 'selected' : ''; ?>>6+</option>
                     </select>
                 </div>
-                <div class="filter-item narrow">
+                <div class="filter-item">
                     <label for="bathrooms"><?php echo t('bathrooms_short'); ?>:</label>
                     <select id="bathrooms" name="bathrooms" class="form-control">
                         <option value=""><?php echo t('all'); ?></option>
@@ -443,7 +448,7 @@ if ($stmt = $conn->prepare($sql)) {
                         <option value="6+" <?php echo $bathrooms_filter === '6+' ? 'selected' : ''; ?>>6+</option>
                     </select>
                 </div>
-                <div class="filter-item narrow">
+                <div class="filter-item">
                     <label for="balconies"><?php echo t('balconies'); ?>:</label>
                     <select id="balconies" name="balconies" class="form-control">
                         <option value=""><?php echo t('all'); ?></option>
@@ -614,42 +619,34 @@ if ($stmt = $conn->prepare($sql)) {
                 <thead>
                     <tr>
                         <th class="cell-id sortable" onclick="window.location.href='<?php echo getSortUrl('PropertyID', $sort_column, $sort_direction); ?>'">
-                            <i class="fas fa-hashtag"></i> <?php echo t('table_header_id'); ?>
-                            <?php echo getSortIcon('PropertyID', $sort_column, $sort_direction); ?>
+                            <?php echo t('table_header_id'); ?> <?php echo getSortIcon('PropertyID', $sort_column, $sort_direction); ?>
                         </th>
-                        <th class="cell-project sortable" onclick="window.location.href='<?php echo getSortUrl('ProjectName', $sort_column, $sort_direction); ?>'">
-                            <i class="fas fa-building"></i> <?php echo t('table_header_project_name'); ?>
-                            <?php echo getSortIcon('ProjectName', $sort_column, $sort_direction); ?>
+                        <th class="cell-project sortable" onclick="window.location.href='<?php echo getSortUrl('project_or_title', $sort_column, $sort_direction); ?>'">
+                            <?php echo t('table_header_project_name'); ?> <?php echo getSortIcon('project_or_title', $sort_column, $sort_direction); ?>
                         </th>
-                        <th class="cell-type">
-                            <i class="fas fa-tag"></i> <?php echo t('property_type'); ?>
+                        <th class="cell-type sortable" onclick="window.location.href='<?php echo getSortUrl('type_name', $sort_column, $sort_direction); ?>'">
+                            <?php echo t('property_type'); ?> <?php echo getSortIcon('type_name', $sort_column, $sort_direction); ?>
                         </th>
-                        <th class="cell-design">
-                            <i class="fas fa-home"></i> <?php echo t('table_header_unit_design'); ?>
+                        <th class="cell-model sortable" onclick="window.location.href='<?php echo getSortUrl('unit_design', $sort_column, $sort_direction); ?>'">
+                            <?php echo t('table_header_unit_design'); ?> <?php echo getSortIcon('unit_design', $sort_column, $sort_direction); ?>
                         </th>
-                        <th class="cell-price sortable" onclick="window.location.href='<?php echo getSortUrl('Price', $sort_column, $sort_direction); ?>'">
-                            <i class="fas fa-dollar-sign"></i> <?php echo t('table_header_price'); ?>
-                            <?php echo getSortIcon('Price', $sort_column, $sort_direction); ?>
+                        <th class="cell-price sortable" onclick="window.location.href='<?php echo getSortUrl('price', $sort_column, $sort_direction); ?>'">
+                            <?php echo t('table_header_price'); ?> <?php echo getSortIcon('price', $sort_column, $sort_direction); ?>
                         </th>
-                        <th class="cell-area sortable" onclick="window.location.href='<?php echo getSortUrl('Area', $sort_column, $sort_direction); ?>'">
-                            <i class="fas fa-ruler-combined"></i> <?php echo t('table_header_area_sqm'); ?>
-                            <?php echo getSortIcon('Area', $sort_column, $sort_direction); ?>
+                        <th class="cell-area sortable" onclick="window.location.href='<?php echo getSortUrl('area', $sort_column, $sort_direction); ?>'">
+                            <?php echo t('table_header_area_sqm'); ?> <?php echo getSortIcon('area', $sort_column, $sort_direction); ?>
                         </th>
                         <th class="cell-location sortable" onclick="window.location.href='<?php echo getSortUrl('governorate', $sort_column, $sort_direction); ?>'">
-                            <i class="fas fa-map-marker-alt"></i> <?php echo t('table_header_governorate'); ?>
-                            <?php echo getSortIcon('governorate', $sort_column, $sort_direction); ?>
+                            <?php echo t('table_header_governorate'); ?> <?php echo getSortIcon('governorate', $sort_column, $sort_direction); ?>
                         </th>
-                        <th class="cell-company">
-                            <i class="fas fa-industry"></i> <?php echo t('table_header_company'); ?>
+                        <th class="cell-company sortable" onclick="window.location.href='<?php echo getSortUrl('company_name', $sort_column, $sort_direction); ?>'">
+                            <?php echo t('table_header_company'); ?> <?php echo getSortIcon('company_name', $sort_column, $sort_direction); ?>
                         </th>
                         <th class="cell-status sortable" onclick="window.location.href='<?php echo getSortUrl('Status', $sort_column, $sort_direction); ?>'">
-                            <i class="fas fa-info-circle"></i> <?php echo t('status'); ?>
-                            <?php echo getSortIcon('Status', $sort_column, $sort_direction); ?>
+                            <?php echo t('table_header_status'); ?> <?php echo getSortIcon('Status', $sort_column, $sort_direction); ?>
                         </th>
                         <?php if (can_manage_properties()): ?>
-                        <th class="cell-actions">
-                            <i class="fas fa-cogs"></i> <?php echo t('table_header_actions'); ?>
-                        </th>
+                        <th class="cell-actions"><?php echo t('actions'); ?></th>
                         <?php endif; ?>
                     </tr>
                 </thead>
