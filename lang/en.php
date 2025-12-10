@@ -116,6 +116,8 @@ return [
     'sqm' => 'sqm',
     'bedrooms' => 'Bedrooms',
     'bathrooms' => 'Bathrooms',
+    'bedrooms_short' => 'Bedrooms',
+    'bathrooms_short' => 'Bathrooms',
     'delivery_date' => 'Delivery Date',
     'featured' => 'Featured',
     'yes' => 'Yes',
