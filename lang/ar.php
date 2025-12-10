@@ -171,6 +171,8 @@ return [
     'bathrooms' => 'عدد الحمامات',
     'balconies' => 'عدد البلكونات',
     'elevators' => 'عدد المصاعد',
+    'bedrooms_short' => 'غرف',
+    'bathrooms_short' => 'حمام',
     'floor_number' => 'رقم الطابق',
     'all_unit_designs' => 'جميع نماذج الوحدات',
     'compound_area' => 'مساحة الكمبوند',
