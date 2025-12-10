@@ -663,6 +663,7 @@ return [
     'processing' => 'Processing',
     'error_occurred' => 'An error occurred',
     'unknown_error' => 'Unknown error',
+    'all' => 'All',
 ];
 ?>
 

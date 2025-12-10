@@ -622,6 +622,11 @@ html[dir="rtl"] .detail-grid--inline .detail-item { align-items: flex-end; }
     margin-top: 15px;
 }
 
+.filter-item.narrow {
+    min-width: 110px;
+    flex: 0 1 auto;
+}
+
 /* Advanced Filters Toggle */
 .advanced-filters-toggle {
     cursor: pointer;

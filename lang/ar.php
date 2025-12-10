@@ -668,5 +668,6 @@ return [
     'processing' => 'جاري المعالجة',
     'error_occurred' => 'حدث خطأ',
     'unknown_error' => 'خطأ غير معروف',
+    'all' => 'الكل',
 ];
 

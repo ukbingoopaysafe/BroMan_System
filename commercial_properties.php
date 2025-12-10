@@ -62,6 +62,11 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 $currency_filter = isset($_GET['currency_filter']) ? trim($_GET['currency_filter']) : '';
     $down_payment_filter = isset($_GET['down_payment']) ? trim($_GET['down_payment']) : '';
     $payment_period_filter = isset($_GET['payment_period']) ? trim($_GET['payment_period']) : '';
+
+    // New filters
+    $bedrooms_filter = isset($_GET['bedrooms']) ? trim($_GET['bedrooms']) : '';
+    $bathrooms_filter = isset($_GET['bathrooms']) ? trim($_GET['bathrooms']) : '';
+    $balconies_filter = isset($_GET['balconies']) ? trim($_GET['balconies']) : '';
 }
 
 // Fetch distinct governorates for the filter dropdown
@@ -410,12 +415,43 @@ if ($stmt = $conn->prepare($sql)) {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="filter-item">
+                <div class="filter-item narrow">
                     <label for="currency"><?php echo t('currency'); ?>:</label>
                     <select id="currency" name="currency_filter" class="form-control">
                         <option value=""><?php echo t('all_currencies') ?? t('all'); ?></option>
                         <option value="EGP" <?php echo $currency_filter === 'EGP' ? 'selected' : ''; ?>><?php echo t('EGP'); ?></option>
                         <option value="USD" <?php echo $currency_filter === 'USD' ? 'selected' : ''; ?>><?php echo t('USD'); ?></option>
+                    </select>
+                </div>
+                <div class="filter-item narrow">
+                    <label for="bedrooms"><?php echo t('bedrooms_short'); ?>:</label>
+                    <select id="bedrooms" name="bedrooms" class="form-control">
+                        <option value=""><?php echo t('all'); ?></option>
+                        <?php for($i=1; $i<=5; $i++): ?>
+                            <option value="<?php echo $i; ?>" <?php echo $bedrooms_filter == $i ? 'selected' : ''; ?>><?php echo $i; ?></option>
+                        <?php endfor; ?>
+                        <option value="6+" <?php echo $bedrooms_filter === '6+' ? 'selected' : ''; ?>>6+</option>
+                    </select>
+                </div>
+                <div class="filter-item narrow">
+                    <label for="bathrooms"><?php echo t('bathrooms_short'); ?>:</label>
+                    <select id="bathrooms" name="bathrooms" class="form-control">
+                        <option value=""><?php echo t('all'); ?></option>
+                        <?php for($i=1; $i<=5; $i++): ?>
+                            <option value="<?php echo $i; ?>" <?php echo $bathrooms_filter == $i ? 'selected' : ''; ?>><?php echo $i; ?></option>
+                        <?php endfor; ?>
+                        <option value="6+" <?php echo $bathrooms_filter === '6+' ? 'selected' : ''; ?>>6+</option>
+                    </select>
+                </div>
+                <div class="filter-item narrow">
+                    <label for="balconies"><?php echo t('balconies'); ?>:</label>
+                    <select id="balconies" name="balconies" class="form-control">
+                        <option value=""><?php echo t('all'); ?></option>
+                        <option value="0" <?php echo $balconies_filter === '0' ? 'selected' : ''; ?>>0</option>
+                        <option value="1" <?php echo $balconies_filter == 1 ? 'selected' : ''; ?>>1</option>
+                        <option value="2" <?php echo $balconies_filter == 2 ? 'selected' : ''; ?>>2</option>
+                        <option value="3" <?php echo $balconies_filter == 3 ? 'selected' : ''; ?>>3</option>
+                        <option value="4+" <?php echo $balconies_filter === '4+' ? 'selected' : ''; ?>>4+</option>
                     </select>
                 </div>
             </div>
