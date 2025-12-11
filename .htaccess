@@ -1,8 +1,170 @@
-# Disable Directory Listing Globally
+# ==================================================
+# BroMan System - Security Configuration
+# ==================================================
+# IMPORTANT: This file contains security rules
+# Do not modify unless you understand the implications
+# ==================================================
+
+# Enable Rewrite Engine
+RewriteEngine On
+
+# ==================================================
+# FORCE HTTPS (Uncomment when SSL is configured)
+# ==================================================
+# RewriteCond %{HTTPS} off
+# RewriteCond %{HTTP:X-Forwarded-Proto} !https
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# ==================================================
+# SECURITY: Disable Directory Listing
+# ==================================================
 Options -Indexes
 
-# Security headers (Optional but recommended)
-<IfModule mod_headers.c>
-    Header set X-XSS-Protection "1; mode=block"
-    Header set X-Content-Type-Options "nosniff"
+# ==================================================
+# SECURITY: Protect Sensitive Files
+# ==================================================
+
+# Block access to hidden files (.git, .env, .htaccess, etc.)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Block access to configuration and sensitive files
+<FilesMatch "(\.env|\.git|\.gitignore|composer\.(json|lock)|package\.json|\.md|\.sql|\.log)$">
+    Require all denied
+</FilesMatch>
+
+# Block access to backup files
+<FilesMatch "\.(bak|backup|old|orig|save|swp|tmp)$">
+    Require all denied
+</FilesMatch>
+
+# Protect config.php from direct access
+<Files "config.php">
+    Require all denied
+</Files>
+
+# Protect db.php from direct access
+<Files "db.php">
+    Require all denied
+</Files>
+
+# Protect security files from direct access
+<Files "security.php">
+    Require all denied
+</Files>
+
+<Files "security_headers.php">
+    Require all denied
+</Files>
+
+<Files "rate_limiter.php">
+    Require all denied
+</Files>
+
+<Files "session_check.php">
+    Require all denied
+</Files>
+
+# ==================================================
+# SECURITY: Protect Upload Directories
+# ==================================================
+
+# Prevent PHP execution in uploads directory
+<IfModule mod_rewrite.c>
+    RewriteRule ^uploads/.*\.php$ - [F,L]
 </IfModule>
+
+# ==================================================
+# SECURITY: HTTP Headers
+# ==================================================
+<IfModule mod_headers.c>
+    # Prevent XSS attacks
+    Header always set X-XSS-Protection "1; mode=block"
+    
+    # Prevent MIME type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+    
+    # Prevent clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+    
+    # Control referrer information
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # Permissions Policy
+    Header always set Permissions-Policy "accelerometer=(), camera=(), geolocation=(self), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+    
+    # Remove PHP version header
+    Header always unset X-Powered-By
+    
+    # Remove server signature
+    Header always unset Server
+    
+    # Content Security Policy (basic - PHP sends a more complete one)
+    # Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://maps.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.googleapis.com"
+</IfModule>
+
+# ==================================================
+# SECURITY: Prevent Information Disclosure
+# ==================================================
+
+# Disable server signature
+ServerSignature Off
+
+# ==================================================
+# PERFORMANCE: Compression
+# ==================================================
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+
+# ==================================================
+# PERFORMANCE: Browser Caching for Static Assets
+# ==================================================
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+</IfModule>
+
+# ==================================================
+# SECURITY: Rate Limiting (if mod_evasive is available)
+# ==================================================
+# <IfModule mod_evasive20.c>
+#     DOSHashTableSize 3097
+#     DOSPageCount 2
+#     DOSSiteCount 50
+#     DOSPageInterval 1
+#     DOSSiteInterval 1
+#     DOSBlockingPeriod 60
+# </IfModule>
+
+# ==================================================
+# SECURITY: Block Bad Bots and Crawlers
+# ==================================================
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTP_USER_AGENT} (havij|sqlmap|nikto|wpscan|acunetix) [NC]
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# ==================================================
+# SECURITY: Block SQL Injection Attempts
+# ==================================================
+<IfModule mod_rewrite.c>
+    RewriteCond %{QUERY_STRING} (\<|%3C).*script.*(\>|%3E) [NC,OR]
+    RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+    RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2}) [OR]
+    RewriteCond %{QUERY_STRING} (;|\'|\"|%22|%27).*(union|select|insert|drop|delete|update|cast|create|char|convert|alter|declare|order|script|set|md5|benchmark|encode) [NC]
+    RewriteRule ^(.*)$ - [F,L]
+</IfModule>
+
+# ==================================================
+# Custom Error Pages (Optional)
+# ==================================================
+# ErrorDocument 403 /error/403.html
+# ErrorDocument 404 /error/404.html
+# ErrorDocument 500 /error/500.html

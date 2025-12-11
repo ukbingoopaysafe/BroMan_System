@@ -1,10 +1,9 @@
 <?php
-require_once __DIR__ .
-'/lang/translate.php'; // Include translation handler
+require_once __DIR__ . '/lang/translate.php'; // Include translation handler
+require_once __DIR__ . '/security.php'; // Include security helpers
 
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+// Ensure secure session is started
+ensure_secure_session_started();
 
 // If user is already logged in, redirect to dashboard
 if (isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true) {
@@ -15,7 +14,19 @@ if (isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true) {
 // Include the database connection file
 require_once 'db.php';
 
+// Include rate limiter (gracefully handle if tables don't exist yet)
+$rate_limiting_enabled = false;
+try {
+    require_once __DIR__ . '/rate_limiter.php';
+    // Check if required tables exist
+    $table_check = $conn->query("SHOW TABLES LIKE 'login_attempts'");
+    $rate_limiting_enabled = $table_check && $table_check->num_rows > 0;
+} catch (Exception $e) {
+    error_log("Rate limiter not available: " . $e->getMessage());
+}
+
 $error_message = '';
+$warning_message = '';
 $username_value = ''; // To retain username on error
 
 // Check for timeout messages
@@ -29,88 +40,122 @@ if (isset($_GET['timeout'])) {
 
 // Process form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username_value = isset($_POST['username']) ? trim($_POST['username']) : '';
-
-    if (empty(trim($_POST["username"]))) {
-        $error_message = t('username_required');
+    // CSRF Protection
+    if (!validateCSRFToken($_POST['csrf_token'] ?? null)) {
+        $error_message = 'انتهت صلاحية الجلسة. يرجى المحاولة مرة أخرى.';
     } else {
-        $username = trim($_POST["username"]);
-    }
+        $username_value = isset($_POST['username']) ? trim($_POST['username']) : '';
 
-    if (empty(trim($_POST["password"]))) {
-        $error_message = t('password_required');
-    } else {
-        $password = $_POST["password"];
-    }
+        if (empty(trim($_POST["username"]))) {
+            $error_message = t('username_required');
+        } else {
+            $username = trim($_POST["username"]);
+        }
 
-    if (empty($error_message)) {
-        $sql = "SELECT EmployeeID, Username, Password, Role, FullName FROM employees WHERE Username = ?";
+        if (empty(trim($_POST["password"]))) {
+            $error_message = t('password_required');
+        } else {
+            $password = $_POST["password"];
+        }
 
-        if ($stmt = $conn->prepare($sql)) {
-            $stmt->bind_param("s", $param_username);
-            $param_username = $username;
-            
-            if ($stmt->execute()) {
-                $stmt->store_result();
+        // Check rate limiting before processing login
+        if (empty($error_message) && $rate_limiting_enabled) {
+            $rate_check = check_rate_limit($conn, $username ?? null);
+            if (!$rate_check['allowed']) {
+                $error_message = $rate_check['message'];
+            }
+        }
+
+        if (empty($error_message)) {
+            $sql = "SELECT EmployeeID, Username, Password, Role, FullName FROM employees WHERE Username = ?";
+
+            if ($stmt = $conn->prepare($sql)) {
+                $stmt->bind_param("s", $param_username);
+                $param_username = $username;
                 
-                if ($stmt->num_rows == 1) {
-                    $stmt->bind_result($employee_id, $db_username, $hashed_password, $role, $full_name);
-                    if ($stmt->fetch()) {
-                        if (password_verify($password, $hashed_password)) {
-                            session_regenerate_id(true);
-                            
-                            $_SESSION["loggedin"] = true;
-                            $_SESSION["employee_id"] = $employee_id;
-                            $_SESSION["username"] = $db_username;
-                            $_SESSION["role"] = $role;
-                            $_SESSION["full_name"] = $full_name;
-                            $_SESSION["created_at"] = time();
-                            $_SESSION["last_activity"] = time();
-                            // Language preference could be saved here if needed
-
-                            // Log login activity (non-blocking)
-                            try {
-                                require_once __DIR__ . '/activity_log.php';
-                                if (function_exists('log_activity')) {
-                                    log_activity($conn, $employee_id, 'login', json_encode(['username' => $db_username]));
+                if ($stmt->execute()) {
+                    $stmt->store_result();
+                    
+                    if ($stmt->num_rows == 1) {
+                        $stmt->bind_result($employee_id, $db_username, $hashed_password, $role, $full_name);
+                        if ($stmt->fetch()) {
+                            if (password_verify($password, $hashed_password)) {
+                                // Successful login
+                                session_regenerate_id(true);
+                                
+                                $_SESSION["loggedin"] = true;
+                                $_SESSION["employee_id"] = $employee_id;
+                                $_SESSION["username"] = $db_username;
+                                $_SESSION["role"] = $role;
+                                $_SESSION["full_name"] = $full_name;
+                                $_SESSION["created_at"] = time();
+                                $_SESSION["last_activity"] = time();
+                                
+                                // Record successful login for rate limiting
+                                if ($rate_limiting_enabled) {
+                                    handle_successful_login($conn, $db_username);
                                 }
-                            } catch (Exception $e) {
-                                error_log('Failed to record login activity: ' . $e->getMessage());
-                            }
 
-                            // Update active session record
-                            try {
-                                require_once __DIR__ . '/session_activity.php';
-                                update_session_activity($conn);
-                            } catch (Exception $e) {
-                                error_log('Failed to update session activity: ' . $e->getMessage());
-                            }
+                                // Log login activity (non-blocking)
+                                try {
+                                    require_once __DIR__ . '/activity_log.php';
+                                    if (function_exists('log_activity')) {
+                                        log_activity($conn, $employee_id, 'login', json_encode(['username' => $db_username]));
+                                    }
+                                } catch (Exception $e) {
+                                    error_log('Failed to record login activity: ' . $e->getMessage());
+                                }
 
-                            header("Location: dashboard.php");
-                            exit();
-                        } else {
-                            $error_message = t('invalid_password');
+                                // Update active session record
+                                try {
+                                    require_once __DIR__ . '/session_activity.php';
+                                    update_session_activity($conn);
+                                } catch (Exception $e) {
+                                    error_log('Failed to update session activity: ' . $e->getMessage());
+                                }
+
+                                header("Location: dashboard.php");
+                                exit();
+                            } else {
+                                // Wrong password - record failed attempt
+                                if ($rate_limiting_enabled) {
+                                    $fail_result = handle_failed_login($conn, $username);
+                                    if ($fail_result['attempts_remaining'] > 0 && $fail_result['attempts_remaining'] <= 3) {
+                                        $warning_message = "تنبيه: متبقي {$fail_result['attempts_remaining']} محاولات قبل الحظر المؤقت.";
+                                    }
+                                }
+                                // Use generic error message for security (don't reveal if user exists)
+                                $error_message = 'اسم المستخدم أو كلمة المرور غير صحيحة.';
+                            }
                         }
+                    } else {
+                        // User not found - record failed attempt
+                        if ($rate_limiting_enabled) {
+                            $fail_result = handle_failed_login($conn, $username);
+                            if ($fail_result['attempts_remaining'] > 0 && $fail_result['attempts_remaining'] <= 3) {
+                                $warning_message = "تنبيه: متبقي {$fail_result['attempts_remaining']} محاولات قبل الحظر المؤقت.";
+                            }
+                        }
+                        // Use generic error message for security
+                        $error_message = 'اسم المستخدم أو كلمة المرور غير صحيحة.';
                     }
                 } else {
-                    $error_message = t('no_account_found');
+                    error_log("Error executing login statement: " . $stmt->error);
+                    $error_message = t('login_error');
                 }
+                $stmt->close();
             } else {
-                error_log("Error executing login statement: " . $stmt->error);
+                error_log("Error preparing login statement: " . $conn->error);
                 $error_message = t('login_error');
             }
-            $stmt->close();
-        } else {
-            error_log("Error preparing login statement: " . $conn->error);
-            $error_message = t('login_error'); // Use generic error message
         }
     }
-    // Close connection only after all operations are done
-    if (isset($conn)) {
-        $conn->close();
-    }
 }
+
+// Generate CSRF token for form
+$csrf_token = generateCSRFToken();
 ?>
+
 
 <!DOCTYPE html>
 <html lang="<?php echo get_lang_code(); ?>" dir="<?php echo get_direction(); ?>">
@@ -195,6 +240,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             padding: 15px;
             border-radius: var(--border-radius, 4px);
         }
+        .message-warning {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: var(--border-radius, 4px);
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+        }
         .language-switcher {
             text-align: center;
             margin-top: 25px;
@@ -223,8 +276,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <?php if (!empty($error_message)): ?>
                 <div class="message message-error"><?= htmlspecialchars($error_message) ?></div>
             <?php endif; ?>
+            
+            <?php if (!empty($warning_message)): ?>
+                <div class="message-warning"><?= htmlspecialchars($warning_message) ?></div>
+            <?php endif; ?>
 
             <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <div class="form-group">
                     <label for="username"><?php echo t('username'); ?>:</label>
                     <input type="text" name="username" id="username" class="form-input" required value="<?php echo htmlspecialchars($username_value); ?>">
