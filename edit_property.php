@@ -96,7 +96,7 @@ if ($result_property_types = $conn->query($sql_property_types)) {
 
 // Finishing Types
 $finishing_types_list = [];
-$sql_finishing_types = "SELECT FinishingID, FinishingName, FinishingName_ar FROM PropertyFinishingTypes ORDER BY FinishingID";
+$sql_finishing_types = "SELECT FinishingID, FinishingName, FinishingName_ar FROM PropertyFinishingTypes ORDER BY sort_order ASC";
 if ($result_finishing_types = $conn->query($sql_finishing_types)) {
     while ($row_finish = $result_finishing_types->fetch_assoc()) {
         $finishing_types_list[] = $row_finish;

@@ -57,7 +57,7 @@ if ($result = $conn->query($sql_types)) {
 // Unit designs are now handled as text input, no database lookup needed
 
 // Fetch Finishing Types
-$sql_finishing = "SELECT FinishingID, FinishingName, FinishingName_ar FROM propertyfinishingtypes ORDER BY FinishingID";
+$sql_finishing = "SELECT FinishingID, FinishingName, FinishingName_ar FROM propertyfinishingtypes ORDER BY sort_order ASC";
 if ($result = $conn->query($sql_finishing)) {
     while ($row = $result->fetch_assoc()) {
         $finishing_types[] = $row;
