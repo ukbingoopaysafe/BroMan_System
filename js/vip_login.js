@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             draw() {
-                ctx.fillStyle = `rgba(212, 175, 55, ${this.alpha})`; // Gold particles
+                ctx.fillStyle = `rgba(184, 134, 11, ${this.alpha})`; // Darker Gold particles for light bg
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const distance = Math.sqrt(dx * dx + dy * dy);
 
                     if (distance < 100) {
-                        ctx.strokeStyle = `rgba(212, 175, 55, ${0.1 * (1 - distance / 100)})`;
+                        ctx.strokeStyle = `rgba(184, 134, 11, ${0.1 * (1 - distance / 100)})`;
                         ctx.lineWidth = 0.5;
                         ctx.beginPath();
                         ctx.moveTo(particles[i].x, particles[i].y);

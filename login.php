@@ -96,7 +96,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <div class="login-container">
         <div class="glass-card">
             <div class="logo-container">
-                <img src="images/Logo/Final_Logo White-01.png" alt="BroMan Logo">
+                <img src="images/Logo/Final_Logo.png" alt="BroMan Logo">
             </div>
             
             <div class="login-header">
