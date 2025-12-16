@@ -11,9 +11,11 @@ if (session_status() == PHP_SESSION_NONE) {
 $is_logged_in = isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true;
 $user_role = isset($_SESSION["role"]) ? $_SESSION["role"] : null;
 $user_full_name = isset($_SESSION["full_name"]) ? htmlspecialchars($_SESSION["full_name"]) : "Guest";
+// Extract first name only for logout button
+$user_first_name = explode(' ', $user_full_name)[0];
 
 $active_page = basename($_SERVER["PHP_SELF"]);
-$logo_path = "images/broman_logo.png";
+$logo_path = "images/Logo/Final_Logo White-02.png"; // Cropped white/gold logo for dark navbar
 
 $current_lang = get_lang_code();
 $switch_lang = ($current_lang == 'ar') ? 'en' : 'ar';
@@ -67,7 +69,7 @@ $switch_lang_url = basename($_SERVER['PHP_SELF']) . '?' . http_build_query($quer
       <!-- Reports link removed as requested -->
             <li>
                 <form action="logout.php" method="POST" style="display: inline;">
-                    <button type="submit" class="btn-logout"><?php echo sprintf(t('logout_user'), $user_full_name); ?></button>
+                    <button type="submit" class="btn-logout"><?php echo sprintf(t('logout_user'), $user_first_name); ?></button>
                 </form>
             </li>
         <?php else: ?>
@@ -78,73 +80,237 @@ $switch_lang_url = basename($_SERVER['PHP_SELF']) . '?' . http_build_query($quer
 </nav>
 
 <style>
+/* Premium Navbar Styles - Ultra Dark Navy with Gold Accents */
+.navbar {
+    background: linear-gradient(135deg, #020d24 0%, #0a1a3a 100%);
+    padding: 0.80rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 3px solid #b08a0e;
+}
+
+.navbar .logo-container {
+    display: flex;
+    align-items: center;
+}
+
+.navbar .logo-container a {
+    display: flex;
+    align-items: center;
+}
+
+.navbar .logo {
+    height: 42px;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    transition: all 0.3s ease;
+}
+
+.navbar .logo:hover {
+    transform: scale(1.03);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.navbar ul {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.navbar ul li a {
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    padding: 0.55rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navbar ul li a:hover,
+.navbar ul li a.active {
+    color: #b08a0e;
+    background: linear-gradient(135deg, rgba(176, 138, 14, 0.15) 0%, rgba(176, 138, 14, 0.08) 100%);
+    box-shadow: inset 0 -2px 0 #b08a0e, 0 2px 8px rgba(176, 138, 14, 0.15);
+}
+
+.navbar ul li a.active {
+    color: #c9a011;
+    background: linear-gradient(135deg, rgba(176, 138, 14, 0.2) 0%, rgba(176, 138, 14, 0.1) 100%);
+    box-shadow: inset 0 -3px 0 #b08a0e, 0 4px 12px rgba(176, 138, 14, 0.2);
+}
+
 .navbar ul li.dropdown {
-  position: relative;
-  display: inline-block;
+    position: relative;
+    display: inline-block;
+}
+
+/* Dropdown parent link styling */
+.navbar ul li.dropdown > a.dropbtn {
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    padding: 0.55rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.navbar ul li.dropdown:hover > a.dropbtn,
+.navbar ul li.dropdown.active > a.dropbtn {
+    color: #b08a0e;
+    background: linear-gradient(135deg, rgba(176, 138, 14, 0.15) 0%, rgba(176, 138, 14, 0.08) 100%);
+    box-shadow: inset 0 -2px 0 #b08a0e, 0 2px 8px rgba(176, 138, 14, 0.15);
 }
 
 .navbar ul li.dropdown .dropdown-content {
-  display: none;
-  position: absolute;
-  background-color: #f9f9f9;
-  min-width: 200px; /* Adjust as needed */
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  z-index: 1;
-  border-radius: 4px;
-  overflow: hidden; /* Ensures border-radius applies to children */
-  top: 100%; /* Position below the parent */
-  left: 0;
+    display: none;
+    position: absolute;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    min-width: 220px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    z-index: 1001;
+    border-radius: 12px;
+    overflow: hidden;
+    top: 100%;
+    left: 0;
+    padding: 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    animation: dropdownSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dropdownSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .navbar ul li.dropdown:hover .dropdown-content {
-  display: block;
+    display: block;
 }
 
 .navbar ul li.dropdown .dropdown-content a {
-  color: black;
-  padding: 12px 16px;
-  text-decoration: none;
-  display: block;
-  text-align: left; /* Adjust if using RTL */
-  white-space: nowrap;
+    color: #2c3e50 !important;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    display: block;
+    font-weight: 500;
+    white-space: nowrap;
 }
 
 .navbar ul li.dropdown .dropdown-content a:hover {
-  background-color: #f1f1f1;
+    background: rgba(176, 138, 14, 0.1);
+    color: #020d24 !important;
 }
 
 .navbar ul li.dropdown .dropdown-content a.active-sub {
-  background-color: #ddd; /* Style for active sub-item */
-  font-weight: bold;
+    background: rgba(176, 138, 14, 0.15);
+    color: #020d24 !important;
+    font-weight: 600;
 }
 
 /* Arrow for dropdown */
 .navbar ul li.dropdown a.dropbtn .arrow {
-  display: inline-block;
-  margin-left: 5px; /* Adjust spacing */
-  font-size: 0.8em;
-  transition: transform 0.3s ease;
+    display: inline-block;
+    margin-left: 5px;
+    font-size: 0.75em;
+    transition: transform 0.3s ease;
 }
 
 .navbar ul li.dropdown:hover a.dropbtn .arrow {
-  transform: rotate(180deg);
+    transform: rotate(180deg);
+}
+
+/* Premium Logout Button */
+.navbar .btn-logout {
+    background: linear-gradient(135deg, #b08a0e 0%, #8a6b08 100%);
+    color: #fff;
+    border: none;
+    padding: 0.55rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(176, 138, 14, 0.25);
+}
+
+.navbar .btn-logout:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(176, 138, 14, 0.35);
+}
+
+/* Language Switch */
+.navbar ul li a.lang-switch {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.8rem;
+    padding: 0.45rem 0.85rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+}
+
+.navbar ul li a.lang-switch:hover {
+    border-color: #b08a0e;
+    color: #b08a0e;
+    background: rgba(176, 138, 14, 0.08);
 }
 
 /* Adjustments for RTL */
 html[dir="rtl"] .navbar ul li.dropdown .dropdown-content {
-  left: auto;
-  right: 0;
+    left: auto;
+    right: 0;
 }
 
 html[dir="rtl"] .navbar ul li.dropdown .dropdown-content a {
-  text-align: right;
+    text-align: right;
 }
 
 html[dir="rtl"] .navbar ul li.dropdown a.dropbtn .arrow {
-  margin-left: 0;
-  margin-right: 5px;
+    margin-left: 0;
+    margin-right: 5px;
 }
 
-</style>
+/* Responsive */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 0.5rem 1rem;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .navbar ul {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.25rem;
+    }
+    
+    .navbar .logo {
+        height: 40px;
+    }
+}
 </style>
 
