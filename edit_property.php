@@ -740,6 +740,7 @@ if ($att_stmt) {
     <link rel="shortcut icon" href="/images/Logo%20Broman.svg">
     <link rel="apple-touch-icon" href="/images/Logo%20Broman.svg">
     <link rel="stylesheet" href="modern_styles.css">
+    <link rel="stylesheet" href="css/premium_design.css">
     <link rel="stylesheet" href="lightbox.css">
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css"> 
@@ -766,8 +767,8 @@ if ($att_stmt) {
         .form-section h3 {
             margin-top: 0;
             margin-bottom: 20px;
-            color: var(--primary-color);
-            border-bottom: 2px solid var(--primary-color);
+            color: #020d24;
+            border-bottom: 2px solid #b08a0e;
             padding-bottom: 5px;
             display: inline-block;
         }
@@ -807,8 +808,8 @@ if ($att_stmt) {
         }
         .form-input:focus {
             outline: none;
-            border-color: #0056b3;
-            box-shadow: 0 0 0 2px rgba(0,86,179,0.2);
+            border-color: #b08a0e;
+            box-shadow: 0 0 0 2px rgba(176, 138, 14, 0.2);
         }
         .form-group textarea {
             resize: vertical;

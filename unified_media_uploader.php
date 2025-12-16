@@ -63,13 +63,13 @@ require_once __DIR__ . '/media_functions.php';
 }
 
 .upload-area:hover {
-    border-color: #007bff;
+    border-color: #b08a0e;
     background: #f8f9fa;
 }
 
 .upload-area.dragover {
-    border-color: #007bff;
-    background: #e3f2fd;
+    border-color: #b08a0e;
+    background: rgba(176, 138, 14, 0.1);
 }
 
 .upload-content {
@@ -136,7 +136,7 @@ require_once __DIR__ . '/media_functions.php';
 
 .file-type {
     font-size: 12px;
-    color: #007bff;
+    color: #b08a0e;
     font-weight: bold;
 }
 
@@ -168,7 +168,7 @@ require_once __DIR__ . '/media_functions.php';
 
 .progress-fill {
     height: 100%;
-    background: #007bff;
+    background: linear-gradient(135deg, #b08a0e 0%, #8a6b08 100%);
     width: 0%;
     transition: width 0.3s ease;
 }
@@ -229,7 +229,7 @@ require_once __DIR__ . '/media_functions.php';
 }
 
 .btn-primary {
-    background: #007bff;
+    background: linear-gradient(135deg, #b08a0e 0%, #8a6b08 100%);
     color: white;
 }
 

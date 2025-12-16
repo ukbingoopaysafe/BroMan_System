@@ -218,16 +218,16 @@
 }
 
 .upload-area:hover {
-    border-color: #007bff;
+    border-color: #b08a0e;
 }
 
 .upload-area.dragover {
-    border-color: #007bff;
-    background-color: #f8f9ff;
+    border-color: #b08a0e;
+    background-color: rgba(176, 138, 14, 0.1);
 }
 
 .upload-btn {
-    background-color: #007bff;
+    background: linear-gradient(135deg, #b08a0e 0%, #8a6b08 100%);
     color: white;
     border: none;
     border-radius: 4px;
@@ -235,11 +235,13 @@
     cursor: pointer;
     font-size: 14px;
     margin: 5px;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(176, 138, 14, 0.25);
 }
 
 .upload-btn:hover {
-    background-color: #0056b3;
+    background: linear-gradient(135deg, #c9a011 0%, #b08a0e 100%);
+    transform: translateY(-2px);
 }
 
 .upload-progress {
@@ -253,7 +255,7 @@
 
 .upload-progress-bar {
     height: 100%;
-    background-color: #007bff;
+    background: linear-gradient(135deg, #b08a0e 0%, #8a6b08 100%);
     width: 0%;
     transition: width 0.3s ease;
 }
@@ -264,43 +266,42 @@
         width: 95%;
         padding: 20px;
     }
-    
+
     .lightbox-close {
         top: 10px;
         right: 20px;
         font-size: 30px;
     }
-    
+
     .lightbox-nav {
         font-size: 24px;
         padding: 8px 12px;
     }
-    
+
     .lightbox-prev {
         left: 10px;
     }
-    
+
     .lightbox-next {
         right: 10px;
     }
-    
+
     .images-grid {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 10px;
     }
-    
+
     .image-item img {
         height: 120px;
     }
-    
+
     .audio-item {
         flex-direction: column;
         align-items: stretch;
         gap: 10px;
     }
-    
+
     .audio-item audio {
         max-width: 100%;
     }
 }
-

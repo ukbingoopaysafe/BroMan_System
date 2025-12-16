@@ -47,7 +47,7 @@ require_once __DIR__ . '/media_functions.php';
 /* Reuse styles from unified_media_uploader but with smaller previews for attachments */
 .unified-attachment-uploader { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; }
 .upload-area { border: 2px dashed #ccc; border-radius: 8px; padding: 30px; text-align: center; background: white; cursor: pointer; }
-.upload-area.dragover { border-color: #007bff; background: #eef7ff; }
+.upload-area.dragover { border-color: #b08a0e; background: rgba(176, 138, 14, 0.1); }
 .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 12px; }
 .file-preview { position: relative; border: 1px solid #eee; border-radius: 6px; overflow: hidden; background: white; }
 .file-preview img { width: 100%; height: 100px; object-fit: cover; }

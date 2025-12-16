@@ -553,13 +553,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel="shortcut icon" href="/images/Logo%20Broman.svg">
     <link rel="apple-touch-icon" href="/images/Logo%20Broman.svg">
     <link rel="stylesheet" href="modern_styles.css">
+    <link rel="stylesheet" href="css/premium_design.css">
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css">
     <?php endif; ?>
     <!-- Map provider: Google Maps -->
     <style>
         .form-section { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
-        .form-section h3 { margin-bottom: 15px; color: #0056b3; }
+        .form-section h3 { margin-bottom: 15px; color: #020d24; border-bottom: 2px solid #b08a0e; display: inline-block; padding-bottom: 5px; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
         
         /* Upload area styles */
@@ -573,20 +574,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             transition: border-color 0.3s ease;
         }
         .upload-area:hover, .upload-area.dragover {
-            border-color: #0056b3;
-            background-color: #f0f8ff;
+            border-color: #b08a0e;
+            background-color: rgba(176, 138, 14, 0.1);
         }
         .upload-btn {
-            background-color: #0056b3;
+            background: linear-gradient(135deg, #b08a0e 0%, #8a6b08 100%);
             color: white;
             border: none;
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
             margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(176, 138, 14, 0.25);
         }
         .upload-btn:hover {
-            background-color: #004494;
+            background: linear-gradient(135deg, #c9a011 0%, #b08a0e 100%);
+            transform: translateY(-2px);
         }
         
         /* Preview styles */

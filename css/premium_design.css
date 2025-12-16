@@ -459,6 +459,240 @@ body.premium-theme {
 }
 
 /* =====================================================
+   PREMIUM FORM SECTIONS & CONTAINER
+   ===================================================== */
+
+/* Main Form Container with Glassmorphism */
+.premium-form-container {
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-xl);
+    margin-bottom: var(--space-xl);
+}
+
+/* Form Section with Gold Accent */
+.premium-form-section {
+    margin-bottom: var(--space-xl);
+    padding-bottom: var(--space-lg);
+    border-bottom: 1px solid var(--bg-tertiary);
+}
+
+.premium-form-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.premium-form-section h3 {
+    font-size: 1.1rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--premium-navy);
+    margin: 0 0 var(--space-lg) 0;
+    padding-bottom: var(--space-sm);
+    border-bottom: 2px solid var(--premium-gold);
+    display: inline-block;
+}
+
+/* Form Grid Layout */
+.premium-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--space-lg);
+}
+
+/* Full Width Grid Item */
+.premium-form-grid .full-width {
+    grid-column: 1 / -1;
+}
+
+/* Form Display (Read-only Fields) */
+.premium-form-display {
+    padding: 0.85rem 1rem;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-medium);
+}
+
+/* Premium Upload Area */
+.premium-upload-area {
+    border: 2px dashed var(--glass-border-strong);
+    border-radius: var(--radius-md);
+    padding: var(--space-xl);
+    text-align: center;
+    background: var(--bg-secondary);
+    transition: var(--transition-base);
+    cursor: pointer;
+}
+
+.premium-upload-area:hover,
+.premium-upload-area.dragover {
+    border-color: var(--premium-gold);
+    background: var(--premium-gold-light);
+}
+
+.premium-upload-area i {
+    font-size: 2.5rem;
+    color: var(--text-muted);
+    margin-bottom: var(--space-md);
+    display: block;
+}
+
+.premium-upload-area:hover i {
+    color: var(--premium-gold);
+}
+
+.premium-upload-btn {
+    background: linear-gradient(135deg, var(--premium-gold) 0%, #8a6b08 100%);
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    margin-top: var(--space-md);
+    transition: var(--transition-base);
+}
+
+.premium-upload-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-gold);
+}
+
+/* Premium Form Actions (Submit/Cancel Buttons) */
+.premium-form-actions {
+    margin-top: var(--space-xl);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--bg-tertiary);
+    display: flex;
+    gap: var(--space-md);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.premium-form-actions .btn {
+    padding: 0.85rem 2rem;
+    font-size: 1rem;
+    font-weight: var(--font-weight-semibold);
+    border-radius: var(--radius-sm);
+    border: none;
+    cursor: pointer;
+    transition: var(--transition-bounce);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.premium-form-actions .btn-submit {
+    background: linear-gradient(135deg, var(--premium-gold) 0%, #8a6b08 100%);
+    color: #fff;
+    box-shadow: var(--shadow-gold);
+}
+
+.premium-form-actions .btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(176, 138, 14, 0.4);
+}
+
+.premium-form-actions .btn-cancel {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.premium-form-actions .btn-cancel:hover {
+    background: var(--glass-border-strong);
+    color: var(--text-primary);
+}
+
+/* Seller Row Card Style */
+.premium-seller-row {
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-md);
+    background: var(--bg-secondary);
+    position: relative;
+}
+
+.premium-seller-row:hover {
+    border-color: var(--premium-gold-light);
+    box-shadow: var(--shadow-xs);
+}
+
+.premium-seller-row .remove-seller {
+    position: absolute;
+    top: var(--space-sm);
+    left: var(--space-sm);
+    background: var(--status-danger-bg);
+    color: var(--status-danger);
+    border: none;
+    border-radius: var(--radius-full);
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-base);
+}
+
+html[dir="rtl"] .premium-seller-row .remove-seller {
+    left: auto;
+    right: var(--space-sm);
+}
+
+.premium-seller-row .remove-seller:hover {
+    background: var(--status-danger);
+    color: #fff;
+}
+
+/* Images Preview Grid */
+.premium-images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--space-md);
+    margin-top: var(--space-md);
+}
+
+.premium-image-preview {
+    position: relative;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    aspect-ratio: 1;
+}
+
+.premium-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.premium-image-preview .remove-file {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: var(--status-danger);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-full);
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* =====================================================
    PREMIUM TABLES
    ===================================================== */
 
