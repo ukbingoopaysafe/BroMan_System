@@ -136,27 +136,31 @@ if ($seller_stmt) {
 // Format price for display
 function formatPrice($property)
 {
+    // Get actual currency from property
+    $currency_code = $property['currency'] ?? 'EGP';
+    $currency_label = ($currency_code === 'USD') ? 'دولار' : 'جنيه مصري';
+    
     if (isset($property['listing_type']) && $property['listing_type'] === 'Rental') {
         if (!empty($property['monthly_rent']) && is_numeric($property['monthly_rent'])) {
-            return number_format(floatval($property['monthly_rent']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('per_month');
+            return number_format(floatval($property['monthly_rent']), 0, '.', ',') . ' ' . $currency_label . ' / ' . t('per_month');
         } elseif (!empty($property['daily_rent']) && is_numeric($property['daily_rent'])) {
-            return number_format(floatval($property['daily_rent']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('per_day');
+            return number_format(floatval($property['daily_rent']), 0, '.', ',') . ' ' . $currency_label . ' / ' . t('per_day');
         } elseif (!empty($property['yearly_rent']) && is_numeric($property['yearly_rent'])) {
-            return number_format(floatval($property['yearly_rent']), 0, '.', ',') . ' ' . t('currency') . ' / ' . t('per_year');
+            return number_format(floatval($property['yearly_rent']), 0, '.', ',') . ' ' . $currency_label . ' / ' . t('per_year');
         }
     }
     if (!empty($property['price_cash']) && is_numeric($property['price_cash'])) {
-        return number_format(floatval($property['price_cash']), 0, '.', ',') . ' ' . t('currency');
+        return number_format(floatval($property['price_cash']), 0, '.', ',') . ' ' . $currency_label;
     } elseif (!empty($property['price_installments']) && is_numeric($property['price_installments'])) {
-        return number_format(floatval($property['price_installments']), 0, '.', ',') . ' ' . t('currency');
+        return number_format(floatval($property['price_installments']), 0, '.', ',') . ' ' . $currency_label;
     } elseif (!empty($property['min_price']) && is_numeric($property['min_price']) && !empty($property['max_price']) && is_numeric($property['max_price'])) {
-        return number_format(floatval($property['min_price']), 0, '.', ',') . ' - ' . number_format(floatval($property['max_price']), 0, '.', ',') . ' ' . t('currency');
+        return number_format(floatval($property['min_price']), 0, '.', ',') . ' - ' . number_format(floatval($property['max_price']), 0, '.', ',') . ' ' . $currency_label;
     } elseif (!empty($property['min_price']) && is_numeric($property['min_price'])) {
-        return t('starts_from') . ' ' . number_format(floatval($property['min_price']), 0, '.', ',') . ' ' . t('currency');
+        return t('starts_from') . ' ' . number_format(floatval($property['min_price']), 0, '.', ',') . ' ' . $currency_label;
     } elseif (!empty($property['max_price']) && is_numeric($property['max_price'])) {
-        return t('up_to') . ' ' . number_format(floatval($property['max_price']), 0, '.', ',') . ' ' . t('currency');
+        return t('up_to') . ' ' . number_format(floatval($property['max_price']), 0, '.', ',') . ' ' . $currency_label;
     } elseif (!empty($property['avg_price']) && is_numeric($property['avg_price'])) {
-        return number_format(floatval($property['avg_price']), 0, '.', ',') . ' ' . t('currency') . ' (' . t('average') . ')';
+        return number_format(floatval($property['avg_price']), 0, '.', ',') . ' ' . $currency_label . ' (' . t('average') . ')';
     }
     return t('price_not_specified');
 }
@@ -226,6 +230,46 @@ function formatPaymentTerms($property)
 require_once __DIR__ . '/flash.php';
 $flashes = get_flash_messages();
 
+// --- Helper Functions Moved for Global Availability ---
+
+// Helper: normalize phone numbers for tel: links
+function normalize_phone_for_tel($raw) {
+    $s = trim((string)$raw);
+    if ($s === '') return '';
+    $s = preg_replace('/[^0-9+]/', '', $s);
+    if ($s === '') return '';
+    if (strpos($s, '+') === 0) return $s;
+    if (strpos($s, '00') === 0) return '+' . ltrim($s, '0');
+    if (strpos($s, '0') === 0) {
+        $without0 = substr($s, 1);
+        return '+20' . $without0;
+    }
+    if (strpos($s, '20') === 0) return '+' . $s;
+    return $s;
+}
+
+function translate_seller_type($val) {
+    $v = $val === null ? '' : trim((string)$val);
+    if ($v === '') return '';
+    $map = [
+        'مالك' => 'seller_type_owner', 'وسيط' => 'seller_type_broker', 'وكيل' => 'seller_type_agent',
+        'بواب' => 'seller_type_doorman', 'شركة مطورة' => 'seller_type_developer_company',
+        'شركة تشطيب' => 'seller_type_finishing_company', 'شركة تسويق' => 'seller_type_marketing_company',
+        'Owner' => 'seller_type_owner', 'Broker' => 'seller_type_broker', 'Agent' => 'seller_type_agent',
+        'Doorman' => 'seller_type_doorman', 'Developer Company' => 'seller_type_developer_company',
+        'Finishing Company' => 'seller_type_finishing_company', 'Marketing Company' => 'seller_type_marketing_company',
+    ];
+    return isset($map[$v]) ? t($map[$v]) : $v;
+}
+
+function render_or_fallback($val, $is_seller_type = false) {
+    if ($val !== null && trim((string)$val) !== '') {
+        return $is_seller_type ? htmlspecialchars(translate_seller_type($val)) : htmlspecialchars(trim((string)$val));
+    }
+    return htmlspecialchars(t('undefined'));
+}
+// -----------------------------------------------------
+
 // Page title
 $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['Title'] ?: $property['ProjectName'] ?: t('undefined')));
 
@@ -275,7 +319,8 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="modern_styles.css">
-    <link rel="stylesheet" href="lightbox.css">
+    <link rel="stylesheet" href="css/premium_design.css">
+    <link rel="stylesheet" href="lightbox.css?v=<?php echo filemtime('lightbox.css'); ?>">
     <?php if (get_direction() === 'rtl'): ?>
         <link rel="stylesheet" href="rtl_styles.css">
     <?php endif; ?>
@@ -287,6 +332,580 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
         }
     </style>
     <style>
+        /* =====================================================
+           PREMIUM PROPERTY VIEW - HERO + SIDEBAR LAYOUT
+           ===================================================== */
+        
+        /* Main Layout Grid */
+        .property-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            margin-bottom: 30px;
+            align-items: start;
+        }
+        
+        @media (max-width: 1024px) {
+            .property-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Hero Image Gallery - Cinematic Blurred Background */
+        .property-hero {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 380px;
+        }
+        
+        /* Mobile: More square aspect ratio for better display */
+        /* Mobile: Reset height/width */
+        @media (max-width: 1024px) {
+            .property-layout {
+                grid-template-columns: 1fr;
+            }
+            .property-hero {
+                height: auto;
+                aspect-ratio: 4 / 3;
+            }
+        }
+        
+        #heroMainContainer {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        /* Blurred Background Layer */
+        .hero-backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: blur(20px);
+            opacity: 0.5;
+            transform: scale(1.1);
+            z-index: 1;
+        }
+        
+        /* Main Content Layer - Full Image with Cinematic Background */
+        .hero-main-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain !important; /* Full image visible */
+            z-index: 2;
+            cursor: pointer;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+        
+        .hero-main-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain !important; /* Videos show complete without cropping */
+            z-index: 2;
+            cursor: pointer;
+        }
+        
+        .hero-thumbnails {
+            display: flex;
+            gap: 6px;
+            padding: 8px;
+            background: #f0f0f0;
+            overflow-x: auto;
+        }
+        
+        .hero-thumb {
+            width: 60px;
+            height: 45px;
+            border-radius: 6px;
+            object-fit: cover;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            flex-shrink: 0;
+        }
+        
+        .hero-thumb:hover, .hero-thumb.active {
+            opacity: 1;
+            border-color: #333;
+        }
+        
+        /* Media thumbnails (video/audio) */
+        .hero-media-thumb {
+            position: relative;
+            width: 60px;
+            height: 45px;
+            border-radius: 6px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .hero-media-thumb:hover, .hero-media-thumb.active {
+            opacity: 1;
+            border-color: #333;
+        }
+        
+        .hero-media-thumb i {
+            color: #fff;
+            font-size: 1.5rem;
+        }
+        
+        .hero-media-thumb.video-thumb {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 100%);
+        }
+        
+        .hero-media-thumb.audio-thumb {
+            background: linear-gradient(135deg, #3a1e5f 0%, #1b0d2a 100%);
+        }
+        
+        /* Audio main container */
+        
+        .hero-main-audio {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #3a1e5f 0%, #1b0d2a 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .hero-main-audio i {
+            font-size: 4rem;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+        
+        .hero-main-audio audio {
+            width: 80%;
+            max-width: 400px;
+        }
+        
+        .hero-media-count {
+            position: absolute;
+            bottom: 80px;
+            right: 16px;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            direction: ltr; /* Force LTR for consistent Icon-Number pairing */
+            z-index: 5;
+        }
+        
+        .media-count-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+        }
+        
+        .hero-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(18, 18, 18, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 10;
+            letter-spacing: 0.5px;
+        }
+
+        .hero-badge i {
+            font-size: 1rem;
+        }
+        
+        .hero-badge.status-available i { color: #2ecc71; } /* Emerald Green */
+        .hero-badge.status-sold i { color: #e74c3c; } /* Soft Red */
+        .hero-badge.status-rented i { color: #3498db; } /* Bright Blue */
+        .hero-badge.status-pending i { color: #f1c40f; } /* Yellow */
+        
+        .hero-image-count {
+            position: absolute;
+            bottom: 80px;
+            right: 16px;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            backdrop-filter: blur(4px);
+        }
+        
+        /* Sidebar Card */
+        .property-sidebar {
+            position: sticky;
+            top: 80px;
+        }
+        
+        .sidebar-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.06);
+            overflow: hidden;
+            height: 380px; /* Match property-hero height */
+            overflow-y: auto; /* Allow scrolling if content exceeds height */
+        }
+
+        /* Customize scrollbar for sidebar card */
+        .sidebar-card::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar-card::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .sidebar-card::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+        .sidebar-card::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar-card {
+                height: auto;
+                overflow-y: visible;
+            }
+        }
+        
+        .sidebar-header {
+            background: #fafafa;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .sidebar-price {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        
+        .sidebar-price-note {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .sidebar-body {
+            padding: 10px;
+        }
+        
+        .sidebar-stat {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .sidebar-stat:last-child {
+            border-bottom: none;
+        }
+        
+        .sidebar-stat-icon {
+            width: 36px;
+            height: 36px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 1rem;
+        }
+        
+        .sidebar-stat-content {
+            flex: 1;
+        }
+        
+        .sidebar-stat-label {
+            font-size: 0.8rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .sidebar-stat-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #020d24;
+        }
+        
+        .sidebar-actions {
+            padding: 16px 20px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .sidebar-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .sidebar-btn-primary {
+            background: #333;
+            color: #fff;
+        }
+        
+        .sidebar-btn-primary:hover {
+            background: #444;
+        }
+        
+        .sidebar-btn-whatsapp {
+            background: #25D366;
+            color: #fff;
+        }
+        
+        .sidebar-btn-whatsapp:hover {
+            background: #20bd5a;
+            transform: translateY(-2px);
+        }
+        
+        .sidebar-btn-outline {
+            background: transparent;
+            border: 2px solid #e5e7eb;
+            color: #020d24;
+        }
+        
+        .sidebar-btn-outline:hover {
+            border-color: #b08a0e;
+            color: #b08a0e;
+        }
+        
+        /* Compact Info Cards Grid */
+        .info-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 24px;
+        }
+        
+        .info-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+        
+        .info-card-header {
+            background: linear-gradient(135deg, #020d24 0%, #0a1a3a 100%);
+            padding: 12px 16px;
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .info-card-header i {
+            color: #b08a0e;
+        }
+        
+        .info-card-body {
+            padding: 16px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .info-value {
+            color: #020d24;
+            font-weight: 500;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+        
+        .info-value a {
+            color: #b08a0e;
+            text-decoration: none;
+        }
+        
+        .info-value a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Description Card */
+        .description-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.06);
+        }
+        
+        .description-card h3 {
+            color: #020d24;
+            font-size: 1.1rem;
+            margin: 0 0 12px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #b08a0e;
+            display: inline-block;
+        }
+        
+        .description-card p {
+            color: #555;
+            line-height: 1.7;
+            margin: 0;
+        }
+        
+        /* Sellers Grid */
+        .sellers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        
+        .seller-compact-card {
+            background: linear-gradient(135deg, rgba(176, 138, 14, 0.05) 0%, rgba(176, 138, 14, 0.02) 100%);
+            border: 1px solid rgba(176, 138, 14, 0.15);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        
+        .seller-compact-card .seller-type {
+            color: #b08a0e;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .seller-compact-card .seller-name {
+            color: #020d24;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+        
+        .seller-compact-card .seller-phone a {
+            color: #b08a0e;
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+        
+        /* Map Container */
+        .map-container {
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        
+        .map-container #property-map {
+            height: 250px !important;
+            border-radius: 0;
+        }
+        
+        /* Media Section (compact) */
+        .media-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        }
+        
+        .media-section h3 {
+            color: #020d24;
+            font-size: 1rem;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .media-thumbnails {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+        
+        .media-thumb {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        .media-thumb img, .media-thumb video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
         /* Enhanced Property Details Styling */
         .property-details {
             margin-bottom: 40px;
@@ -301,12 +920,13 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
         }
         
         .property-section h2 {
-            background-color: #f8f9fa;
-            padding: 15px 20px;
+            background: #f5f5f5;
+            padding: 14px 20px;
             margin: 0;
-            border-bottom: 1px solid #eee;
-            font-size: 1.3rem;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 1.15rem;
             color: #333;
+            font-weight: 600;
         }
         
         .detail-grid {
@@ -376,7 +996,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
         .page-header h1 {
             margin: 0;
             font-size: 1.8rem;
-            color: #333;
+            color: #020d24;
         }
         
         .actions {
@@ -389,9 +1009,32 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
             align-items: center;
             gap: 5px;
             padding: 8px 15px;
-            border-radius: 4px;
+            border-radius: 6px;
             font-weight: 500;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        .actions .btn-primary {
+            background: linear-gradient(135deg, #b08a0e 0%, #8a6b08 100%);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(176, 138, 14, 0.25);
+        }
+        
+        .actions .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(176, 138, 14, 0.35);
+        }
+        
+        .actions .btn-secondary {
+            background: #f3f4f6;
+            color: #020d24;
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+        
+        .actions .btn-secondary:hover {
+            background: #e5e7eb;
+            transform: translateY(-1px);
         }
         
         .actions .btn i {
@@ -479,12 +1122,13 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
             position: absolute;
             top: 8px;
             right: 8px;
-            background: #007bff;
+            background: linear-gradient(135deg, #b08a0e 0%, #8a6b08 100%);
             color: white;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 0.8rem;
             font-weight: 500;
+            box-shadow: 0 2px 8px rgba(176, 138, 14, 0.3);
         }
         
         .audio-notes {
@@ -691,84 +1335,339 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                     <i class="fab fa-whatsapp"></i>
                     <span class="sr-only">مشاركة عبر واتساب</span>
                 </a>
-                <a href="javascript:history.back()" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> <?php echo t('back'); ?></a>
+                <?php
+                // Smart Back Button Logic
+                $back_link = 'javascript:history.back()'; // Default to browser history (preserves filters/scroll)
+                
+                // If referer is present and indicates we came from an Add or Edit form, force link to Listings
+                // This prevents "Back" from returning to a form submission or success page
+                if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
+                    $ref = $_SERVER['HTTP_REFERER'];
+                    // Check for common add/edit script names
+                    if (strpos($ref, 'add_') !== false || strpos($ref, 'edit_') !== false) {
+                        $back_link = 'index_properties.php';
+                    }
+                } else {
+                    // unexpected direct access or no referer, default safe listing link could be used,
+                    // but usually history.back is okay or index.
+                    // If no history, javascript:history.back() does nothing. 
+                    // Let's default to index if strictly no referer? 
+                    // Ideally check if history length > 1 but that's JS. 
+                    // For now, let's keep default history.back() unless explicitly from add/edit.
+                    // actually, better default might be index if we want to be safe?
+                    // User request: "Back to listing... NOT add/edit".
+                }
+                ?>
+                <a href="<?php echo $back_link; ?>" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> <?php echo t('back'); ?></a>
             </div>
         </div>
 
-        <!-- Property Images Section -->
-        <?php if (!empty($property_images)): ?>
-        <div class="property-section">
-            <h2>📷 Property Images</h2>
-            <div class="media-gallery">
-                <div class="images-grid">
-                    <?php foreach ($property_images as $index => $image): ?>
-                        <div class="image-item">
-                            <img src="<?php echo htmlspecialchars($image['file_path']); ?>" 
-                                 alt="Property Image" 
-                                 class="property-image-clickable" 
-                                 data-image-index="<?php echo $index; ?>">
-                            <?php if ($image['is_primary']): ?>
-                                <div class="image-primary-badge">Main Image</div>
-                            <?php endif; ?>
+        <!-- Hidden Gallery for Lightbox Navigation (Contains ALL property images) -->
+        <div id="lightbox-gallery-source" style="display:none;">
+            <?php foreach ($property_images as $img): ?>
+                <img src="<?php echo htmlspecialchars($img['file_path']); ?>" 
+                     data-src="<?php echo htmlspecialchars($img['file_path']); ?>"
+                     class="property-image-clickable" 
+                     alt="Property Image">
+            <?php endforeach; ?>
+        </div>
+
+        <!-- NEW PREMIUM LAYOUT: Hero + Sidebar -->
+        <div class="property-layout">
+            <!-- Hero Image Gallery -->
+            <div class="property-hero">
+                <?php 
+                // Build unified media array
+                $all_media = [];
+                
+                // Add images
+                foreach ($property_images as $index => $img) {
+                    $all_media[] = [
+                        'type' => 'image',
+                        'path' => $img['file_path'],
+                        'is_primary' => $img['is_primary'] ?? false
+                    ];
+                }
+                
+                // Add videos
+                if (!empty($property_videos)) {
+                    foreach ($property_videos as $video) {
+                        $all_media[] = [
+                            'type' => 'video',
+                            'path' => $video['VideoPath'],
+                            'name' => $video['VideoName'] ?? ''
+                        ];
+                    }
+                }
+                
+                // Add audio notes
+                if (!empty($property_audio_notes)) {
+                    foreach ($property_audio_notes as $audio) {
+                        $all_media[] = [
+                            'type' => 'audio',
+                            'path' => $audio['file_path']
+                        ];
+                    }
+                }
+                
+                // Get primary/first media
+                $primary_media = null;
+                foreach ($all_media as $media) {
+                    if ($media['type'] === 'image' && !empty($media['is_primary'])) {
+                        $primary_media = $media;
+                        break;
+                    }
+                }
+                if (!$primary_media && !empty($all_media)) {
+                    $primary_media = $all_media[0];
+                }
+                
+                $total_media = count($all_media);
+                $image_count = count($property_images);
+                $video_count = count($property_videos ?? []);
+                $audio_count = count($property_audio_notes ?? []);
+                ?>
+                
+                <!-- Main Display Area - Cinematic Two-Layer System -->
+                <div id="heroMainContainer">
+                    <?php if ($primary_media): ?>
+                        <?php if ($primary_media['type'] === 'image'): ?>
+                            <!-- Blurred Background Layer -->
+                            <img src="<?php echo htmlspecialchars($primary_media['path']); ?>" 
+                                 class="hero-backdrop" 
+                                 alt="">
+                            <!-- Main Content Layer -->
+                            <img src="<?php echo htmlspecialchars($primary_media['path']); ?>" 
+                                 alt="<?php echo htmlspecialchars($property['Title'] ?? $property['ProjectName'] ?? 'Property'); ?>" 
+                                 class="hero-main-image" 
+                                 style="cursor: pointer;"
+                                 onclick="console.log('Clicked image:', this.src); if(window.propertyLightbox) { console.log('Opening lightbox...'); window.propertyLightbox.openBySrc(this.src); } else { console.error('window.propertyLightbox is undefined!'); }"
+                                 id="heroMainMedia">
+                        <?php elseif ($primary_media['type'] === 'video'): ?>
+                            <!-- Blurred Background Video (Static Freeze Frame) -->
+                            <video class="hero-backdrop" muted preload="metadata">
+                                <source src="<?php echo htmlspecialchars($primary_media['path']); ?>#t=0.1" type="video/mp4">
+                            </video>
+                            <!-- Main Content Video -->
+                            <video controls class="hero-main-video" id="heroMainMedia">
+                                <source src="<?php echo htmlspecialchars($primary_media['path']); ?>" type="video/mp4">
+                            </video>
+                        <?php elseif ($primary_media['type'] === 'audio'): ?>
+                            <div class="hero-main-audio" id="heroMainMedia">
+                                <i class="fas fa-microphone"></i>
+                                <audio controls>
+                                    <source src="<?php echo htmlspecialchars($primary_media['path']); ?>" type="audio/mpeg">
+                                </audio>
+                            </div>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <div class="hero-no-image" style="min-height:300px; background:#222; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#666; padding:40px;">
+                            <i class="fas fa-image fa-4x" style="margin-bottom:16px;"></i>
+                            <span style="font-size:0.95rem;">لا توجد وسائط لهذا العقار</span>
                         </div>
-                    <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
-            </div>
-        </div>
-        <?php endif; ?>
-
-        <!-- Property Audio Notes Section -->
-        <?php if (!empty($property_audio_notes)): ?>
-        <div class="property-section">
-            <h2>🎤 Voice Notes</h2>
-            <div class="audio-notes">
-                <?php foreach ($property_audio_notes as $audio): ?>
-                    <div class="audio-item">
-                        <audio controls>
-                            <source src="<?php echo htmlspecialchars($audio['file_path']); ?>" type="audio/mpeg">
-                            Your browser does not support the audio element.
-                        </audio>
-                        <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'manager'): ?>
-                        <div class="audio-info">
-                            <div>Uploaded: <?php echo date('Y-m-d H:i', strtotime($audio['upload_date'])); ?></div>
-                            <?php if ($audio['duration']): ?>
-                                <div>Duration: <?php echo formatDuration($audio['duration']); ?></div>
-                            <?php endif; ?>
-                        </div>
+                
+                <?php if (!empty($property['Status'])): 
+                    // Determine Status Icon and Class
+                    $s_lower = strtolower($property['Status']);
+                    $s_icon = 'fa-info-circle';
+                    $s_class = '';
+                    
+                    if ($s_lower === 'available' || $s_lower === 'متاح') {
+                        $s_icon = 'fa-check-circle';
+                        $s_class = 'status-available';
+                    } elseif ($s_lower === 'sold' || $s_lower === 'مباع') {
+                        $s_icon = 'fa-handshake';
+                        $s_class = 'status-sold';
+                    } elseif ($s_lower === 'rented' || $s_lower === 'مؤجر') {
+                        $s_icon = 'fa-key';
+                        $s_class = 'status-rented';
+                    } elseif ($s_lower === 'pending') {
+                        $s_icon = 'fa-clock';
+                        $s_class = 'status-pending';
+                    }
+                ?>
+                    <div class="hero-badge <?php echo $s_class; ?>">
+                        <i class="fas <?php echo $s_icon; ?>"></i>
+                        <?php echo t($property['Status']); ?>
+                    </div>
+                <?php endif; ?>
+                
+                <!-- Media Count Badge -->
+                <?php if ($total_media > 1): ?>
+                    <div class="hero-media-count">
+                        <?php if ($image_count > 0): ?>
+                            <span class="media-count-item"><i class="fas fa-images"></i> <?php echo $image_count; ?></span>
+                        <?php endif; ?>
+                        <?php if ($video_count > 0): ?>
+                            <span class="media-count-item"><i class="fas fa-video"></i> <?php echo $video_count; ?></span>
+                        <?php endif; ?>
+                        <?php if ($audio_count > 0): ?>
+                            <span class="media-count-item"><i class="fas fa-microphone"></i> <?php echo $audio_count; ?></span>
                         <?php endif; ?>
                     </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-        <?php endif; ?>
-
-        <!-- Property Videos Section -->
-        <?php if (!empty($property_videos)): ?>
-        <div class="property-section">
-            <h2>🎥 <?php echo t('property_videos'); ?></h2>
-            <div class="video-gallery">
-                <div class="videos-grid">
-                    <?php foreach ($property_videos as $video): ?>
-                        <div class="video-item">
-                            <video controls preload="metadata" class="property-video">
-                                <source src="<?php echo htmlspecialchars($video['VideoPath']); ?>" type="video/mp4">
-                                Your browser does not support the video element.
-                            </video>
-                            <div class="video-info">
-                                <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'manager'): ?>
-                                <div class="video-name"><?php echo htmlspecialchars($video['VideoName']); ?></div>
-                                <div class="video-details">
-                                    <span><?php echo t('video_size'); ?>: <?php echo formatFileSize($video['VideoSize']); ?></span>
-                                    <span><?php echo t('uploaded_on'); ?>: <?php echo date('Y-m-d H:i', strtotime($video['UploadDate'])); ?></span>
+                <?php endif; ?>
+                
+                <!-- Unified Media Thumbnails -->
+                <?php if ($total_media > 1): ?>
+                    <div class="hero-thumbnails">
+                        <?php foreach ($all_media as $index => $media): ?>
+                            <?php if ($media['type'] === 'image'): ?>
+                                <img src="<?php echo htmlspecialchars($media['path']); ?>" 
+                                     alt="صورة <?php echo $index + 1; ?>" 
+                                     class="hero-thumb <?php echo ($primary_media && $media['path'] === $primary_media['path']) ? 'active' : ''; ?>"
+                                     onclick="showMedia(this, 'image', '<?php echo htmlspecialchars($media['path']); ?>')">
+                            <?php elseif ($media['type'] === 'video'): ?>
+                                <video src="<?php echo htmlspecialchars($media['path']); ?>#t=0.5" 
+                                       muted 
+                                       preload="metadata"
+                                       class="hero-thumb"
+                                       style="object-fit: cover;"
+                                       onclick="showMedia(this, 'video', '<?php echo htmlspecialchars($media['path']); ?>')"></video>
+                            <?php elseif ($media['type'] === 'audio'): ?>
+                                <div class="hero-media-thumb audio-thumb" 
+                                     onclick="showMedia(this, 'audio', '<?php echo htmlspecialchars($media['path']); ?>')">
+                                    <i class="fas fa-microphone"></i>
                                 </div>
-                                <?php endif; ?>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Sidebar with Key Info -->
+            <div class="property-sidebar">
+                <div class="sidebar-card">
+                    <div class="sidebar-header">
+                        <div class="sidebar-price"><?php echo formatPrice($property); ?></div>
+                        <?php if (!empty($property['listing_type']) && $property['listing_type'] === 'Rental'): ?>
+                            <div class="sidebar-price-note"><?php echo t('rental_property'); ?></div>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <div class="sidebar-body">
+                        <!-- Area -->
+                        <div class="sidebar-stat">
+                            <div class="sidebar-stat-icon"><i class="fas fa-ruler-combined"></i></div>
+                            <div class="sidebar-stat-content">
+                                <div class="sidebar-stat-label"><?php echo t('area'); ?></div>
+                                <div class="sidebar-stat-value"><?php echo formatArea($property); ?></div>
                             </div>
                         </div>
-                    <?php endforeach; ?>
+                        
+                        <!-- Rooms -->
+                        <?php if (!empty($property['Bedrooms'])): ?>
+                        <div class="sidebar-stat">
+                            <div class="sidebar-stat-icon"><i class="fas fa-bed"></i></div>
+                            <div class="sidebar-stat-content">
+                                <div class="sidebar-stat-label"><?php echo t('rooms'); ?></div>
+                                <div class="sidebar-stat-value"><?php echo htmlspecialchars($property['Bedrooms']); ?></div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <!-- Bathrooms -->
+                        <?php if (!empty($property['Bathrooms'])): ?>
+                        <div class="sidebar-stat">
+                            <div class="sidebar-stat-icon"><i class="fas fa-bath"></i></div>
+                            <div class="sidebar-stat-content">
+                                <div class="sidebar-stat-label"><?php echo t('bathrooms'); ?></div>
+                                <div class="sidebar-stat-value"><?php echo htmlspecialchars($property['Bathrooms']); ?></div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <!-- Location -->
+                        <?php 
+                        $location_display = '';
+                        if (!empty($property['district'])) $location_display = $property['district'];
+                        if (!empty($property['governorate'])) {
+                            $location_display .= ($location_display ? '، ' : '') . $property['governorate'];
+                        }
+                        if ($location_display):
+                        ?>
+                        <div class="sidebar-stat">
+                            <div class="sidebar-stat-icon"><i class="fas fa-map-marker-alt"></i></div>
+                            <div class="sidebar-stat-content">
+                                <div class="sidebar-stat-label"><?php echo t('location'); ?></div>
+                                <div class="sidebar-stat-value"><?php echo htmlspecialchars($location_display); ?></div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <!-- Finishing Type -->
+                        <?php if (!empty($property['FinishingTypeName'])): ?>
+                        <div class="sidebar-stat">
+                            <div class="sidebar-stat-icon"><i class="fas fa-paint-roller"></i></div>
+                            <div class="sidebar-stat-content">
+                                <div class="sidebar-stat-label"><?php echo t('finishing_type'); ?></div>
+                                <div class="sidebar-stat-value">
+                                    <?php 
+                                    if (get_lang_code() === 'ar' && !empty($property['FinishingTypeName_ar'])) {
+                                        echo htmlspecialchars($property['FinishingTypeName_ar']);
+                                    } else {
+                                        echo htmlspecialchars($property['FinishingTypeName']);
+                                    }
+                                    ?>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
+                        <!-- Owner Information (Sidebar) -->
+                        <?php
+                        // Prepare seller list for sidebar
+                        $sb_render_sellers = $property_sellers ?? [];
+                        // Check logic matches legacy seller check
+                        $sb_legacy_seller_present = (!empty($property['seller_type']) || !empty($property['seller_name']) || !empty($property['seller_phone']) || !empty($property['owner_name']) || !empty($property['owner_phone']));
+                        
+                        if (empty($sb_render_sellers) && $sb_legacy_seller_present) {
+                            $sb_render_sellers[] = [
+                                'seller_type' => $property['seller_type'] ?? null,
+                                'seller_name' => $property['seller_name'] ?? ($property['owner_name'] ?? null),
+                                'seller_phone' => $property['seller_phone'] ?? ($property['owner_phone'] ?? null),
+                            ];
+                        }
+                        
+                        if (!empty($sb_render_sellers)):
+                            foreach ($sb_render_sellers as $sb_seller):
+                                // Determine display name
+                                $sb_name = !empty($sb_seller['seller_name']) ? $sb_seller['seller_name'] : (!empty($sb_seller['seller_type']) ? translate_seller_type($sb_seller['seller_type']) : t('owner'));
+                                $sb_phone = $sb_seller['seller_phone'] ?? '';
+                                $sb_type_label = !empty($sb_seller['seller_type']) ? translate_seller_type($sb_seller['seller_type']) : '';
+                        ?>
+                        <div class="sidebar-stat">
+                            <div class="sidebar-stat-icon"><i class="fas fa-user-tie"></i></div>
+                            <div class="sidebar-stat-content">
+                                <div class="sidebar-stat-label"><?php echo t('owner_information'); ?></div>
+                                <div class="sidebar-stat-value">
+                                    <?php if ($sb_type_label && $sb_type_label !== $sb_name): ?>
+                                        <div style="font-size: 0.8rem; color: #b08a0e; margin-bottom: 2px;"><?php echo htmlspecialchars($sb_type_label); ?></div>
+                                    <?php endif; ?>
+                                    <div style="font-weight:600; font-size: 0.95rem;"><?php echo htmlspecialchars($sb_name); ?></div>
+                                    <?php if (!empty($sb_phone)): 
+                                        $sb_tel = normalize_phone_for_tel($sb_phone);
+                                    ?>
+                                    <a href="tel:<?php echo $sb_tel; ?>" style="color: var(--primary-color); direction: ltr; display: inline-block; font-size: 0.9rem;">
+                                        <?php echo htmlspecialchars($sb_phone); ?>
+                                    </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <?php 
+                            endforeach;
+                        endif; 
+                        ?>
+                    </div>
                 </div>
             </div>
         </div>
-        <?php endif; ?>
+
+
+
+
 
         <!-- Property Documents Section (user-facing PDFs) -->
         <?php if (!empty($property_documents)): ?>
@@ -1075,49 +1974,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
             </div>
 
             <?php 
-            // Helper: normalize phone numbers for tel: links so that apps
-            // (e.g., WhatsApp on desktop) receive an international format.
-            // Rules applied (best-effort):
-            // - Keep numbers that already start with '+' as-is.
-            // - Convert leading '00' to leading '+'.
-            // - If the number starts with a single leading '0' (local Egyptian style
-            //   like 010..., 011..., 012..., 015...), replace it with '+20' + rest.
-            // - If the number starts with '20' (country code present but no '+'),
-            //   prefix with '+'.
-            // - Otherwise, return digits-only string (best-effort).
-            function normalize_phone_for_tel($raw) {
-                $s = trim((string)$raw);
-                if ($s === '') return '';
-                // keep plus sign and digits only
-                $s = preg_replace('/[^0-9+]/', '', $s);
-                if ($s === '') return '';
-
-                // already international with plus
-                if (strpos($s, '+') === 0) {
-                    return $s;
-                }
-
-                // leading 00 -> +
-                if (strpos($s, '00') === 0) {
-                    return '+' . ltrim($s, '0');
-                }
-
-                // local Egyptian numbers: start with single 0 e.g. 010..., 011..., 012..., 015...
-                if (strpos($s, '0') === 0) {
-                    $without0 = substr($s, 1);
-                    // common mobile patterns in Egypt have 10 digits with leading 0
-                    // so after removing 0 we expect 9 digits; still, add +20 in any case
-                    return '+20' . $without0;
-                }
-
-                // if it already starts with country code like 20..., add +
-                if (strpos($s, '20') === 0) {
-                    return '+' . $s;
-                }
-
-                // fallback: return digits-only (no plus)
-                return $s;
-            }
+            // normalize_phone_for_tel moved to top of file
             // Check if there is any sales information to display before showing the section
             if (
                 !empty($property['sales_manager_name']) || 
@@ -1196,34 +2053,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                 <h2><?php echo t('owner_information'); ?></h2>
                 <div class="seller-list">
                 <?php
-                function translate_seller_type($val) {
-                    $v = $val === null ? '' : trim((string)$val);
-                    if ($v === '') return '';
-                    $map = [
-                        'مالك' => 'seller_type_owner',
-                        'وسيط' => 'seller_type_broker',
-                        'وكيل' => 'seller_type_agent',
-                        'بواب' => 'seller_type_doorman',
-                        'شركة مطورة' => 'seller_type_developer_company',
-                        'شركة تشطيب' => 'seller_type_finishing_company',
-                        'شركة تسويق' => 'seller_type_marketing_company',
-                        'Owner' => 'seller_type_owner',
-
-                        'Broker' => 'seller_type_broker',
-                        'Agent' => 'seller_type_agent',
-                        'Doorman' => 'seller_type_doorman',
-                        'Developer Company' => 'seller_type_developer_company',
-                        'Finishing Company' => 'seller_type_finishing_company',
-                        'Marketing Company' => 'seller_type_marketing_company',
-                    ];
-                    return isset($map[$v]) ? t($map[$v]) : $v;
-                }
-                function render_or_fallback($val, $is_seller_type = false) {
-                    if ($val !== null && trim((string)$val) !== '') {
-                        return $is_seller_type ? htmlspecialchars(translate_seller_type($val)) : htmlspecialchars(trim((string)$val));
-                    }
-                    return htmlspecialchars(t('undefined'));
-                }
+                // translate_seller_type, render_or_fallback moved to top of file
 
                 $render_sellers = $property_sellers;
                 if (empty($render_sellers) && $legacy_seller_present) {
@@ -1339,7 +2169,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
         </div>
     </div>
 
-    <script src="lightbox.js" defer></script>
+    <script src="lightbox.js?v=<?php echo filemtime('lightbox.js'); ?>" defer></script>
     <script src="maps_loader.js"></script>
     
     <?php if (!empty($property['latitude']) && !empty($property['longitude'])): ?>
@@ -1420,6 +2250,59 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
             }, 6000);
         }
     });
+    </script>
+    <script>
+    // Unified Media Gallery - Cinematic Two-Layer System
+    function showMedia(thumbElement, mediaType, mediaSrc) {
+        const container = document.getElementById('heroMainContainer');
+        if (!container) return;
+        
+        let newContent = '';
+        
+        if (mediaType === 'image') {
+            // Two-layer cinematic display for images
+            newContent = `
+                <img src="${mediaSrc}" class="hero-backdrop" alt="">
+                <img src="${mediaSrc}" alt="Property Image" class="hero-main-image" style="cursor: pointer;" onclick="console.log('Clicked dynamic image:', this.src); if(window.propertyLightbox) { window.propertyLightbox.openBySrc(this.src); } else { console.error('window.propertyLightbox is undefined!'); }" id="heroMainMedia">
+            `;
+        } else if (mediaType === 'video') {
+            // Two-layer cinematic display for videos (Static Background)
+            newContent = `
+                <video class="hero-backdrop" muted preload="metadata">
+                    <source src="${mediaSrc}#t=0.1" type="video/mp4">
+                </video>
+                <video controls autoplay class="hero-main-video" id="heroMainMedia">
+                    <source src="${mediaSrc}" type="video/mp4">
+                </video>
+            `;
+        } else if (mediaType === 'audio') {
+            // Single layer for audio (no backdrop needed)
+            newContent = `
+                <div class="hero-main-audio" id="heroMainMedia">
+                    <i class="fas fa-microphone"></i>
+                    <audio controls autoplay>
+                        <source src="${mediaSrc}" type="audio/mpeg">
+                    </audio>
+                </div>
+            `;
+        }
+        
+        // Fade effect
+        container.style.opacity = '0.5';
+        setTimeout(() => {
+            container.innerHTML = newContent;
+            container.style.opacity = '1';
+        }, 150);
+        
+        // Update active state on thumbnails
+        document.querySelectorAll('.hero-thumb, .hero-media-thumb').forEach(t => t.classList.remove('active'));
+        thumbElement.classList.add('active');
+    }
+    
+    // Legacy function for backward compatibility
+    function changeHeroImage(thumbElement, imageSrc) {
+        showMedia(thumbElement, 'image', imageSrc);
+    }
     </script>
 </body>
 </html>

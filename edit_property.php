@@ -128,7 +128,7 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $area = $row["Area"];
                 $rooms = $row["Bedrooms"]; // Mapped to rooms
                 $bathrooms = $row["Bathrooms"];
-                $balconies = $row["balconies"];
+                $balconies = ($row["balconies"] == 0) ? '' : $row["balconies"];
                 $elevators = $row["elevators"];
                 $status = $row["Status"];
                 $unit_design = $row["unit_design"];

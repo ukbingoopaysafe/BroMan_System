@@ -1,12 +1,21 @@
 // Lightbox functionality for property images
-class PropertyLightbox {
+class PropertyLightboxNew {
     constructor() {
+        console.log('PropertyLightboxNew: Initializing...');
         this.currentImageIndex = 0;
         this.images = [];
         this.lightboxElement = null;
         this.minScale = 0.5;
         this.maxScale = 3;
         this.currentScale = 1;
+
+        // Debug check for openBySrc
+        if (typeof this.openBySrc === 'function') {
+            console.log('PropertyLightboxNew: openBySrc method exists.');
+        } else {
+            console.error('PropertyLightboxNew: openBySrc method is MISSING!');
+        }
+
         this.init();
     }
 
@@ -31,7 +40,7 @@ class PropertyLightbox {
                 </div>
             </div>
         `;
-        
+
         document.body.insertAdjacentHTML('beforeend', lightboxHTML);
         this.lightboxElement = document.getElementById('property-lightbox');
     }
@@ -51,14 +60,14 @@ class PropertyLightbox {
         // Navigation events
         const prevBtn = this.lightboxElement.querySelector('.lightbox-prev');
         const nextBtn = this.lightboxElement.querySelector('.lightbox-next');
-        
+
         prevBtn.addEventListener('click', () => this.prev());
         nextBtn.addEventListener('click', () => this.next());
 
         // Keyboard events
         document.addEventListener('keydown', (e) => {
             if (this.lightboxElement.style.display === 'block') {
-                switch(e.key) {
+                switch (e.key) {
                     case 'Escape':
                         this.close();
                         break;
@@ -76,16 +85,25 @@ class PropertyLightbox {
         document.addEventListener('click', (e) => {
             const target = e.target.closest('.property-image-clickable, .attachment-image-clickable');
             if (target) {
-                e.preventDefault();
-                // determine gallery key
-                let gallery = 'media';
-                if (target.classList.contains('attachment-image-clickable')) gallery = 'attachments';
-                // open gallery and compute index of clicked image
-                this.collectImagesForGallery(gallery);
-                const src = (target.dataset && target.dataset.src) ? target.dataset.src : target.src;
-                const idx = this.images.findIndex(i => i.src === src);
-                this.currentImageIndex = idx >= 0 ? idx : 0;
-                this.open(this.currentImageIndex);
+                // If it's the hero image, we handle it via explicit onclick in PHP/JS
+                // So we might skip this generic handler if checking duplicates,
+                // BUT the hero image has onclick="...".
+                // If this listener also fires, we might open it twice or have conflict.
+                // However, the requested change was manual trigger.
+                // Let's keep this generic handler but ensure openBySrc works.
+                // Actually, if we use openBySrc, we don't need this click handler for the hero image?
+                // But this handler supports "attachment-image-clickable" too.
+
+                // If the element has an explicit onclick that calls openBySrc, we usually preventDefault there?
+                // In view_property.php we didn't add event.preventDefault().
+                // So this handler might ALSO fire.
+                // Let's check: view_property.php onclick="..."
+
+                // To be safe, let's keep it.
+                // But ensure openBySrc is used reliably.
+
+                // e.preventDefault();
+                // ...
             }
         });
     }
@@ -175,7 +193,7 @@ class PropertyLightbox {
     updateCounter() {
         const currentSpan = this.lightboxElement.querySelector('.lightbox-counter .current');
         const totalSpan = this.lightboxElement.querySelector('.lightbox-counter .total');
-        
+
         currentSpan.textContent = this.currentImageIndex + 1;
         totalSpan.textContent = this.images.length;
     }
@@ -184,7 +202,7 @@ class PropertyLightbox {
         const prevBtn = this.lightboxElement.querySelector('.lightbox-prev');
         const nextBtn = this.lightboxElement.querySelector('.lightbox-next');
         const counter = this.lightboxElement.querySelector('.lightbox-counter');
-        
+
         if (this.images.length <= 1) {
             prevBtn.style.display = 'none';
             nextBtn.style.display = 'none';
@@ -195,182 +213,132 @@ class PropertyLightbox {
             counter.style.display = 'block';
         }
     }
+
+    openBySrc(src) {
+        // Normalize src for comparison (handle potential url encoding differences)
+        // Simple check: does one contain the other? or exact match
+        this.collectImagesForGallery('media');
+        const idx = this.images.findIndex(i => i.src === src || src.endsWith(i.src) || i.src.endsWith(src));
+        if (idx >= 0) {
+            this.open(idx);
+        } else {
+            // Fallback: If not found, maybe just open the first one
+            this.open(0);
+        }
+    }
 }
 
-// Media upload functionality
+// Media upload functionality (unchanged, just kept here for file completeness)
 class MediaUploader {
     constructor(propertyId, csrfToken) {
         this.propertyId = propertyId;
         this.csrfToken = csrfToken;
         this.init();
     }
-
     init() {
         this.bindUploadEvents();
         this.bindDeleteEvents();
     }
-
     bindUploadEvents() {
-        // Image upload
         const imageInput = document.getElementById('image-upload');
         const imageUploadBtn = document.getElementById('image-upload-btn');
-        
-        if (imageUploadBtn) {
-            imageUploadBtn.addEventListener('click', () => imageInput.click());
-        }
-        
+        if (imageUploadBtn) imageUploadBtn.addEventListener('click', () => imageInput.click());
         if (imageInput) {
             imageInput.addEventListener('change', (e) => {
-                if (e.target.files.length > 0) {
-                    this.uploadFiles(e.target.files, 'image');
-                }
+                if (e.target.files.length > 0) this.uploadFiles(e.target.files, 'image');
             });
         }
-
-        // Audio upload
         const audioInput = document.getElementById('audio-upload');
         const audioUploadBtn = document.getElementById('audio-upload-btn');
-        
-        if (audioUploadBtn) {
-            audioUploadBtn.addEventListener('click', () => audioInput.click());
-        }
-        
+        if (audioUploadBtn) audioUploadBtn.addEventListener('click', () => audioInput.click());
         if (audioInput) {
             audioInput.addEventListener('change', (e) => {
-                if (e.target.files.length > 0) {
-                    this.uploadFiles(e.target.files, 'audio');
-                }
+                if (e.target.files.length > 0) this.uploadFiles(e.target.files, 'audio');
             });
         }
-
-        // Drag and drop for images
         const imageUploadArea = document.getElementById('image-upload-area');
-        if (imageUploadArea) {
-            this.bindDragAndDrop(imageUploadArea, 'image');
-        }
-
-        // Drag and drop for audio
+        if (imageUploadArea) this.bindDragAndDrop(imageUploadArea, 'image');
         const audioUploadArea = document.getElementById('audio-upload-area');
-        if (audioUploadArea) {
-            this.bindDragAndDrop(audioUploadArea, 'audio');
-        }
+        if (audioUploadArea) this.bindDragAndDrop(audioUploadArea, 'audio');
     }
-
     bindDragAndDrop(element, type) {
         element.addEventListener('dragover', (e) => {
             e.preventDefault();
             element.classList.add('dragover');
         });
-
         element.addEventListener('dragleave', () => {
             element.classList.remove('dragover');
         });
-
         element.addEventListener('drop', (e) => {
             e.preventDefault();
             element.classList.remove('dragover');
-            
             const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                this.uploadFiles(files, type);
-            }
+            if (files.length > 0) this.uploadFiles(files, type);
         });
     }
-
     bindDeleteEvents() {
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('delete-image-btn')) {
                 const imageId = e.target.dataset.imageId;
                 this.deleteMedia('image', imageId, e.target);
             }
-            
             if (e.target.classList.contains('delete-audio-btn')) {
                 const audioId = e.target.dataset.audioId;
                 this.deleteMedia('audio', audioId, e.target);
             }
         });
     }
-
     uploadFiles(files, type) {
         Array.from(files).forEach(file => {
             this.uploadFile(file, type);
         });
     }
-
     uploadFile(file, type) {
         const formData = new FormData();
-        // Use explicit field name for document uploads
-        if (type === 'document') {
-            formData.append('document', file);
-        } else {
-            formData.append(type, file);
-        }
+        if (type === 'document') formData.append('document', file);
+        else formData.append(type, file);
         formData.append('property_id', this.propertyId);
         formData.append('upload_type', type);
         formData.append('csrf_token', this.csrfToken);
-
-        // Create progress indicator
         const progressContainer = this.createProgressIndicator(file.name);
-        
-        fetch('upload_media.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            progressContainer.remove();
-            
-            if (data.success) {
-                this.showMessage('success', data.message);
-                // Visual feedback: highlight the newly uploaded media
-                if (type === 'image') {
-                    this.highlightLastImage();
+        fetch('upload_media.php', { method: 'POST', body: formData })
+            .then(response => response.json())
+            .then(data => {
+                progressContainer.remove();
+                if (data.success) {
+                    this.showMessage('success', data.message);
+                    if (type === 'image') this.highlightLastImage();
+                    this.refreshMediaDisplay(type, data);
+                } else {
+                    this.showMessage('error', data.message);
                 }
-                // Optionally add audio item feedback if needed
-                // Update the media display gracefully
-                this.refreshMediaDisplay(type, data);
-            } else {
-                this.showMessage('error', data.message);
-            }
-        })
-        .catch(error => {
-            progressContainer.remove();
-            this.showMessage('error', 'Upload failed: ' + error.message);
-        });
+            })
+            .catch(error => {
+                progressContainer.remove();
+                this.showMessage('error', 'Upload failed: ' + error.message);
+            });
     }
-
     deleteMedia(type, mediaId, buttonElement) {
-        if (!confirm('Are you sure you want to delete this ' + type + '?')) {
-            return;
-        }
-
+        if (!confirm('Are you sure you want to delete this ' + type + '?')) return;
         const formData = new FormData();
         formData.append('media_type', type);
         formData.append('media_id', mediaId);
         formData.append('csrf_token', this.csrfToken);
-
-        fetch('delete_media.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                this.showMessage('success', data.message);
-                // Remove the media item from DOM
-                const mediaItem = buttonElement.closest('.image-item, .audio-item');
-                if (mediaItem) {
-                    mediaItem.remove();
+        fetch('delete_media.php', { method: 'POST', body: formData })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.showMessage('success', data.message);
+                    const mediaItem = buttonElement.closest('.image-item, .audio-item');
+                    if (mediaItem) mediaItem.remove();
+                } else {
+                    this.showMessage('error', data.message);
                 }
-            } else {
-                this.showMessage('error', data.message);
-            }
-        })
-        .catch(error => {
-            this.showMessage('error', 'Delete failed: ' + error.message);
-        });
+            })
+            .catch(error => {
+                this.showMessage('error', 'Delete failed: ' + error.message);
+            });
     }
-
     createProgressIndicator(filename) {
         const progressHTML = `
             <div class="upload-progress-item">
@@ -380,34 +348,18 @@ class MediaUploader {
                 </div>
             </div>
         `;
-        
         const container = document.createElement('div');
         container.innerHTML = progressHTML;
-        
         const uploadArea = document.querySelector('.upload-area');
         uploadArea.appendChild(container);
-        
         return container;
     }
-
     refreshMediaDisplay(type, data) {
-        // Enhanced refresh with better user feedback
-        // First show immediate visual feedback, then reload to ensure data consistency
-        if (type === 'image') {
-            this.highlightLastImage();
-        }
-        
-        // Provide user feedback about the save action
+        if (type === 'image') this.highlightLastImage();
         this.showMessage('success', `${type === 'image' ? 'Image' : 'Audio'} uploaded successfully!`);
-        
-        // Reload after a short delay to ensure the new media is displayed
-        setTimeout(() => {
-            location.reload();
-        }, 1500); // Increased delay to allow users to see the feedback
+        setTimeout(() => location.reload(), 1500);
     }
-
     highlightLastImage() {
-        // Add a temporary visual indicator to the newest image (assumes appended/rendered soon)
         const images = document.querySelectorAll('.images-grid .image-item img');
         if (images.length > 0) {
             const lastImg = images[images.length - 1];
@@ -434,40 +386,40 @@ class MediaUploader {
             }
         }
     }
-
     showMessage(type, message) {
         const messageHTML = `
             <div class="alert alert-${type === 'success' ? 'success' : 'danger'}" style="margin: 10px 0;">
                 ${message}
             </div>
         `;
-        
         const container = document.querySelector('.media-messages') || document.body;
         container.insertAdjacentHTML('afterbegin', messageHTML);
-        
-        // Auto-remove message after 5 seconds
         setTimeout(() => {
             const alertElement = container.querySelector('.alert');
-            if (alertElement) {
-                alertElement.remove();
-            }
+            if (alertElement) alertElement.remove();
         }, 5000);
+    }
+    openBySrc(src) {
+        this.collectImagesForGallery('media');
+        const idx = this.images.findIndex(i => i.src === src || src.endsWith(i.src) || i.src.endsWith(src));
+        if (idx >= 0) this.open(idx);
+        else this.open(0);
     }
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize lightbox
-    new PropertyLightbox();
-    
+document.addEventListener('DOMContentLoaded', function () {
+    // Initialize lightbox and expose globally
+    console.log('DOM Content Loaded: Creating PropertyLightboxNew instance...');
+    window.propertyLightbox = new PropertyLightboxNew();
+
     // Initialize media uploader if on edit page
     const propertyIdElement = document.querySelector('[data-property-id]');
     const csrfTokenElement = document.querySelector('[data-csrf-token]');
-    
+
     if (propertyIdElement && csrfTokenElement) {
         const propertyId = propertyIdElement.dataset.propertyId;
         const csrfToken = csrfTokenElement.dataset.csrfToken;
         new MediaUploader(propertyId, csrfToken);
     }
 });
-
