@@ -3,8 +3,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Tajawal:wght@400;700&display=swap');
 
 :root {
-    --primary-color: #007bff;
-    /* A modern blue */
+    --primary-color: #b08a0e;
+    /* Premium Gold */
     --secondary-color: #6c757d;
     /* A neutral grey */
     --light-color: #f8f9fa;
@@ -156,8 +156,8 @@ body {
 }
 
 .btn-primary:hover {
-    background-color: #0056b3;
-    border-color: #0056b3;
+    background-color: #8a6b08;
+    border-color: #8a6b08;
 }
 
 .btn-success {
@@ -605,7 +605,7 @@ html[dir="rtl"] .detail-grid--inline .detail-item {
 
 /* Specific colors for each button */
 .table-actions a.btn-view {
-    background-color: #007bff;
+    background-color: #020d24;
 }
 
 .table-actions a.btn-edit {
@@ -732,17 +732,17 @@ html[dir="rtl"] .detail-grid--inline .detail-item {
 /* Advanced Filters Toggle */
 .advanced-filters-toggle {
     cursor: pointer;
-    color: #007bff;
+    color: #b08a0e;
     margin-bottom: 15px;
     display: inline-block;
     padding: 8px 15px;
     border-radius: 4px;
-    background-color: #e9f0ff;
+    background-color: rgba(176, 138, 14, 0.1);
     transition: all 0.2s ease;
 }
 
 .advanced-filters-toggle:hover {
-    background-color: #d8e5ff;
+    background-color: rgba(176, 138, 14, 0.2);
 }
 
 .advanced-filters {

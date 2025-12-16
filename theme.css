@@ -11,19 +11,22 @@ body {
     font-size: 15px;
 }
 
-h1, h2, h3 {
-    color: #004085;
+h1,
+h2,
+h3 {
+    color: #020d24;
     margin-top: 0;
 }
 
 /* روابط عامة */
 a {
-    color: #007bff;
+    color: #b08a0e;
     text-decoration: none;
     transition: color 0.3s ease;
 }
+
 a:hover {
-    color: #0056b3;
+    color: #8a6b08;
     text-decoration: underline;
 }
 
@@ -46,7 +49,8 @@ a:hover {
 
 .navbar .nav-left a {
     margin-left: 20px;
-    color: #ffc107; /* لون ذهبي واضح */
+    color: #ffc107;
+    /* لون ذهبي واضح */
     text-decoration: none;
     font-weight: 600;
     transition: color 0.3s ease;
@@ -92,35 +96,39 @@ a:hover {
 }
 
 /* الجداول */
-table, .table {
+table,
+.table {
     width: 100%;
     border-collapse: collapse;
     background-color: white;
     border-radius: 8px;
     overflow: hidden;
     margin-top: 20px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     font-size: 14px;
 }
 
-th, td {
+th,
+td {
     padding: 12px 15px;
     border: 1px solid #dee2e6;
     vertical-align: middle;
 }
 
 th {
-    background-color: #007bff;
+    background-color: #020d24;
     color: white;
     font-weight: 700;
     text-align: center;
 }
 
-tr:nth-child(even), .table tbody tr:nth-child(even) {
+tr:nth-child(even),
+.table tbody tr:nth-child(even) {
     background-color: #f8f9fa;
 }
 
-tr:hover, .table tbody tr:hover {
+tr:hover,
+.table tbody tr:hover {
     background-color: #e9ecef;
 }
 
@@ -141,11 +149,11 @@ tr:hover, .table tbody tr:hover {
 }
 
 .btn-primary {
-    background-color: #007bff;
+    background-color: #b08a0e;
 }
 
 .btn-primary:hover {
-    background-color: #0056b3;
+    background-color: #8a6b08;
 }
 
 .btn-success {
@@ -183,7 +191,7 @@ tr:hover, .table tbody tr:hover {
 
 /* أزرار التعديل والحذف (رابط وليس زر) */
 .btn-edit {
-    color: #007bff;
+    color: #b08a0e;
     text-decoration: none;
     font-weight: 700;
     cursor: pointer;
@@ -233,7 +241,7 @@ tr:hover, .table tbody tr:hover {
     border-radius: 10px;
     max-width: 500px;
     margin: 30px auto;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .form-card label {
@@ -243,7 +251,9 @@ tr:hover, .table tbody tr:hover {
 }
 
 .form-card .form-input,
-input, select, textarea {
+input,
+select,
+textarea {
     padding: 10px;
     margin-bottom: 20px;
     border-radius: 5px;
@@ -305,7 +315,7 @@ input, select, textarea {
     flex: 1 1 250px;
     background-color: #fff;
     border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
     padding: 20px;
     text-align: center;
     transition: transform 0.2s ease;
@@ -364,7 +374,7 @@ input, select, textarea {
 .footer-link {
     display: inline-block;
     margin-top: 25px;
-    color: #007bff;
+    color: #b08a0e;
     font-weight: 600;
     text-decoration: none;
     cursor: pointer;

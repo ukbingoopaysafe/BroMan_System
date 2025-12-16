@@ -17,7 +17,7 @@
 }
 
 .property-row:hover::after {
-    background-color: #007bff;
+    background-color: #020d24;
 }
 
 /* Action buttons styling */
@@ -36,7 +36,7 @@
 }
 
 .btn-edit {
-    color: #007bff;
+    color: #b08a0e;
     background-color: #f8f9fa;
 }
 
@@ -52,4 +52,3 @@
 .btn-delete:hover {
     background-color: #f5c6cb;
 }
-
