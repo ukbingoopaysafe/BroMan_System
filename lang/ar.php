@@ -669,5 +669,8 @@ return [
     'error_occurred' => 'حدث خطأ',
     'unknown_error' => 'خطأ غير معروف',
     'all' => 'الكل',
+    'select_governorate_first' => 'اختر المحافظة أولاً',
+    'loading' => 'جاري التحميل...',
+    'no_regions_found' => 'لا توجد مناطق',
 ];
 

@@ -47,6 +47,7 @@ if (!array_key_exists($sort_column, $allowed_sort_columns)) {
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
     $search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
     $governorate_filter = isset($_GET['governorate']) ? trim($_GET['governorate']) : '';
+    $district_filter = isset($_GET['district']) ? trim($_GET['district']) : '';
     $company_filter = isset($_GET['company']) ? trim($_GET['company']) : '';
     $unit_design_filter = isset($_GET['unit_design']) ? trim($_GET['unit_design']) : '';
     $status_filter = isset($_GET['status']) ? trim($_GET['status']) : '';
@@ -176,6 +177,13 @@ if (!empty($property_type_filter)) {
 if (!empty($governorate_filter)) {
     $sql_where[] = "p.governorate = ?";
     $params[] = $governorate_filter;
+    $types .= "s";
+}
+
+// Add district filter
+if (!empty($district_filter)) {
+    $sql_where[] = "p.district = ?";
+    $params[] = $district_filter;
     $types .= "s";
 }
 
@@ -472,9 +480,28 @@ if ($stmt = $conn->prepare($sql)) {
                     <select id="status" name="status" class="form-control">
                         <option value=""><?php echo t('all_statuses'); ?></option>
                         <option value="available" <?php echo $status_filter === 'available' ? 'selected' : ''; ?>><?php echo t('status_available'); ?></option>
-                        <option value="sold" <?php echo $status_filter === 'sold' ? 'selected' : ''; ?>><?php echo t('status_sold'); ?></option>
-                        <option value="rented" <?php echo $status_filter === 'rented' ? 'selected' : ''; ?>><?php echo t('status_rented'); ?></option>
+                        
+                        <?php if ($current_mode !== 'Rental'): ?>
+                            <option value="sold" <?php echo $status_filter === 'sold' ? 'selected' : ''; ?>><?php echo t('status_sold'); ?></option>
+                        <?php endif; ?>
+                        
+                        <?php if ($current_mode === 'Rental'): ?>
+                            <option value="rented" <?php echo $status_filter === 'rented' ? 'selected' : ''; ?>><?php echo t('status_rented'); ?></option>
+                        <?php endif; ?>
+                        
                         <option value="unavailable" <?php echo $status_filter === 'unavailable' ? 'selected' : ''; ?>><?php echo t('status_unavailable'); ?></option>
+                    </select>
+                </div>
+                <!-- Year Built Moved to Row 1 -->
+                <div class="filter-item">
+                    <label for="year_built"><?php echo t('year_built'); ?>:</label>
+                    <select id="year_built" name="year_built" class="form-control">
+                        <option value=""><?php echo t('all_years'); ?></option>
+                        <?php foreach ($year_built_list as $yb): ?>
+                            <option value="<?php echo htmlspecialchars($yb); ?>" <?php echo $year_built_filter === $yb ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($yb); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
             </div>
@@ -490,6 +517,17 @@ if ($stmt = $conn->prepare($sql)) {
                                 <?php echo htmlspecialchars($gov); ?>
                             </option>
                         <?php endforeach; ?>
+                    </select>
+                </div>
+                <!-- New Region (District) Filter -->
+                <div class="filter-item">
+                    <label for="district"><?php echo t('district'); ?>:</label>
+                    <select id="district" name="district" class="form-control" 
+                            data-selected="<?php echo htmlspecialchars($district_filter); ?>"
+                            data-default-text="<?php echo t('all') . ' ' . t('district'); ?>"
+                            data-prompt-text="<?php echo t('select_governorate_first') ?? 'اختر المحافظة أولاً'; ?>"
+                            data-loading-text="<?php echo t('loading') ?? 'جاري التحميل...'; ?>">
+                        <option value=""><?php echo t('select_governorate_first') ?? 'اختر المحافظة أولاً'; ?></option>
                     </select>
                 </div>
                 <div class="filter-item">
@@ -509,17 +547,6 @@ if ($stmt = $conn->prepare($sql)) {
                         <option value=""><?php echo t('all_seller_types') ?? t('select_seller_type'); ?></option>
                         <?php foreach (allowed_seller_types() as $st): ?>
                             <option value="<?php echo htmlspecialchars($st); ?>" <?php echo $seller_type_filter === $st ? 'selected' : ''; ?>><?php echo htmlspecialchars($st); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="filter-item">
-                    <label for="year_built"><?php echo t('year_built'); ?>:</label>
-                    <select id="year_built" name="year_built" class="form-control">
-                        <option value=""><?php echo t('all_years'); ?></option>
-                        <?php foreach ($year_built_list as $yb): ?>
-                            <option value="<?php echo htmlspecialchars($yb); ?>" <?php echo $year_built_filter === $yb ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($yb); ?>
-                            </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -873,6 +900,7 @@ if ($stmt = $conn->prepare($sql)) {
 </script>
 
 <script src="property_row_click.js"></script>
+<script src="filter_regions.js"></script>
 
 </body>
 </html>
