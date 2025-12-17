@@ -395,7 +395,26 @@ if ($stmt = $conn->prepare($sql)) {
         .mobile-sort-select { flex: 1; padding: 10px 14px; border: 1px solid #ccc; border-radius: 8px; background: #fff; font-size: 0.9rem; color: #333; cursor: pointer; }
         .mobile-sort-select:focus { outline: none; border-color: #b08a0e; box-shadow: 0 0 0 3px rgba(176, 138, 14, 0.15); }
     }
+    /* Mobile Filter Toggle */
+    .mobile-filter-toggle { display: none; }
+    @media (max-width: 992px) {
+        .mobile-filter-toggle { display: flex !important; align-items: center; justify-content: space-between; width: 100%; padding: 14px 18px; background: linear-gradient(135deg, #b08a0e 0%, #d4a817 100%); color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-bottom: 0; transition: all 0.3s ease; }
+        .mobile-filter-toggle i:first-child { margin-left: 8px; }
+        .mobile-filter-toggle span { flex: 1; text-align: right; }
+        .mobile-filter-toggle .toggle-icon { transition: transform 0.3s ease; }
+        .mobile-filter-toggle.active .toggle-icon { transform: rotate(180deg); }
+        .filter-section .filter-form { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e0e0e0; }
+        .filter-section .filter-form.show { display: block !important; }
+    }
     </style>
+    <script>
+    function toggleMobileFilters() {
+        var btn = document.querySelector('.mobile-filter-toggle');
+        var form = document.querySelector('.filter-section .filter-form');
+        btn.classList.toggle('active');
+        form.classList.toggle('show');
+    }
+    </script>
 </head>
 <body>
 
@@ -421,7 +440,14 @@ if ($stmt = $conn->prepare($sql)) {
 
     <!-- Enhanced Filter Section -->
     <div class="filter-section">
-        <form method="GET" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
+        <!-- Mobile Filter Toggle Button -->
+        <button type="button" class="mobile-filter-toggle" onclick="toggleMobileFilters()">
+            <i class="fas fa-filter"></i>
+            <span><?php echo t('filters') ?? 'الفلاتر'; ?></span>
+            <i class="fas fa-chevron-down toggle-icon"></i>
+        </button>
+        
+        <form method="GET" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" class="filter-form">
             <input type="hidden" name="view" value="<?php echo htmlspecialchars($view_mode); ?>">
             
             <!-- Basic Filters (Row 1) -->
