@@ -2077,7 +2077,11 @@ if ($att_stmt) {
         // Handle Dynamic Seller Addition
         const addSellerBtn = document.getElementById('add-seller-row');
         addSellerBtn.addEventListener('click', function() {
-             // Mutation observer or just wait for timeout? 
+             const template = document.getElementById('seller-row-template');
+             const container = document.getElementById('seller-entries');
+             const clone = template.content.cloneNode(true);
+             container.appendChild(clone);
+             
              // The existing click handler adds the row. We need to init the new row.
              // We can assume the new row is the last one in #seller-entries
              setTimeout(() => {
@@ -2096,6 +2100,34 @@ if ($att_stmt) {
                      setupPhoneValidation(codeSelect.id, numInput.id);
                  }
              }, 50); // Small delay to allow template injection
+        });
+
+        // Event delegation for remove button
+        document.getElementById('seller-entries').addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-seller')) {
+                const row = e.target.closest('.seller-row');
+                // Check if it's the only row, if so clearing values might be better than removing, 
+                // but the requirements say "remove" and we have a "+ Add" button. 
+                // However, usually we want at least one row. 
+                // The PHP code handles empty array by creating one blank entry, so removing all from DOM is fine 
+                // as long as user adds one back or the backend handles it.
+                // But let's check count to be safe/UX friendly.
+                const rows = document.querySelectorAll('#seller-entries .seller-row');
+                if (rows.length > 1) {
+                    row.remove();
+                } else {
+                    // Start of cleaning the row instead of removing it if it's the last one
+                    // actually, the design has a remove button, let's just allow remove but maybe warn?
+                    // Or just remove and if they submit invalid, backend validation catches it.
+                    // Let's just remove it. 
+                    // Actually, looking at the PHP `if (empty($seller_entries_post))` it creates a blank one.
+                    // But for better UX, if 1 row left, maybe clear it or just don't allow remove?
+                    // The HTML for the FIRST row has `style="display:none;"` on the remove button (line 1620).
+                    // So we only need to handle dynamically added ones or subsequent ones.
+                    // Wait, the cloned template DOES have the remove button visible.
+                    row.remove();
+                }
+            }
         });
     });
     </script>
