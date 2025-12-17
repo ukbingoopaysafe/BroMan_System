@@ -337,6 +337,283 @@ if ($stmt = $conn->prepare($sql)) {
     <link rel="stylesheet" href="property_card_styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
+    <!-- Mobile Responsive Table - Professional Card Design -->
+    <style>
+    @media (max-width: 992px) {
+        /* Container Reset */
+        .table-responsive {
+            overflow: visible !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+        
+        /* Table Structure Reset */
+        .properties-table {
+            display: block !important;
+            width: 100% !important;
+            min-width: unset !important;
+        }
+        .properties-table thead {
+            display: none !important;
+        }
+        .properties-table tbody {
+            display: block !important;
+        }
+        
+        /* === PROPERTY CARD === */
+        .properties-table tbody tr {
+            display: block !important;
+            position: relative !important;
+            overflow: hidden !important;
+            background: #ffffff !important;
+            border-radius: 12px !important;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+            border: 1px solid #e0e0e0 !important;
+            margin-bottom: 20px !important;
+            padding: 0 !important;
+        }
+        .properties-table tbody tr:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
+            transform: none !important;
+        }
+        
+        /* === ALL CELLS BASE === */
+        .properties-table tbody td {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 12px 16px !important;
+            border-bottom: 1px dashed #eee !important;
+            margin: 0 !important;
+            min-width: unset !important;
+            max-width: unset !important;
+            width: auto !important;
+        }
+        .properties-table tbody td:last-child {
+            border-bottom: none !important;
+        }
+        
+        /* Label (from data-label) - Right side */
+        .properties-table tbody td::before {
+            content: attr(data-label);
+            font-weight: 500 !important;
+            color: #666 !important;
+            font-size: 0.85rem !important;
+            flex-shrink: 0 !important;
+            text-align: right !important;
+        }
+        
+        /* Value - Left side */
+        .properties-table tbody td > * {
+            color: #333 !important;
+            font-weight: 500 !important;
+        }
+        
+        /* RTL Support */
+        html[dir="rtl"] .properties-table tbody td {
+            flex-direction: row !important;
+        }
+        html[dir="rtl"] .properties-table tbody td::before {
+            text-align: right !important;
+            order: 1 !important;
+        }
+        
+        /* === ID CELL - Badge Style === */
+        .properties-table tbody td.cell-id {
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%) !important;
+            border-bottom: 2px solid #b08a0e !important;
+            padding: 14px 16px !important;
+            justify-content: flex-start !important;
+            gap: 10px !important;
+        }
+        .properties-table tbody td.cell-id::before {
+            content: "رقم العقار:" !important;
+            background: #b08a0e !important;
+            color: #fff !important;
+            padding: 4px 10px !important;
+            border-radius: 4px !important;
+            font-size: 0.75rem !important;
+            font-weight: 600 !important;
+            order: 0 !important;
+        }
+        .properties-table tbody td.cell-id strong {
+            font-size: 1.2rem !important;
+            font-weight: 700 !important;
+            color: #020d24 !important;
+            order: 1 !important;
+        }
+        
+        /* === PROJECT/TITLE CELL === */
+        .properties-table tbody td.cell-project {
+            background: #fafafa !important;
+            padding: 16px !important;
+            border-bottom: 1px solid #e0e0e0 !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+        }
+        .properties-table tbody td.cell-project::before {
+            display: none !important;
+        }
+        .properties-table tbody td.cell-project .project-title {
+            font-size: 1.15rem !important;
+            font-weight: 700 !important;
+            color: #1a1a2e !important;
+            margin-bottom: 4px !important;
+        }
+        .properties-table tbody td.cell-project .project-subtitle {
+            font-size: 0.9rem !important;
+            color: #666 !important;
+        }
+        
+        /* === PRICE CELL - Highlighted === */
+        .properties-table tbody td.cell-price {
+            background: linear-gradient(135deg, rgba(176, 138, 14, 0.08) 0%, rgba(176, 138, 14, 0.03) 100%) !important;
+            border-bottom: 1px solid rgba(176, 138, 14, 0.2) !important;
+            padding: 14px 16px !important;
+        }
+        .properties-table tbody td.cell-price::before {
+            color: #8a6b08 !important;
+            font-weight: 600 !important;
+        }
+        .properties-table tbody td.cell-price > * {
+            color: #b08a0e !important;
+            font-weight: 700 !important;
+            font-size: 1.05rem !important;
+        }
+        
+        /* === STATUS CELL === */
+        .properties-table tbody td.cell-status {
+            padding: 14px 16px !important;
+        }
+        .properties-table tbody td.cell-status .status-badge {
+            padding: 6px 14px !important;
+            font-size: 0.8rem !important;
+        }
+        
+        /* === ACTIONS CELL === */
+        .properties-table tbody td.cell-actions {
+            background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%) !important;
+            border-top: 1px solid #e0e0e0 !important;
+            border-bottom: none !important;
+            padding: 14px 16px !important;
+            justify-content: center !important;
+        }
+        .properties-table tbody td.cell-actions::before {
+            display: none !important;
+        }
+        .properties-table .table-actions {
+            display: flex !important;
+            flex-direction: row !important;
+            width: 100% !important;
+            gap: 12px !important;
+        }
+        .properties-table .table-actions a,
+        .properties-table .table-actions button,
+        .properties-table .table-actions form {
+            flex: 1 !important;
+        }
+        .properties-table .table-actions a,
+        .properties-table .table-actions button {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 12px 16px !important;
+            font-size: 0.9rem !important;
+            font-weight: 600 !important;
+            border-radius: 8px !important;
+            min-width: unset !important;
+        }
+        
+        /* === TYPE, AREA, LOCATION, COMPANY CELLS === */
+        .properties-table tbody td.cell-type,
+        .properties-table tbody td.cell-design,
+        .properties-table tbody td.cell-area,
+        .properties-table tbody td.cell-location,
+        .properties-table tbody td.cell-company {
+            padding: 12px 16px !important;
+        }
+        
+        /* Hide company on very small screens */
+        @media (max-width: 576px) {
+            .properties-table tbody td.cell-company {
+                display: none !important;
+            }
+        }
+    }
+    
+    /* Extra small screens */
+    @media (max-width: 480px) {
+        .properties-table tbody td {
+            padding: 10px 12px !important;
+            font-size: 0.9rem !important;
+        }
+        .properties-table tbody td::before {
+            font-size: 0.8rem !important;
+        }
+        .properties-table tbody td.cell-id strong {
+            font-size: 1.1rem !important;
+        }
+        .properties-table tbody td.cell-project .project-title {
+            font-size: 1.05rem !important;
+        }
+        .properties-table .table-actions a,
+        .properties-table .table-actions button {
+            padding: 10px 12px !important;
+            font-size: 0.85rem !important;
+        }
+    }
+    
+    /* Mobile Sort Container */
+    .mobile-sort-container {
+        display: none;
+    }
+    @media (max-width: 992px) {
+        .mobile-sort-container {
+            display: flex !important;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            border: 1px solid #e0e0e0;
+        }
+        .mobile-sort-container label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        .mobile-sort-select {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 0.9rem;
+            color: #333;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: left 12px center;
+            padding-left: 32px;
+        }
+        html[dir="rtl"] .mobile-sort-select {
+            background-position: right 12px center;
+            padding-left: 14px;
+            padding-right: 32px;
+        }
+        .mobile-sort-select:focus {
+            outline: none;
+            border-color: #b08a0e;
+            box-shadow: 0 0 0 3px rgba(176, 138, 14, 0.15);
+        }
+    }
+    </style>
+
 </head>
 <body>
 
@@ -640,6 +917,39 @@ if ($stmt = $conn->prepare($sql)) {
         </div>
     <?php else: ?>
         <!-- Enhanced Table View -->
+        
+        <!-- Mobile Sort Dropdown (visible only on mobile) -->
+        <div class="mobile-sort-container">
+            <label for="mobile-sort"><?php echo t('sort_by') ?? 'ترتيب حسب'; ?>:</label>
+            <select id="mobile-sort" class="mobile-sort-select" onchange="window.location.href=this.value">
+                <option value=""><?php echo t('select_sort') ?? 'اختر الترتيب'; ?></option>
+                <option value="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'PropertyID', 'direction' => 'desc'])); ?>" <?php echo ($sort_column === 'PropertyID' && $sort_direction === 'desc') ? 'selected' : ''; ?>>
+                    # <?php echo t('table_header_id') ?? 'رقم'; ?> (الأحدث أولاً)
+                </option>
+                <option value="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'PropertyID', 'direction' => 'asc'])); ?>" <?php echo ($sort_column === 'PropertyID' && $sort_direction === 'asc') ? 'selected' : ''; ?>>
+                    # <?php echo t('table_header_id') ?? 'رقم'; ?> (الأقدم أولاً)
+                </option>
+                <option value="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'price', 'direction' => 'desc'])); ?>" <?php echo ($sort_column === 'price' && $sort_direction === 'desc') ? 'selected' : ''; ?>>
+                    <?php echo t('table_header_price') ?? 'السعر'; ?> (الأعلى أولاً)
+                </option>
+                <option value="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'price', 'direction' => 'asc'])); ?>" <?php echo ($sort_column === 'price' && $sort_direction === 'asc') ? 'selected' : ''; ?>>
+                    <?php echo t('table_header_price') ?? 'السعر'; ?> (الأقل أولاً)
+                </option>
+                <option value="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'area', 'direction' => 'desc'])); ?>" <?php echo ($sort_column === 'area' && $sort_direction === 'desc') ? 'selected' : ''; ?>>
+                    <?php echo t('table_header_area_sqm') ?? 'المساحة'; ?> (الأكبر أولاً)
+                </option>
+                <option value="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'area', 'direction' => 'asc'])); ?>" <?php echo ($sort_column === 'area' && $sort_direction === 'asc') ? 'selected' : ''; ?>>
+                    <?php echo t('table_header_area_sqm') ?? 'المساحة'; ?> (الأصغر أولاً)
+                </option>
+                <option value="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'project_or_title', 'direction' => 'asc'])); ?>" <?php echo ($sort_column === 'project_or_title' && $sort_direction === 'asc') ? 'selected' : ''; ?>>
+                    <?php echo t('table_header_project_name') ?? 'المشروع'; ?> (أ-ي)
+                </option>
+                <option value="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'project_or_title', 'direction' => 'desc'])); ?>" <?php echo ($sort_column === 'project_or_title' && $sort_direction === 'desc') ? 'selected' : ''; ?>>
+                    <?php echo t('table_header_project_name') ?? 'المشروع'; ?> (ي-أ)
+                </option>
+            </select>
+        </div>
+        
         <div class="table-responsive">
             <table class="properties-table">
                 <thead>
@@ -680,10 +990,10 @@ if ($stmt = $conn->prepare($sql)) {
                     <?php // Display PropertyID instead of a sequential row counter ?>
                     <?php foreach ($properties as $property): ?>
                         <tr class="property-row" data-property-id="<?php echo $property['PropertyID']; ?>">
-                            <td class="cell-id">
+                            <td class="cell-id" data-label="#">
                                 <strong><?php echo (int)($property['friendly_id'] ?? $property['PropertyID']); ?></strong>
                             </td>
-                            <td class="cell-project">
+                            <td class="cell-project" data-label="<?php echo t('table_header_project_name'); ?>">
                                 <?php
                                     $proj = trim((string)($property['ProjectName'] ?? ''));
                                     $ttl = trim((string)($property['Title'] ?? ''));
@@ -705,19 +1015,19 @@ if ($stmt = $conn->prepare($sql)) {
                                 </div>
                                 <?php endif; ?>
                             </td>
-                            <td class="cell-type">
+                            <td class="cell-type" data-label="<?php echo t('property_type'); ?>">
                                 <?php echo getPropertyTypeBadge($property['PropertyTypeID'], $property['PropertyTypeName']); ?>
                             </td>
-                            <td class="cell-design">
+                            <td class="cell-design" data-label="<?php echo t('table_header_unit_design'); ?>">
                                 <?php echo formatUnitModel($property); ?>
                             </td>
-                            <td class="cell-price">
+                            <td class="cell-price" data-label="<?php echo t('table_header_price'); ?>">
                                 <?php echo formatDisplayPrice($property); ?>
                             </td>
-                            <td class="cell-area">
+                            <td class="cell-area" data-label="<?php echo t('table_header_area_sqm'); ?>">
                                 <?php echo formatDisplayArea($property); ?>
                             </td>
-                            <td class="cell-location">
+                            <td class="cell-location" data-label="<?php echo t('table_header_governorate'); ?>">
                                 <div class="location-main">
                                     <?php echo htmlspecialchars($property["governorate"] ?: t("undefined")); ?>
                                 </div>
@@ -727,14 +1037,14 @@ if ($stmt = $conn->prepare($sql)) {
                                 </div>
                                 <?php endif; ?>
                             </td>
-                            <td class="cell-company">
+                            <td class="cell-company" data-label="<?php echo t('table_header_company'); ?>">
                                 <?php echo htmlspecialchars($property['company_name'] ?? t('undefined')); ?>
                             </td>
-                            <td class="cell-status">
+                            <td class="cell-status" data-label="<?php echo t('table_header_status'); ?>">
                                 <?php echo getStatusBadge($property['Status']); ?>
                             </td>
                             <?php if (can_manage_properties()): ?>
-                            <td class="cell-actions">
+                            <td class="cell-actions" data-label="">
                                 <div class="table-actions">
                                     <a href="edit_property.php?id=<?php echo $property['PropertyID']; ?>" class="btn-edit" title="<?php echo t('edit'); ?>">
                                         <i class="fas fa-edit"></i>

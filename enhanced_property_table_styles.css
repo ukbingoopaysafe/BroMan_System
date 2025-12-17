@@ -894,3 +894,232 @@ html[dir="rtl"] .sort-icon {
         transform: scale(1);
     }
 }
+
+/* ================================================== */
+/* == MOBILE RESPONSIVE TABLE - CARD LAYOUT == */
+/* ================================================== */
+
+@media (max-width: 992px) {
+
+    /* Remove min-width constraint for mobile */
+    .properties-table {
+        min-width: unset !important;
+        width: 100% !important;
+        display: block !important;
+    }
+
+    /* Hide table header on mobile */
+    .properties-table thead {
+        display: none !important;
+    }
+
+    /* Make tbody a flex container for cards */
+    .properties-table tbody {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+    }
+
+    /* Transform each row into a card */
+    .properties-table tbody tr {
+        display: block !important;
+        background: #fff !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
+        padding: 16px !important;
+        border: 1px solid #e9ecef !important;
+        margin: 0 !important;
+        transform: none !important;
+    }
+
+    .properties-table tbody tr:hover {
+        transform: none !important;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12) !important;
+    }
+
+    /* Stack cells vertically */
+    .properties-table tbody td {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: flex-start !important;
+        padding: 10px 0 !important;
+        border-bottom: 1px solid #f1f3f4 !important;
+        text-align: right !important;
+        gap: 12px !important;
+    }
+
+    html[dir="rtl"] .properties-table tbody td {
+        text-align: left !important;
+        flex-direction: row-reverse !important;
+    }
+
+    /* Add label before each cell value */
+    .properties-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600 !important;
+        color: #6c757d !important;
+        font-size: 0.8rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        flex-shrink: 0 !important;
+        min-width: 100px !important;
+        text-align: left !important;
+    }
+
+    html[dir="rtl"] .properties-table tbody td::before {
+        text-align: right !important;
+    }
+
+    /* Remove border from last cell */
+    .properties-table tbody td:last-child {
+        border-bottom: none !important;
+    }
+
+    /* ID Cell - Prominent display */
+    .properties-table tbody td.cell-id {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+        margin: -16px -16px 12px -16px !important;
+        padding: 12px 16px !important;
+        border-radius: 12px 12px 0 0 !important;
+        border-bottom: 2px solid #b08a0e !important;
+    }
+
+    .properties-table tbody td.cell-id::before {
+        content: "#" !important;
+        font-size: 1rem !important;
+        color: #b08a0e !important;
+    }
+
+    .properties-table tbody td.cell-id strong {
+        font-size: 1.1rem !important;
+        color: #020d24 !important;
+    }
+
+    /* Project Name Cell - Larger */
+    .properties-table tbody td.cell-project {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding-top: 12px !important;
+    }
+
+    .properties-table tbody td.cell-project::before {
+        margin-bottom: 6px !important;
+    }
+
+    .properties-table tbody td.cell-project .project-title {
+        font-size: 1.1rem !important;
+    }
+
+    /* Price Cell - Highlighted */
+    .properties-table tbody td.cell-price {
+        background: rgba(40, 167, 69, 0.05) !important;
+        padding: 12px !important;
+        margin: 8px -16px !important;
+        border-radius: 8px !important;
+    }
+
+    /* Status Cell */
+    .properties-table tbody td.cell-status {
+        padding-bottom: 16px !important;
+    }
+
+    /* Actions Cell - Full width at bottom */
+    .properties-table tbody td.cell-actions {
+        margin: 12px -16px -16px -16px !important;
+        padding: 16px !important;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
+        border-radius: 0 0 12px 12px !important;
+        border-top: 1px solid #e9ecef !important;
+        justify-content: center !important;
+    }
+
+    .properties-table tbody td.cell-actions::before {
+        display: none !important;
+    }
+
+    /* Action buttons - Full width touch-friendly */
+    .properties-table .table-actions {
+        flex-direction: row !important;
+        width: 100% !important;
+        gap: 10px !important;
+    }
+
+    .properties-table .table-actions a,
+    .properties-table .table-actions button {
+        flex: 1 !important;
+        padding: 12px 16px !important;
+        font-size: 0.9rem !important;
+        min-width: unset !important;
+        justify-content: center !important;
+    }
+
+    /* Reset cell widths for mobile */
+    .properties-table tbody td.cell-project,
+    .properties-table tbody td.cell-type,
+    .properties-table tbody td.cell-model,
+    .properties-table tbody td.cell-price,
+    .properties-table tbody td.cell-area,
+    .properties-table tbody td.cell-location,
+    .properties-table tbody td.cell-company,
+    .properties-table tbody td.cell-status {
+        min-width: unset !important;
+        max-width: unset !important;
+        width: auto !important;
+    }
+
+    /* Table responsive container adjustments */
+    .table-responsive {
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+    }
+
+    /* Hide less important columns on very small screens */
+    @media (max-width: 576px) {
+        .properties-table tbody td.cell-company {
+            display: none !important;
+        }
+    }
+}
+
+/* Extra adjustments for smallest screens */
+@media (max-width: 480px) {
+    .properties-table tbody tr {
+        padding: 12px !important;
+    }
+
+    .properties-table tbody td {
+        padding: 8px 0 !important;
+        font-size: 0.85rem !important;
+    }
+
+    .properties-table tbody td::before {
+        font-size: 0.75rem !important;
+        min-width: 80px !important;
+    }
+
+    .properties-table tbody td.cell-id {
+        margin: -12px -12px 10px -12px !important;
+        padding: 10px 12px !important;
+    }
+
+    .properties-table tbody td.cell-price {
+        margin: 6px -12px !important;
+        padding: 10px !important;
+    }
+
+    .properties-table tbody td.cell-actions {
+        margin: 10px -12px -12px -12px !important;
+        padding: 12px !important;
+    }
+
+    .properties-table .table-actions a,
+    .properties-table .table-actions button {
+        padding: 10px 12px !important;
+        font-size: 0.85rem !important;
+    }
+}

@@ -1280,6 +1280,28 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
             margin-left: 0;
         }
     }
+    
+    /* Mobile Safety Margins - prevent border clipping from overflow-x: hidden */
+    @media (max-width: 992px) {
+        .container {
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        
+        .property-layout {
+            width: 100% !important;
+            margin: 0 !important;
+        }
+        
+        .property-hero,
+        .sidebar-card,
+        .info-card {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+    }
     </style>
     <?php endif; ?>
     <script src="session_timeout.js"></script>

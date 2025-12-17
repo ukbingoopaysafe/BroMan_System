@@ -27,12 +27,20 @@ $switch_lang_url = basename($_SERVER['PHP_SELF']) . '?' . http_build_query($quer
 
 ?>
 <nav class="navbar">
-    <div class="logo-container">
-        <a href="dashboard.php" class="company-name-link">
-            <img src="<?php echo $logo_path; ?>" alt="<?php echo t('broman_real_estate_logo'); ?>" class="logo">
-        </a>
+    <div class="navbar-header">
+        <!-- Hamburger Menu Button -->
+        <button class="hamburger" id="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+        </button>
+        <div class="logo-container">
+            <a href="dashboard.php" class="company-name-link">
+                <img src="<?php echo $logo_path; ?>" alt="<?php echo t('broman_real_estate_logo'); ?>" class="logo">
+            </a>
+        </div>
     </div>
-    <ul>
+    <ul class="nav-links" id="nav-links">
         <?php if ($is_logged_in): ?>
             <li><a href="dashboard.php" class="<?php echo ($active_page == "dashboard.php") ? "active" : ""; ?>"><?php echo t('dashboard'); ?></a></li>
             <?php if (isset($_SESSION['listing_context'])): ?>
@@ -80,18 +88,47 @@ $switch_lang_url = basename($_SERVER['PHP_SELF']) . '?' . http_build_query($quer
 </nav>
 
 <style>
+/* CSS Reset for full-width navbar - Force Full Viewport Solution */
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden; /* Prevent horizontal scroll from 100vw trick */
+}
+
+/* Force navbar to break out of any parent container */
+nav.navbar {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin-left: calc(-50vw + 50%) !important;
+    margin-right: calc(-50vw + 50%) !important;
+    left: 0 !important;
+    right: 0 !important;
+    border-radius: 0 !important;
+    /* Handle notch/safe-area on modern mobile devices */
+    padding-top: max(0.80rem, env(safe-area-inset-top));
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+}
+
 /* Premium Navbar Styles - Ultra Dark Navy with Gold Accents */
 .navbar {
     background: linear-gradient(135deg, #020d24 0%, #0a1a3a 100%);
     padding: 0.80rem 2rem;
+    margin: 0;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    box-sizing: border-box;
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
     position: sticky;
     top: 0;
+    left: 0 !important;
+    right: 0 !important;
     z-index: 1000;
     border-bottom: 3px solid #b08a0e;
+    border-radius: 0 !important;
 }
 
 .navbar .logo-container {
@@ -294,23 +331,302 @@ html[dir="rtl"] .navbar ul li.dropdown a.dropbtn .arrow {
     margin-right: 5px;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .navbar {
-        padding: 0.5rem 1rem;
-        flex-direction: column;
-        gap: 0.75rem;
+/* Navbar Header - Contains logo and hamburger */
+.navbar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+/* RTL: Reverse flex direction so hamburger stays on left, logo on right */
+html[dir="rtl"] .navbar-header {
+    flex-direction: row-reverse;
+}
+
+/* Hamburger Button - Hidden on Desktop */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 10;
+    margin-left: 15px; /* Space from edge in RTL */
+}
+
+.hamburger .bar {
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, #c9a011 0%, #b08a0e 100%);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+/* Hamburger Animation when active */
+.hamburger.active .bar:nth-child(1) {
+    transform: rotate(45deg) translate(6px, 6px);
+}
+
+.hamburger.active .bar:nth-child(2) {
+    opacity: 0;
+    transform: translateX(-20px);
+}
+
+.hamburger.active .bar:nth-child(3) {
+    transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* Desktop Styles */
+@media (min-width: 993px) {
+    .navbar-header {
+        width: auto;
     }
     
-    .navbar ul {
-        flex-wrap: wrap;
+    .navbar .nav-links {
+        display: flex !important;
+    }
+}
+
+/* Responsive - Tablet and Mobile */
+@media (max-width: 992px) {
+    .navbar {
+        padding: 0.75rem 1rem;
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .navbar-header {
+        width: 100%;
+    }
+    
+    .hamburger {
+        display: flex;
+    }
+    
+    .navbar .nav-links {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        background: linear-gradient(180deg, #0a1a3a 0%, #061328 100%);
+        margin-top: 1rem;
+        padding: 0.5rem 0;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        max-height: 0;
+        transition: max-height 0.4s ease, padding 0.3s ease;
+    }
+    
+    .navbar .nav-links.active {
+        display: flex;
+        max-height: 600px;
+        padding: 1rem 0;
+    }
+    
+    .navbar .nav-links li {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .navbar ul li a {
+        padding: 0.85rem 1.5rem;
+        font-size: 1rem;
+        border-radius: 0;
         justify-content: center;
-        gap: 0.25rem;
+    }
+    
+    .navbar ul li a:hover,
+    .navbar ul li a.active {
+        background: linear-gradient(90deg, rgba(176, 138, 14, 0.2) 0%, rgba(176, 138, 14, 0.1) 100%);
+        box-shadow: inset 4px 0 0 #b08a0e;
+    }
+    
+    html[dir="rtl"] .navbar ul li a:hover,
+    html[dir="rtl"] .navbar ul li a.active {
+        box-shadow: inset -4px 0 0 #b08a0e;
+    }
+    
+    /* Mobile Dropdown Styles */
+    .navbar ul li.dropdown {
+        display: block;
+        width: 100%;
+    }
+    
+    .navbar ul li.dropdown > a.dropbtn {
+        justify-content: center;
+        padding: 0.85rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    .navbar ul li.dropdown .dropdown-content {
+        position: static;
+        display: none;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.2);
+        box-shadow: none;
+        border-radius: 0;
+        padding: 0;
+        animation: none;
+        border: none;
+        margin: 0;
+    }
+    
+    .navbar ul li.dropdown.open .dropdown-content {
+        display: block;
+    }
+    
+    .navbar ul li.dropdown .dropdown-content a {
+        color: rgba(255, 255, 255, 0.85) !important;
+        padding: 0.75rem 2rem;
+        font-size: 0.9rem;
+        text-align: center;
+        background: transparent;
+    }
+    
+    .navbar ul li.dropdown .dropdown-content a:hover,
+    .navbar ul li.dropdown .dropdown-content a.active-sub {
+        background: rgba(176, 138, 14, 0.15) !important;
+        color: #c9a011 !important;
+    }
+    
+    /* Mobile: Tap to toggle dropdown instead of hover */
+    .navbar ul li.dropdown:hover .dropdown-content {
+        display: none;
+    }
+    
+    .navbar ul li.dropdown.open .dropdown-content {
+        display: block;
+    }
+    
+    /* Arrow rotation for mobile */
+    .navbar ul li.dropdown:hover a.dropbtn .arrow {
+        transform: none;
+    }
+    
+    .navbar ul li.dropdown.open a.dropbtn .arrow {
+        transform: rotate(180deg);
     }
     
     .navbar .logo {
-        height: 40px;
+        height: 38px;
+    }
+    
+    /* Logout button mobile style */
+    .navbar .btn-logout {
+        width: 80%;
+        margin: 0.5rem auto;
+        display: block;
+        text-align: center;
+    }
+    
+    /* Language switch mobile */
+    .navbar ul li a.lang-switch {
+        margin-top: 0.5rem;
+    }
+    
+    /* ============================================
+       GLOBAL MOBILE FIX - Safe Content Margins
+       Prevents border/shadow clipping from overflow-x: hidden
+       ============================================ */
+    .container,
+    .container-fluid,
+    .main-content,
+    .wrapper,
+    .premium-container {
+        width: calc(100% - 24px) !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        box-sizing: border-box !important;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+    .navbar {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .navbar .logo {
+        height: 32px;
+    }
+    
+    .navbar ul li a {
+        font-size: 0.95rem;
+        padding: 0.75rem 1rem;
     }
 }
 </style>
+
+<!-- Mobile Navigation JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const hamburger = document.getElementById('hamburger-btn');
+    const navLinks = document.getElementById('nav-links');
+    const dropdowns = document.querySelectorAll('.navbar .dropdown');
+    
+    // Toggle mobile menu
+    if (hamburger && navLinks) {
+        hamburger.addEventListener('click', function() {
+            hamburger.classList.toggle('active');
+            navLinks.classList.toggle('active');
+            
+            // Update aria-expanded
+            const isExpanded = hamburger.classList.contains('active');
+            hamburger.setAttribute('aria-expanded', isExpanded);
+        });
+    }
+    
+    // Handle dropdowns on mobile (tap to toggle)
+    dropdowns.forEach(function(dropdown) {
+        const dropbtn = dropdown.querySelector('.dropbtn');
+        if (dropbtn) {
+            dropbtn.addEventListener('click', function(e) {
+                // Only prevent default on mobile
+                if (window.innerWidth <= 992) {
+                    e.preventDefault();
+                    
+                    // Close other dropdowns
+                    dropdowns.forEach(function(other) {
+                        if (other !== dropdown) {
+                            other.classList.remove('open');
+                        }
+                    });
+                    
+                    // Toggle current dropdown
+                    dropdown.classList.toggle('open');
+                }
+            });
+        }
+    });
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.navbar')) {
+            if (hamburger) hamburger.classList.remove('active');
+            if (navLinks) navLinks.classList.remove('active');
+            dropdowns.forEach(function(dropdown) {
+                dropdown.classList.remove('open');
+            });
+        }
+    });
+    
+    // Close menu on window resize if going to desktop
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 992) {
+            if (hamburger) hamburger.classList.remove('active');
+            if (navLinks) navLinks.classList.remove('active');
+            dropdowns.forEach(function(dropdown) {
+                dropdown.classList.remove('open');
+            });
+        }
+    });
+});
+</script>
 

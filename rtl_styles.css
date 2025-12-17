@@ -5,21 +5,24 @@ body {
 }
 
 .navbar ul {
-    padding-right: 0; /* Reset padding for RTL */
+    padding-right: 0;
+    /* Reset padding for RTL */
 }
 
+/* Note: Float styles removed - conflicting with flexbox layout */
 .navbar ul li {
-    float: right; /* Float items right */
-    margin-left: 15px; /* Add margin to the left */
-    margin-right: 0; /* Remove margin from the right */
+    margin-left: 15px;
+    /* Add margin to the left */
+    margin-right: 0;
+    /* Remove margin from the right */
 }
 
+/* Note: Float removed from logo-container - using flexbox */
 .navbar .logo-container {
-    float: right;
+    /* flex container handles positioning */
 }
 
 .navbar .lang-switch {
-    float: left; /* Keep lang switch on the opposite side */
     margin-left: 0;
     margin-right: 15px;
 }
@@ -42,12 +45,14 @@ body {
     float: right;
 }
 
-.data-table th, .data-table td {
+.data-table th,
+.data-table td {
     text-align: right;
 }
 
 .actions a {
-    margin-left: 5px; /* Space between action buttons */
+    margin-left: 5px;
+    /* Space between action buttons */
     margin-right: 0;
 }
 
@@ -71,7 +76,8 @@ body {
 
 .form-container div input[type="submit"],
 .form-container div .btn {
-    float: right; /* Align buttons to the right */
+    float: right;
+    /* Align buttons to the right */
     margin-left: 10px;
     margin-right: 0;
 }
@@ -102,7 +108,8 @@ body {
 }
 
 .logo {
-    margin-left: 10px; /* Add space between logo and potential text */
+    margin-left: 10px;
+    /* Add space between logo and potential text */
     margin-right: 0;
 }
 
@@ -188,7 +195,8 @@ html[dir="rtl"] .detail-grid--inline {
     gap: 16px 24px !important;
     direction: rtl !important;
     align-items: start !important;
-    justify-items: end !important; /* align each grid cell to the right */
+    justify-items: end !important;
+    /* align each grid cell to the right */
     text-align: right !important;
 }
 
@@ -196,7 +204,8 @@ html[dir="rtl"] .detail-grid--inline .detail-item {
     display: flex !important;
     flex-direction: column !important;
     gap: 6px !important;
-    align-items: flex-end !important; /* force label/value stack to the right */
+    align-items: flex-end !important;
+    /* force label/value stack to the right */
     text-align: right !important;
 }
 
@@ -245,38 +254,50 @@ html[dir="rtl"] .property-section .detail-grid--inline .detail-item .detail-valu
     text-align: right !important;
     margin-left: 0 !important;
     margin-right: 0 !important;
-    direction: ltr !important; /* keep digits readable left-to-right inside RTL context */
-    unicode-bidi: isolate !important; /* isolate the anchor's bidi handling */
+    direction: ltr !important;
+    /* keep digits readable left-to-right inside RTL context */
+    unicode-bidi: isolate !important;
+    /* isolate the anchor's bidi handling */
 }
 
 html[dir="rtl"] .detail-grid--inline {
-    display: flex !important; /* غير إلى flex بدلاً من grid لتحكم أفضل في RTL */
-    flex-direction: row !important; /* ترتيب الأعمدة من اليمين إلى اليسار */
-    justify-content: flex-start !important; /* في RTL، flex-start يعني بداية من اليمين */
+    display: flex !important;
+    /* غير إلى flex بدلاً من grid لتحكم أفضل في RTL */
+    flex-direction: row !important;
+    /* ترتيب الأعمدة من اليمين إلى اليسار */
+    justify-content: flex-start !important;
+    /* في RTL، flex-start يعني بداية من اليمين */
     align-items: flex-start !important;
-    gap: 24px !important; /* مسافة بين الحقول */
+    gap: 24px !important;
+    /* مسافة بين الحقول */
     text-align: right !important;
     width: 100% !important;
 }
 
 html[dir="rtl"] .detail-grid--inline .detail-item {
-    flex: 1 !important; /* كل حقل يأخذ مساحة متساوية */
+    flex: 1 !important;
+    /* كل حقل يأخذ مساحة متساوية */
     display: flex !important;
     flex-direction: column !important;
-    align-items: flex-end !important; /* محاذاة المحتوى داخل الحقل إلى اليمين */
+    align-items: flex-end !important;
+    /* محاذاة المحتوى داخل الحقل إلى اليمين */
     text-align: right !important;
 }
 
 html[dir="rtl"] .detail-grid--inline .detail-label,
 html[dir="rtl"] .detail-grid--inline .detail-value {
     width: 100% !important;
-    text-align: right !important; /* محاذاة النصوص إلى اليمين بشكل قسري */
+    text-align: right !important;
+    /* محاذاة النصوص إلى اليمين بشكل قسري */
 }
 
 html[dir="rtl"] .detail-grid--inline .detail-value a {
     display: block !important;
     width: 100% !important;
-    text-align: right !important; /* محاذاة رابط الهاتف إلى اليمين */
-    direction: ltr !important; /* الحفاظ على ترتيب الأرقام LTR */
-    unicode-bidi: plaintext !important; /* يجعل النص يعامل كـ نص عادي، يحافظ على الأرقام */
+    text-align: right !important;
+    /* محاذاة رابط الهاتف إلى اليمين */
+    direction: ltr !important;
+    /* الحفاظ على ترتيب الأرقام LTR */
+    unicode-bidi: plaintext !important;
+    /* يجعل النص يعامل كـ نص عادي، يحافظ على الأرقام */
 }
