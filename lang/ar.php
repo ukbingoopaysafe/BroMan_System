@@ -220,6 +220,7 @@ return [
     'payment_terms' => 'طريقة الدفع',
     'unit_price' => 'سعر الوحدة',
     'unit_area' => 'مساحة الوحدة',
+    'select_sort' => 'اختر الترتيب',
     
     // Table Headers
     'table_header_id' => '#',

@@ -896,164 +896,253 @@ html[dir="rtl"] .sort-icon {
 }
 
 /* ================================================== */
-/* == MOBILE RESPONSIVE TABLE - CARD LAYOUT == */
+/* == MOBILE CARD DESIGN - CLEAN & PRECISE == */
 /* ================================================== */
 
 @media (max-width: 992px) {
 
-    /* Remove min-width constraint for mobile */
+    /* === Table Structure Reset === */
     .properties-table {
         min-width: unset !important;
         width: 100% !important;
         display: block !important;
     }
 
-    /* Hide table header on mobile */
     .properties-table thead {
         display: none !important;
     }
 
-    /* Make tbody a flex container for cards */
     .properties-table tbody {
         display: flex !important;
         flex-direction: column !important;
         gap: 16px !important;
     }
 
-    /* Transform each row into a card */
+    /* === Card Container (tr) === */
     .properties-table tbody tr {
-        display: block !important;
-        background: #fff !important;
+        display: flex !important;
+        flex-direction: column !important;
+        background: #ffffff !important;
         border-radius: 12px !important;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
-        padding: 16px !important;
-        border: 1px solid #e9ecef !important;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+        border: 1px solid #e5e5e5 !important;
+        overflow: hidden !important;
         margin: 0 !important;
-        transform: none !important;
+        padding: 0 !important;
     }
 
     .properties-table tbody tr:hover {
-        transform: none !important;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
     }
 
-    /* Stack cells vertically */
+    /* ============================================== */
+    /* RULE 1: THE FLEX ROW RULE                     */
+    /* Each cell: Label (right/gray) - Value (left/dark bold) */
+    /* ============================================== */
+
     .properties-table tbody td {
         display: flex !important;
+        flex-direction: row-reverse !important;
+        /* RTL: Label right, Value left */
         justify-content: space-between !important;
-        align-items: flex-start !important;
-        padding: 10px 0 !important;
-        border-bottom: 1px solid #f1f3f4 !important;
-        text-align: right !important;
+        align-items: center !important;
+        padding: 12px 16px !important;
+        border-bottom: 1px dashed #eee !important;
+        background: #fff !important;
+        min-height: 44px !important;
         gap: 12px !important;
     }
 
-    html[dir="rtl"] .properties-table tbody td {
-        text-align: left !important;
-        flex-direction: row-reverse !important;
-    }
-
-    /* Add label before each cell value */
+    /* Label from data-label (RIGHT side in RTL) */
     .properties-table tbody td::before {
         content: attr(data-label);
-        font-weight: 600 !important;
-        color: #6c757d !important;
-        font-size: 0.8rem !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
+        font-weight: 500 !important;
+        color: #888 !important;
+        font-size: 0.85rem !important;
         flex-shrink: 0 !important;
-        min-width: 100px !important;
-        text-align: left !important;
+        white-space: nowrap !important;
     }
 
-    html[dir="rtl"] .properties-table tbody td::before {
-        text-align: right !important;
+    /* Value content (LEFT side in RTL) - Dark & Bold */
+    .properties-table tbody td>*,
+    .properties-table tbody td {
+        color: #333 !important;
+        font-weight: 600 !important;
+        font-size: 0.9rem !important;
     }
 
-    /* Remove border from last cell */
+    /* Reset the td itself to not be bold (only content inside) */
+    .properties-table tbody td {
+        font-weight: normal !important;
+    }
+
+    /* Last cell no border */
     .properties-table tbody td:last-child {
         border-bottom: none !important;
     }
 
-    /* ID Cell - Prominent display */
+    /* ============================================== */
+    /* RULE 2: ID & STATUS HEADER                    */
+    /* ID cell: Light gray background at top         */
+    /* Status: Clear visibility                      */
+    /* ============================================== */
+
+    /* ID Cell - Distinct Header */
     .properties-table tbody td.cell-id {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
-        margin: -16px -16px 12px -16px !important;
-        padding: 12px 16px !important;
-        border-radius: 12px 12px 0 0 !important;
+        background: #f5f5f5 !important;
         border-bottom: 2px solid #b08a0e !important;
+        padding: 14px 16px !important;
     }
 
     .properties-table tbody td.cell-id::before {
-        content: "#" !important;
+        color: #666 !important;
+        font-weight: 600 !important;
+    }
+
+    .properties-table tbody td.cell-id,
+    .properties-table tbody td.cell-id strong,
+    .properties-table tbody td.cell-id span {
+        color: #0a1a3a !important;
+        font-weight: 700 !important;
         font-size: 1rem !important;
-        color: #b08a0e !important;
     }
 
-    .properties-table tbody td.cell-id strong {
-        font-size: 1.1rem !important;
-        color: #020d24 !important;
-    }
-
-    /* Project Name Cell - Larger */
-    .properties-table tbody td.cell-project {
-        flex-direction: column !important;
-        align-items: stretch !important;
-        padding-top: 12px !important;
-    }
-
-    .properties-table tbody td.cell-project::before {
-        margin-bottom: 6px !important;
-    }
-
-    .properties-table tbody td.cell-project .project-title {
-        font-size: 1.1rem !important;
-    }
-
-    /* Price Cell - Highlighted */
-    .properties-table tbody td.cell-price {
-        background: rgba(40, 167, 69, 0.05) !important;
-        padding: 12px !important;
-        margin: 8px -16px !important;
-        border-radius: 8px !important;
-    }
-
-    /* Status Cell */
+    /* Status Cell - Clear Badge */
     .properties-table tbody td.cell-status {
-        padding-bottom: 16px !important;
+        padding: 14px 16px !important;
     }
 
-    /* Actions Cell - Full width at bottom */
-    .properties-table tbody td.cell-actions {
-        margin: 12px -16px -16px -16px !important;
-        padding: 16px !important;
-        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
-        border-radius: 0 0 12px 12px !important;
-        border-top: 1px solid #e9ecef !important;
+    .properties-table tbody td.cell-status .status-badge,
+    .properties-table tbody td.cell-status .badge,
+    .properties-table tbody td.cell-status span {
+        display: inline-flex !important;
+        align-items: center !important;
         justify-content: center !important;
+        padding: 6px 14px !important;
+        border-radius: 20px !important;
+        font-size: 0.8rem !important;
+        font-weight: 600 !important;
+        gap: 4px !important;
     }
 
+    .properties-table tbody td.cell-status .status-available,
+    .properties-table tbody td.cell-status .badge.bg-success {
+        background: #28a745 !important;
+        color: #fff !important;
+    }
+
+    .properties-table tbody td.cell-status .status-sold,
+    .properties-table tbody td.cell-status .badge.bg-danger {
+        background: #dc3545 !important;
+        color: #fff !important;
+    }
+
+    .properties-table tbody td.cell-status .status-rented,
+    .properties-table tbody td.cell-status .badge.bg-warning {
+        background: #ffc107 !important;
+        color: #212529 !important;
+    }
+
+    /* ============================================== */
+    /* RULE 3: ACTIONS CELL                          */
+    /* Bottom of card, full width, centered buttons  */
+    /* NO label for actions                          */
+    /* ============================================== */
+
+    .properties-table tbody td.cell-actions {
+        background: #f8f8f8 !important;
+        border-top: 1px solid #eee !important;
+        border-bottom: none !important;
+        padding: 14px 16px !important;
+        justify-content: center !important;
+        flex-direction: row !important;
+    }
+
+    /* Hide the label for actions */
     .properties-table tbody td.cell-actions::before {
         display: none !important;
+        content: none !important;
     }
 
-    /* Action buttons - Full width touch-friendly */
+    /* Action buttons container */
     .properties-table .table-actions {
+        display: flex !important;
         flex-direction: row !important;
+        justify-content: center !important;
+        align-items: center !important;
         width: 100% !important;
         gap: 10px !important;
     }
 
+    /* Action buttons styling */
     .properties-table .table-actions a,
     .properties-table .table-actions button {
         flex: 1 !important;
-        padding: 12px 16px !important;
-        font-size: 0.9rem !important;
-        min-width: unset !important;
+        max-width: 130px !important;
+        padding: 10px 16px !important;
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        display: inline-flex !important;
+        align-items: center !important;
         justify-content: center !important;
+        gap: 6px !important;
+        text-decoration: none !important;
+        transition: all 0.2s ease !important;
     }
 
-    /* Reset cell widths for mobile */
+    /* Edit button */
+    .properties-table .table-actions a.btn-edit {
+        background: #b08a0e !important;
+        color: #fff !important;
+    }
+
+    .properties-table .table-actions a.btn-edit:hover {
+        background: #c9a011 !important;
+    }
+
+    /* Delete button */
+    .properties-table .table-actions a.btn-delete {
+        background: #8b1a1a !important;
+        color: #fff !important;
+    }
+
+    .properties-table .table-actions a.btn-delete:hover {
+        background: #a52020 !important;
+    }
+
+    /* ============================================== */
+    /* RULE 4: GENERAL APPEARANCE                    */
+    /* Clean look with proper spacing                */
+    /* ============================================== */
+
+    /* Price cell styling */
+    .properties-table tbody td.cell-price strong,
+    .properties-table tbody td.cell-price span,
+    .properties-table tbody td.cell-price {
+        color: #28a745 !important;
+    }
+
+    /* Project title */
+    .properties-table tbody td.cell-project .project-title,
+    .properties-table tbody td.cell-project strong {
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        color: #333 !important;
+    }
+
+    /* Type badge */
+    .properties-table tbody td.cell-type .property-type-badge,
+    .properties-table tbody td.cell-type .badge {
+        background: #b08a0e !important;
+        color: #fff !important;
+        padding: 4px 10px !important;
+        border-radius: 12px !important;
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+    }
+
+    /* Reset cell widths */
     .properties-table tbody td.cell-project,
     .properties-table tbody td.cell-type,
     .properties-table tbody td.cell-model,
@@ -1067,59 +1156,41 @@ html[dir="rtl"] .sort-icon {
         width: auto !important;
     }
 
-    /* Table responsive container adjustments */
+    /* Table responsive container */
     .table-responsive {
-        overflow-x: visible !important;
-        overflow-y: visible !important;
+        overflow: visible !important;
         border-radius: 0 !important;
         border: none !important;
         box-shadow: none !important;
         background: transparent !important;
         padding: 0 !important;
     }
-
-    /* Hide less important columns on very small screens */
-    @media (max-width: 576px) {
-        .properties-table tbody td.cell-company {
-            display: none !important;
-        }
-    }
 }
 
-/* Extra adjustments for smallest screens */
+/* === Small Screen Adjustments === */
 @media (max-width: 480px) {
+    .properties-table tbody {
+        gap: 14px !important;
+    }
+
     .properties-table tbody tr {
-        padding: 12px !important;
+        border-radius: 10px !important;
     }
 
     .properties-table tbody td {
-        padding: 8px 0 !important;
+        padding: 10px 14px !important;
+        min-height: 40px !important;
         font-size: 0.85rem !important;
     }
 
     .properties-table tbody td::before {
-        font-size: 0.75rem !important;
-        min-width: 80px !important;
-    }
-
-    .properties-table tbody td.cell-id {
-        margin: -12px -12px 10px -12px !important;
-        padding: 10px 12px !important;
-    }
-
-    .properties-table tbody td.cell-price {
-        margin: 6px -12px !important;
-        padding: 10px !important;
-    }
-
-    .properties-table tbody td.cell-actions {
-        margin: 10px -12px -12px -12px !important;
-        padding: 12px !important;
+        font-size: 0.8rem !important;
     }
 
     .properties-table .table-actions a,
     .properties-table .table-actions button {
-        padding: 10px 12px !important;
-        font-size: 0.85rem !important;
+        padding: 8px 12px !important;
+        font-size: 0.8rem !important;
+        max-width: 110px !important;
     }
 }
