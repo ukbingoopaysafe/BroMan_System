@@ -19,18 +19,37 @@ if (empty($governorate)) {
     exit;
 }
 
-$districts = [];
-$sql = "SELECT DISTINCT district FROM Properties WHERE governorate = ? AND district IS NOT NULL AND district != '' ORDER BY district";
+// Get current listing mode from session
+$current_mode = $_SESSION['listing_context'] ?? null;
 
-if ($stmt = $conn->prepare($sql)) {
-    $stmt->bind_param("s", $governorate);
-    if ($stmt->execute()) {
-        $result = $stmt->get_result();
-        while ($row = $result->fetch_assoc()) {
-            $districts[] = $row['district'];
+$districts = [];
+
+// Filter by listing_type if a mode is active
+if (!empty($current_mode)) {
+    $sql = "SELECT DISTINCT district FROM Properties WHERE governorate = ? AND district IS NOT NULL AND district != '' AND listing_type = ? ORDER BY district";
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param("ss", $governorate, $current_mode);
+        if ($stmt->execute()) {
+            $result = $stmt->get_result();
+            while ($row = $result->fetch_assoc()) {
+                $districts[] = $row['district'];
+            }
         }
+        $stmt->close();
     }
-    $stmt->close();
+} else {
+    // Fallback: no mode filter (should not normally happen)
+    $sql = "SELECT DISTINCT district FROM Properties WHERE governorate = ? AND district IS NOT NULL AND district != '' ORDER BY district";
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param("s", $governorate);
+        if ($stmt->execute()) {
+            $result = $stmt->get_result();
+            while ($row = $result->fetch_assoc()) {
+                $districts[] = $row['district'];
+            }
+        }
+        $stmt->close();
+    }
 }
 
 header('Content-Type: application/json');

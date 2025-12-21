@@ -70,10 +70,11 @@ $currency_filter = isset($_GET['currency_filter']) ? trim($_GET['currency_filter
     $balconies_filter = isset($_GET['balconies']) ? trim($_GET['balconies']) : '';
 }
 
-// Fetch distinct governorates for the filter dropdown
+// Fetch distinct governorates for the filter dropdown (filtered by current listing mode)
 $governorates_list = [];
-$sql_governorates = "SELECT DISTINCT governorate FROM Properties WHERE governorate IS NOT NULL AND governorate != '' ORDER BY governorate";
+$sql_governorates = "SELECT DISTINCT governorate FROM Properties WHERE governorate IS NOT NULL AND governorate != '' AND listing_type = ? ORDER BY governorate";
 if ($stmt_gov = $conn->prepare($sql_governorates)) {
+    $stmt_gov->bind_param('s', $current_mode);
     if ($stmt_gov->execute()) {
         $result_governorates = $stmt_gov->get_result();
         while ($row_gov = $result_governorates->fetch_assoc()) {
@@ -83,10 +84,11 @@ if ($stmt_gov = $conn->prepare($sql_governorates)) {
     $stmt_gov->close();
 }
 
-// Fetch distinct companies for the filter dropdown
+// Fetch distinct companies for the filter dropdown (filtered by current listing mode)
 $companies_list = [];
-$sql_companies = "SELECT DISTINCT company_name FROM Properties WHERE company_name IS NOT NULL AND company_name != '' ORDER BY company_name";
+$sql_companies = "SELECT DISTINCT company_name FROM Properties WHERE company_name IS NOT NULL AND company_name != '' AND listing_type = ? ORDER BY company_name";
 if ($stmt_comp = $conn->prepare($sql_companies)) {
+    $stmt_comp->bind_param('s', $current_mode);
     if ($stmt_comp->execute()) {
         $result_companies = $stmt_comp->get_result();
         while ($row_comp = $result_companies->fetch_assoc()) {
@@ -96,13 +98,14 @@ if ($stmt_comp = $conn->prepare($sql_companies)) {
     $stmt_comp->close();
 }
 
-// Fetch unit designs for the filter dropdown
+// Fetch unit designs for the filter dropdown (filtered by current listing mode)
 $unit_designs = [];
 $sql_unit_designs = "SELECT DISTINCT p.unit_design AS DesignName 
                      FROM Properties p 
-                     WHERE p.unit_design IS NOT NULL AND p.unit_design != ''
+                     WHERE p.unit_design IS NOT NULL AND p.unit_design != '' AND p.listing_type = ?
                      ORDER BY p.unit_design";
 if ($stmt_designs = $conn->prepare($sql_unit_designs)) {
+    $stmt_designs->bind_param('s', $current_mode);
     if ($stmt_designs->execute()) {
         $result_designs = $stmt_designs->get_result();
         while ($row_design = $result_designs->fetch_assoc()) {
@@ -112,12 +115,13 @@ if ($stmt_designs = $conn->prepare($sql_unit_designs)) {
     $stmt_designs->close();
 }
 
-// Fetch distinct year_built values for the filter dropdown
+// Fetch distinct year_built values for the filter dropdown (filtered by current listing mode)
 $year_built_list = [];
 $sql_years = "SELECT DISTINCT year_built FROM Properties 
-              WHERE year_built IS NOT NULL AND year_built != '' AND year_built <> '0'
+              WHERE year_built IS NOT NULL AND year_built != '' AND year_built <> '0' AND listing_type = ?
               ORDER BY year_built DESC";
 if ($stmt_years = $conn->prepare($sql_years)) {
+    $stmt_years->bind_param('s', $current_mode);
     if ($stmt_years->execute()) {
         $result_years = $stmt_years->get_result();
         while ($row_year = $result_years->fetch_assoc()) {
