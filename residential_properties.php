@@ -164,11 +164,13 @@ $types .= "s";
 // Add search term filter
 if (!empty($search_term)) {
     // unit design is stored on Properties.unit_design (text), reference p.unit_design
-    $sql_where[] = "(p.Title LIKE ? OR p.ProjectName LIKE ? OR p.governorate LIKE ? OR p.district LIKE ? OR p.Location LIKE ? OR p.company_name LIKE ? OR p.unit_design LIKE ?)";
+    // Also search in seller_name for owner/seller search
+    $sql_where[] = "(p.Title LIKE ? OR p.ProjectName LIKE ? OR p.governorate LIKE ? OR p.district LIKE ? OR p.Location LIKE ? OR p.company_name LIKE ? OR p.unit_design LIKE ? OR p.seller_name LIKE ?)";
     $search_param = "%" . $search_term . "%";
-    array_push($params, $search_param, $search_param, $search_param, $search_param, $search_param, $search_param, $search_param);
-    $types .= "sssssss";
+    array_push($params, $search_param, $search_param, $search_param, $search_param, $search_param, $search_param, $search_param, $search_param);
+    $types .= "ssssssss";
 }
+
 
 // Add property type filter
 if (!empty($property_type_filter)) {
