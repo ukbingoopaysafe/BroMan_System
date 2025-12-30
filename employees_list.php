@@ -13,15 +13,21 @@ require_once __DIR__ . '/db.php'; // Include database connection using absolute 
 $search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 // Prepare SQL to fetch employees using ACTUAL schema column names from broman_db.sql
-$sql = "SELECT EmployeeID, FullName, Username, Role, DateJoined FROM employees"; // Corrected column names
-if (!empty($search_term)) {
-    // Update search fields based on actual schema
-    $sql .= " WHERE FullName LIKE ? OR Username LIKE ? OR Role LIKE ?"; // Search by FullName, Username, Role
+// Try with AllowedModes first, fallback without if column doesn't exist
+$sql = "SELECT EmployeeID, FullName, Username, Role, AllowedModes, DateJoined FROM employees";
+$has_allowed_modes = true;
+
+$stmt = $conn->prepare($sql . ($search_term ? " WHERE FullName LIKE ? OR Username LIKE ? OR Role LIKE ?" : "") . " ORDER BY EmployeeID ASC");
+
+// If prepare fails (column doesn't exist), try without AllowedModes
+if (!$stmt) {
+    $sql = "SELECT EmployeeID, FullName, Username, Role, DateJoined FROM employees";
+    $has_allowed_modes = false;
+    $stmt = $conn->prepare($sql . ($search_term ? " WHERE FullName LIKE ? OR Username LIKE ? OR Role LIKE ?" : "") . " ORDER BY EmployeeID ASC");
 }
-$sql .= " ORDER BY EmployeeID ASC";
 
 $employees = [];
-if ($stmt = $conn->prepare($sql)) {
+if ($stmt) {
     if (!empty($search_term)) {
         $like_search_term = "%" . $search_term . "%";
         // Bind parameters for new search fields
@@ -30,6 +36,16 @@ if ($stmt = $conn->prepare($sql)) {
     if ($stmt->execute()) {
         $result = $stmt->get_result();
         while ($row = $result->fetch_assoc()) {
+            // Add fallback AllowedModes if column doesn't exist
+            if (!$has_allowed_modes) {
+                if ($row['Role'] === 'manager') {
+                    $row['AllowedModes'] = 'Primary,Resale,Rental';
+                } elseif (in_array($row['Role'], ['rental_admin', 'rental_user'])) {
+                    $row['AllowedModes'] = 'Rental';
+                } else {
+                    $row['AllowedModes'] = 'Primary,Resale';
+                }
+            }
             $employees[] = $row;
         }
         $stmt->close();
@@ -139,6 +155,7 @@ if ($stmt = $conn->prepare($sql)) {
                             <th><?php echo t('full_name'); // Use correct key if different?></th>
                             <th><?php echo t('username'); ?></th>
                             <th><?php echo t('role'); ?></th>
+                            <th><?php echo t('allowed_modes'); ?></th>
                             <th><?php echo t('date_joined'); // Use correct key if different?></th>
                             <th><?php echo t('actions'); ?></th>
                         </tr>
@@ -158,6 +175,7 @@ if ($stmt = $conn->prepare($sql)) {
                                 <td><?php echo htmlspecialchars($employee['FullName']); ?></td>
                                 <td><?php echo htmlspecialchars($employee['Username']); ?></td>
                                 <td><?php echo htmlspecialchars($display_role); ?></td> 
+                                <td><?php echo htmlspecialchars(get_allowed_modes_display($employee['AllowedModes'] ?? '', get_lang_code())); ?></td>
                                 <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($employee['DateJoined']))); ?></td>
                                 <td class="actions">
                                     <!-- Corrected ID parameter -->

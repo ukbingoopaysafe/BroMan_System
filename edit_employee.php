@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/security.php';
 ensure_secure_session_started();
+require_once __DIR__ . '/lang/translate.php'; // Include translation handler
 require_once 'session_check.php'; // Include session timeout check
 require_once 'permissions.php'; // Include permissions system
 
@@ -8,11 +9,11 @@ require_once 'permissions.php'; // Include permissions system
 check_permission('manage_employees');
 
 require_once 'db.php'; // Database connection
-require_once 'navbar.php'; // Navigation bar
 
 // Initialize variables
 $employee_id = $full_name = $username = $role = "";
-$full_name_err = $username_err = $password_err = $role_err = $general_err = "";
+$allowed_modes = ['Primary', 'Resale']; // Default modes
+$full_name_err = $username_err = $password_err = $role_err = $modes_err = $general_err = "";
 $is_editing_self = false;
 
 // Check if ID is provided in URL
@@ -23,16 +24,43 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
     }
 
     // Prepare a select statement to fetch employee details
-    $sql_fetch = "SELECT FullName, Username, Role FROM Employees WHERE EmployeeID = ?";
-    if ($stmt_fetch = $conn->prepare($sql_fetch)) {
+    // Try with AllowedModes first, fallback to without if column doesn't exist
+    $sql_fetch = "SELECT FullName, Username, Role, AllowedModes FROM Employees WHERE EmployeeID = ?";
+    $stmt_fetch = $conn->prepare($sql_fetch);
+    
+    // If prepare fails (column doesn't exist), try without AllowedModes
+    if (!$stmt_fetch) {
+        $sql_fetch = "SELECT FullName, Username, Role FROM Employees WHERE EmployeeID = ?";
+        $stmt_fetch = $conn->prepare($sql_fetch);
+        $has_allowed_modes_column = false;
+    } else {
+        $has_allowed_modes_column = true;
+    }
+    
+    if ($stmt_fetch) {
         $stmt_fetch->bind_param("i", $param_employee_id);
         $param_employee_id = $employee_id;
 
         if ($stmt_fetch->execute()) {
             $stmt_fetch->store_result();
             if ($stmt_fetch->num_rows == 1) {
-                $stmt_fetch->bind_result($full_name, $username, $role);
-                $stmt_fetch->fetch();
+                if ($has_allowed_modes_column) {
+                    $stmt_fetch->bind_result($full_name, $username, $role, $allowed_modes_str);
+                    $stmt_fetch->fetch();
+                    // Parse allowed modes string to array
+                    $allowed_modes = !empty($allowed_modes_str) ? explode(',', $allowed_modes_str) : ['Primary', 'Resale'];
+                } else {
+                    $stmt_fetch->bind_result($full_name, $username, $role);
+                    $stmt_fetch->fetch();
+                    // Fallback: derive modes from role
+                    if ($role === 'manager') {
+                        $allowed_modes = ['Primary', 'Resale', 'Rental'];
+                    } elseif (in_array($role, ['rental_admin', 'rental_user'])) {
+                        $allowed_modes = ['Rental'];
+                    } else {
+                        $allowed_modes = ['Primary', 'Resale'];
+                    }
+                }
             } else {
                 $_SESSION["error_message"] = "Employee not found.";
                 header("Location: employees_list.php");
@@ -111,12 +139,29 @@ if ($is_editing_self && $role === 'admin' && $_POST["role"] !== 'admin') {
 if (empty($role_err)) { // proceed if no error from self-demotion check
     if (empty($_POST["role"])) {
         $role_err = "Please select a role.";
-    } elseif (!in_array($_POST["role"], ["admin", "user", "manager", "rental_admin", "rental_user"])) {
+    } elseif (!in_array($_POST["role"], ["admin", "user", "manager"])) {
         $role_err = "Invalid role selected.";
     } else {
         $role_posted = $_POST["role"];
     }
 }
+
+    // Validate Allowed Modes (only for non-managers)
+    $allowed_modes_posted = [];
+    if (isset($role_posted) && $role_posted !== 'manager') {
+        if (empty($_POST["allowed_modes"]) || !is_array($_POST["allowed_modes"])) {
+            $modes_err = "Please select at least one mode.";
+        } else {
+            $valid_modes = ['Primary', 'Resale', 'Rental'];
+            $allowed_modes_posted = array_intersect($_POST["allowed_modes"], $valid_modes);
+            if (empty($allowed_modes_posted)) {
+                $modes_err = "Please select at least one valid mode.";
+            }
+        }
+    } elseif (isset($role_posted) && $role_posted === 'manager') {
+        // Managers get all modes
+        $allowed_modes_posted = ['Primary', 'Resale', 'Rental'];
+    }
 
     // Validate Password (only if new password is provided)
     $new_password = $_POST["new_password"];
@@ -134,19 +179,46 @@ if (empty($role_err)) { // proceed if no error from self-demotion check
     }
 
     // Check input errors before updating in database
-    if (empty($full_name_err) && empty($username_err) && empty($password_err) && empty($role_err) && empty($general_err)) {
+    if (empty($full_name_err) && empty($username_err) && empty($password_err) && empty($role_err) && empty($modes_err) && empty($general_err)) {
+        $allowed_modes_str_update = implode(',', $allowed_modes_posted);
+        
+        // Try with AllowedModes first
         if ($hashed_password_to_update !== null) {
-            $sql_update = "UPDATE Employees SET FullName = ?, Username = ?, Role = ?, Password = ? WHERE EmployeeID = ?";
+            $sql_update = "UPDATE Employees SET FullName = ?, Username = ?, Role = ?, AllowedModes = ?, Password = ? WHERE EmployeeID = ?";
         } else {
-            $sql_update = "UPDATE Employees SET FullName = ?, Username = ?, Role = ? WHERE EmployeeID = ?";
+            $sql_update = "UPDATE Employees SET FullName = ?, Username = ?, Role = ?, AllowedModes = ? WHERE EmployeeID = ?";
+        }
+        
+        $stmt_update = $conn->prepare($sql_update);
+        $has_allowed_modes_col = true;
+        
+        // If prepare fails (column doesn't exist), try without AllowedModes
+        if (!$stmt_update) {
+            if ($hashed_password_to_update !== null) {
+                $sql_update = "UPDATE Employees SET FullName = ?, Username = ?, Role = ?, Password = ? WHERE EmployeeID = ?";
+            } else {
+                $sql_update = "UPDATE Employees SET FullName = ?, Username = ?, Role = ? WHERE EmployeeID = ?";
+            }
+            $stmt_update = $conn->prepare($sql_update);
+            $has_allowed_modes_col = false;
         }
 
-        if ($stmt_update = $conn->prepare($sql_update)) {
-            if ($hashed_password_to_update !== null) {
-                $stmt_update->bind_param("ssssi", $param_full_name, $param_username, $param_role, $param_password, $param_employee_id_update);
-                $param_password = $hashed_password_to_update;
+        if ($stmt_update) {
+            if ($has_allowed_modes_col) {
+                if ($hashed_password_to_update !== null) {
+                    $stmt_update->bind_param("sssssi", $param_full_name, $param_username, $param_role, $param_modes, $param_password, $param_employee_id_update);
+                    $param_password = $hashed_password_to_update;
+                } else {
+                    $stmt_update->bind_param("ssssi", $param_full_name, $param_username, $param_role, $param_modes, $param_employee_id_update);
+                }
+                $param_modes = $allowed_modes_str_update;
             } else {
-                $stmt_update->bind_param("sssi", $param_full_name, $param_username, $param_role, $param_employee_id_update);
+                if ($hashed_password_to_update !== null) {
+                    $stmt_update->bind_param("ssssi", $param_full_name, $param_username, $param_role, $param_password, $param_employee_id_update);
+                    $param_password = $hashed_password_to_update;
+                } else {
+                    $stmt_update->bind_param("sssi", $param_full_name, $param_username, $param_role, $param_employee_id_update);
+                }
             }
             
             $param_full_name = $full_name_posted;
@@ -174,10 +246,9 @@ if (empty($role_err)) { // proceed if no error from self-demotion check
         }
     } else {
         $full_name = isset($full_name_posted) ? $full_name_posted : $full_name;
-        $username = isset($username_posted) ? $username_posted : $username;
-        $role = isset($role_posted) ? $role_posted : $role;
-    }
-}
+                    $allowed_modes = !empty($allowed_modes_posted) ? $allowed_modes_posted : $allowed_modes;
+                }
+            }
 
 ?>
 
@@ -234,15 +305,33 @@ if (empty($role_err)) { // proceed if no error from self-demotion check
 
     <div>
         <label for="role"><?php echo t("role"); ?>:</label>
-        <select id="role" name="role" class="form-input <?php echo (!empty($role_err)) ? 'is-invalid' : ''; ?>" required>
+        <select id="role" name="role" class="form-input <?php echo (!empty($role_err)) ? 'is-invalid' : ''; ?>" required onchange="toggleModesSection()">
             <option value=""><?php echo t("select_role"); ?></option>
-            <option value="user" <?php echo ($role == "user") ? "selected" : ""; ?>><?php echo t("primary_resale_user_role"); ?></option>
-            <option value="admin" <?php echo ($role == "admin") ? "selected" : ""; ?>><?php echo t("primary_resale_admin_role"); ?></option>
-            <option value="rental_user" <?php echo ($role == "rental_user") ? "selected" : ""; ?>><?php echo t('rental_user_role'); ?></option>
-            <option value="rental_admin" <?php echo ($role == "rental_admin") ? "selected" : ""; ?>><?php echo t('rental_admin_role'); ?></option>
+            <option value="user" <?php echo ($role == "user") ? "selected" : ""; ?>><?php echo t("user_role"); ?></option>
+            <option value="admin" <?php echo ($role == "admin") ? "selected" : ""; ?>><?php echo t("admin_role"); ?></option>
             <option value="manager" <?php echo ($role == "manager") ? "selected" : ""; ?>><?php echo t("manager_role"); ?></option>
         </select>
         <?php if (!empty($role_err)): ?><span class="error-message"><?php echo htmlspecialchars($role_err); ?></span><?php endif; ?>
+    </div>
+
+    <div class="form-section" id="modes-section" style="margin-top: 20px;">
+        <h4><?php echo t('allowed_modes'); ?></h4>
+        <p class="form-hint"><?php echo t('allowed_modes_hint'); ?></p>
+        <?php if (!empty($modes_err)): ?><div class="message message-error"><?php echo htmlspecialchars($modes_err); ?></div><?php endif; ?>
+        <div class="checkbox-group">
+            <label class="checkbox-item">
+                <input type="checkbox" name="allowed_modes[]" value="Primary" <?php echo in_array('Primary', $allowed_modes) ? 'checked' : ''; ?>>
+                <span class="checkbox-label"><?php echo t('mode_primary'); ?></span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" name="allowed_modes[]" value="Resale" <?php echo in_array('Resale', $allowed_modes) ? 'checked' : ''; ?>>
+                <span class="checkbox-label"><?php echo t('mode_resale'); ?></span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" name="allowed_modes[]" value="Rental" <?php echo in_array('Rental', $allowed_modes) ? 'checked' : ''; ?>>
+                <span class="checkbox-label"><?php echo t('mode_rental'); ?></span>
+            </label>
+        </div>
     </div>
 
     <hr>
@@ -268,5 +357,20 @@ if (empty($role_err)) { // proceed if no error from self-demotion check
     </div>
 </div>
 
+<script>
+function toggleModesSection() {
+    const role = document.getElementById('role').value;
+    const modesSection = document.getElementById('modes-section');
+    if (role === 'manager') {
+        modesSection.style.display = 'none';
+    } else {
+        modesSection.style.display = 'block';
+    }
+}
+// Run on page load
+document.addEventListener('DOMContentLoaded', toggleModesSection);
+</script>
+
 </body>
 </html>
+

@@ -27,7 +27,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $error = "Please enter both username and password.";
         } else {
             // Prepare statement using mysqli
-            $stmt = $conn->prepare("SELECT EmployeeID, Username, Password, Role, FullName FROM employees WHERE Username = ?");
+            // Try with AllowedModes first, fallback without if column doesn't exist
+            $stmt = $conn->prepare("SELECT EmployeeID, Username, Password, Role, FullName, AllowedModes FROM employees WHERE Username = ?");
+            $has_allowed_modes = true;
+            
+            if (!$stmt) {
+                // Column doesn't exist, try without it
+                $stmt = $conn->prepare("SELECT EmployeeID, Username, Password, Role, FullName FROM employees WHERE Username = ?");
+                $has_allowed_modes = false;
+            }
+            
             if ($stmt) {
                 $stmt->bind_param("s", $username);
                 $stmt->execute();
@@ -45,6 +54,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $_SESSION['username'] = $user['Username'];
                     $_SESSION['role'] = $user['Role'];
                     $_SESSION['full_name'] = $user['FullName'];
+                    
+                    // Store allowed modes from database (flexible permissions)
+                    if ($has_allowed_modes && !empty($user['AllowedModes'])) {
+                        $_SESSION['allowed_modes'] = $user['AllowedModes'];
+                    } else {
+                        // Fallback: derive from role
+                        if ($user['Role'] === 'manager') {
+                            $_SESSION['allowed_modes'] = 'Primary,Resale,Rental';
+                        } elseif (in_array($user['Role'], ['rental_admin', 'rental_user'])) {
+                            $_SESSION['allowed_modes'] = 'Rental';
+                        } else {
+                            $_SESSION['allowed_modes'] = 'Primary,Resale';
+                        }
+                    }
                     
                     // Add activity log if module exists
                     if (file_exists('activity_log.php')) {

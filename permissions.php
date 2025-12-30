@@ -12,6 +12,51 @@
 require_once __DIR__ . '/security.php';
 ensure_secure_session_started();
 
+// Auto-refresh permissions from DB into Session to apply changes immediately
+if (isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true && isset($_SESSION['employee_id'])) {
+    require_once __DIR__ . '/db.php';
+    // Use a fresh connection for this check if generic one isn't available, or simple global $conn
+    global $conn;
+    
+    // Fallback if global conn not set (though usually included before)
+    $stmt_refresh = null;
+    if ($conn) {
+        // Fetch current Role and AllowedModes
+        // Try with AllowedModes first
+        $sql_refresh = "SELECT Role, AllowedModes FROM employees WHERE EmployeeID = ?";
+        $stmt_refresh = $conn->prepare($sql_refresh);
+        if (!$stmt_refresh) {
+            // Fallback for migrations not run
+             $sql_refresh = "SELECT Role FROM employees WHERE EmployeeID = ?";
+             $stmt_refresh = $conn->prepare($sql_refresh);
+             $has_modes = false;
+        } else {
+             $has_modes = true;
+        }
+
+        if ($stmt_refresh) {
+            $stmt_refresh->bind_param("i", $_SESSION['employee_id']);
+            if ($stmt_refresh->execute()) {
+                $stmt_refresh->store_result();
+                if ($stmt_refresh->num_rows == 1) {
+                     if ($has_modes) {
+                         $stmt_refresh->bind_result($db_role, $db_modes);
+                         $stmt_refresh->fetch();
+                         $_SESSION['role'] = $db_role;
+                         $_SESSION['allowed_modes'] = !empty($db_modes) ? $db_modes : 'Primary,Resale';
+                     } else {
+                         $stmt_refresh->bind_result($db_role);
+                         $stmt_refresh->fetch();
+                         $_SESSION['role'] = $db_role;
+                         // Session allowed_modes remains as is or recalculated based on role default
+                     }
+                }
+            }
+            $stmt_refresh->close();
+        }
+    }
+}
+
 // Supported listing modes
 const VALID_LISTING_MODES = ['Primary', 'Resale', 'Rental'];
 
@@ -30,21 +75,25 @@ function get_user_role() {
 }
 
 /**
- * الحصول على الأنماط المسموح بها حسب الدور
+ * الحصول على الأنماط المسموح بها للمستخدم الحالي
+ * يستخدم الأنماط المخزنة في الجلسة (نظام الصلاحيات المرن)
  */
-function get_allowed_modes_for_role($role) {
-    switch ($role) {
-        case 'manager':
-            return VALID_LISTING_MODES;
-        case 'admin': // Primary & Resale admin
-        case 'user': // Primary & Resale user
-            return ['Primary', 'Resale'];
-        case 'rental_admin':
-        case 'rental_user':
-            return ['Rental'];
-        default:
-            return [];
+function get_allowed_modes_for_role($role = null) {
+    // المدير دائماً له كل الصلاحيات
+    $role = $role ?? get_user_role();
+    if ($role === 'manager') {
+        return VALID_LISTING_MODES;
     }
+    
+    // استخدام الأنماط المخزنة في الجلسة (نظام الصلاحيات المرن)
+    if (isset($_SESSION['allowed_modes']) && !empty($_SESSION['allowed_modes'])) {
+        $modes = explode(',', $_SESSION['allowed_modes']);
+        // تصفية الأنماط الصالحة فقط
+        return array_values(array_intersect($modes, VALID_LISTING_MODES));
+    }
+    
+    // القيمة الافتراضية إذا لم تكن موجودة في الجلسة
+    return ['Primary', 'Resale'];
 }
 
 /**
@@ -109,13 +158,6 @@ function is_admin() {
 }
 
 /**
- * فحص ما إذا كان المستخدم مسؤول إيجارات
- */
-function is_rental_admin() {
-    return get_user_role() === 'rental_admin';
-}
-
-/**
  * فحص ما إذا كان المستخدم عادي
  */
 function is_user() {
@@ -123,10 +165,19 @@ function is_user() {
 }
 
 /**
- * فحص ما إذا كان المستخدم عادي للإيجارات
+ * فحص ما إذا كان المستخدم مسؤول إيجارات (للتوافق مع الكود القديم)
+ * @deprecated استخدم is_admin() مع فحص الأنماط المسموحة
+ */
+function is_rental_admin() {
+    return is_admin() && in_array('Rental', get_allowed_modes_for_role());
+}
+
+/**
+ * فحص ما إذا كان المستخدم عادي للإيجارات (للتوافق مع الكود القديم)
+ * @deprecated استخدم is_user() مع فحص الأنماط المسموحة
  */
 function is_rental_user() {
-    return get_user_role() === 'rental_user';
+    return is_user() && in_array('Rental', get_allowed_modes_for_role());
 }
 
 /**
@@ -154,12 +205,10 @@ function can_manage_properties($mode = null) {
         return false;
     }
 
+    // المسؤول يمكنه إدارة العقارات في الأنماط المسموح له بها
     if (is_admin()) {
-        return in_array($mode, ['Primary', 'Resale'], true);
-    }
-
-    if (is_rental_admin()) {
-        return $mode === 'Rental';
+        $allowed = get_allowed_modes_for_role();
+        return in_array($mode, $allowed, true);
     }
 
     return false;
@@ -253,13 +302,9 @@ function get_role_name_ar($role) {
         case 'manager':
             return 'مدير';
         case 'admin':
-            return 'مسؤول (أساسي/إعادة بيع)';
-        case 'rental_admin':
-            return 'مسؤول الإيجارات';
+            return 'مسؤول';
         case 'user':
-            return 'مستخدم (أساسي/إعادة بيع)';
-        case 'rental_user':
-            return 'مستخدم الإيجارات';
+            return 'مستخدم';
         default:
             return 'غير محدد';
     }
@@ -273,16 +318,38 @@ function get_role_name_en($role) {
         case 'manager':
             return 'Manager';
         case 'admin':
-            return 'Primary/Resale Admin';
-        case 'rental_admin':
-            return 'Rental Admin';
+            return 'Admin';
         case 'user':
-            return 'Primary/Resale User';
-        case 'rental_user':
-            return 'Rental User';
+            return 'User';
         default:
             return 'Unknown';
     }
+}
+
+/**
+ * الحصول على أسماء الأنماط المسموحة للعرض
+ */
+function get_allowed_modes_display($modes_string, $lang = 'ar') {
+    if (empty($modes_string)) {
+        return $lang === 'ar' ? 'غير محدد' : 'Not set';
+    }
+    
+    $modes = explode(',', $modes_string);
+    $display_names = [];
+    
+    $names_ar = ['Primary' => 'الأساسي', 'Resale' => 'إعادة البيع', 'Rental' => 'الإيجارات'];
+    $names_en = ['Primary' => 'Primary', 'Resale' => 'Resale', 'Rental' => 'Rental'];
+    
+    $names = $lang === 'ar' ? $names_ar : $names_en;
+    
+    foreach ($modes as $mode) {
+        $mode = trim($mode);
+        if (isset($names[$mode])) {
+            $display_names[] = $names[$mode];
+        }
+    }
+    
+    return implode(', ', $display_names);
 }
 ?>
 
