@@ -214,26 +214,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Otherwise checks for reasonable length (e.g., 8-15)
         return strlen($clean) >= 8 && strlen($clean) <= 15;
     }
-    $valid_seller_found = false;
     foreach ($seller_entries as $idx => $seller_row) {
         $phone_val = $seller_row['seller_phone'] ?? '';
-        $name_val = $seller_row['seller_name'] ?? '';
-        if ($phone_val === null || trim($phone_val) === '') {
-            $errors[] = 'يجب إدخال رقم هاتف لكل بائع.';
-            continue;
+        if ($phone_val !== null && trim($phone_val) !== '') {
+            if (!isValidPhoneFormat($phone_val)) {
+                $errors[] = 'رقم هاتف البائع (' . ($idx + 1) . ') غير صحيح (يجب أن يكون متوافقاً مع مفتاح الدولة).';
+            }
         }
-        if (!isValidPhoneFormat($phone_val)) {
-            $errors[] = 'رقم هاتف البائع (' . ($idx + 1) . ') غير صحيح (يجب أن يكون متوافقاً مع مفتاح الدولة).';
-            continue;
-        }
-        if ($name_val === null || trim($name_val) === '') {
-            $errors[] = 'يجب إدخال اسم البائع (' . ($idx + 1) . ').';
-            continue;
-        }
-        $valid_seller_found = true;
-    }
-    if (!$valid_seller_found) {
-        $errors[] = 'يجب إضافة بائع واحد على الأقل مع رقم هاتف صحيح.';
     }
     if (!empty($sales_manager_phone) && !isValidPhoneFormat($sales_manager_phone)) {
         $errors[] = 'رقم هاتف مدير المبيعات غير صحيح.';

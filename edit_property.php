@@ -483,26 +483,13 @@ if ($att_stmt) {
         $clean = preg_replace('/[^0-9]/', '', $phone);
         return strpos($clean, '201') === 0 && strlen($clean) === 12;
     }
-    $valid_seller_found = false;
     foreach ($seller_entries_post as $idx => $row) {
         $phone_val = $row['seller_phone'] ?? '';
-        $name_val = $row['seller_name'] ?? '';
-        if ($phone_val === null || trim($phone_val) === '') {
-            $errors['seller_phone_' . $idx] = 'يجب إدخال رقم هاتف لكل بائع.';
-            continue;
+        if ($phone_val !== null && trim($phone_val) !== '') {
+            if (!isValidPhoneFormat($phone_val)) {
+                $errors['seller_phone_' . $idx] = 'رقم الهاتف غير صحيح (يجب أن يكون متوافقاً مع مفتاح الدولة).';
+            }
         }
-        if (!isValidPhoneFormat($phone_val)) {
-            $errors['seller_phone_' . $idx] = 'رقم الهاتف غير صحيح (يجب أن يكون متوافقاً مع مفتاح الدولة).';
-            continue;
-        }
-        if ($name_val === null || trim($name_val) === '') {
-            $errors['seller_name_' . $idx] = 'يجب إدخال اسم البائع (' . ($idx + 1) . ').';
-            continue;
-        }
-        $valid_seller_found = true;
-    }
-    if (!$valid_seller_found) {
-        $errors['seller_phone'] = 'يجب إضافة بائع واحد على الأقل مع رقم هاتف صحيح.';
     }
     if (!empty($sales_manager_phone_posted) && !isValidPhoneFormat($sales_manager_phone_posted)) {
         $errors['sales_manager_phone'] = 'رقم هاتف مدير المبيعات غير صحيح.';
@@ -1819,7 +1806,6 @@ if ($att_stmt) {
                         unitDesignField.disabled = false;
                     }
                     if (finishingTypeField) {
-                        finishingTypeField.setAttribute('required', 'required');
                         finishingTypeField.disabled = false;
                     }
                     if (finishingTypeCommercialField) {
@@ -1855,7 +1841,6 @@ if ($att_stmt) {
                         finishingTypeField.disabled = true;
                     }
                     if (finishingTypeCommercialField) {
-                        finishingTypeCommercialField.setAttribute('required', 'required');
                         finishingTypeCommercialField.disabled = false;
                     }
 
