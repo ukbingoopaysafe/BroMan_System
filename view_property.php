@@ -133,6 +133,28 @@ if ($seller_stmt) {
     $seller_stmt->close();
 }
 
+// Fetch all linked property types for display pluralization
+$linked_types = [];
+$lt_sql = "SELECT pt.TypeName, pt.TypeName_ar 
+           FROM property_type_links ptl
+           JOIN PropertyTypes pt ON ptl.property_type_id = pt.PropertyTypeID
+           WHERE ptl.property_id = ?";
+if ($lt_stmt = $conn->prepare($lt_sql)) {
+    $lt_stmt->bind_param("i", $property_id);
+    if ($lt_stmt->execute()) {
+        $lt_res = $lt_stmt->get_result();
+        while ($lt_row = $lt_res->fetch_assoc()) {
+            $linked_types[] = (get_lang_code() === 'ar' && !empty($lt_row['TypeName_ar'])) ? $lt_row['TypeName_ar'] : $lt_row['TypeName'];
+        }
+    }
+    $lt_stmt->close();
+}
+// Fallback if no links exist (legacy)
+if (empty($linked_types) && !empty($property['TypeName'])) {
+    $linked_types[] = (get_lang_code() === 'ar' && !empty($property['TypeName_ar'])) ? $property['TypeName_ar'] : $property['TypeName'];
+}
+$types_display = implode(' ، ', array_map('htmlspecialchars', $linked_types));
+
 // Format price for display
 function formatPrice($property)
 {
@@ -1737,10 +1759,10 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                         <span class="detail-value"><?php echo htmlspecialchars($property['ProjectName']); ?></span>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($property['TypeName'])): ?>
+                    <?php if (!empty($linked_types)): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('property_type'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['TypeName']); ?></span>
+                        <span class="detail-value"><?php echo $types_display; ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['Status'])): ?>

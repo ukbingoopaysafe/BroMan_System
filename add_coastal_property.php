@@ -301,6 +301,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $t_before_execute = microtime(true);
     if ($stmt->execute()) {
             $new_property_id = $conn->insert_id;
+
+            // Link property type in new junction table
+            $insType = $conn->prepare("INSERT INTO property_type_links (property_id, property_type_id) VALUES (?, ?)");
+            if ($insType) {
+                $pt_id = 2; // Coastal
+                $insType->bind_param("ii", $new_property_id, $pt_id);
+                $insType->execute();
+                $insType->close();
+            }
+
             ensurePropertySellersTable($conn);
             if ($seller_entries) {
                 $insSeller = $conn->prepare("INSERT INTO property_sellers (property_id, seller_type, seller_name, seller_phone) VALUES (?, ?, ?, ?)");

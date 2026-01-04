@@ -143,12 +143,19 @@ if ($stmt_types = $conn->prepare($sql_property_types)) {
 }
 
 // Build the main SQL query with proper joins for unit design and finishing type
+$lang = get_lang_code();
 $sql_select = "SELECT p.*, pt.TypeName AS PropertyTypeName, e.FullName AS EmployeeName,
-               p.unit_design AS UnitDesignName, pft.FinishingName AS FinishingTypeName
+               p.unit_design AS UnitDesignName, pft.FinishingName AS FinishingTypeName,
+               (SELECT GROUP_CONCAT(ptl2.property_type_id ORDER BY ptl2.property_type_id) 
+                FROM property_type_links ptl2 
+                WHERE ptl2.property_id = p.PropertyID) AS AllPropertyTypeIDs,
+               (SELECT GROUP_CONCAT(pt2.TypeName ORDER BY pt2.PropertyTypeID) 
+                FROM property_type_links ptl2 
+                JOIN PropertyTypes pt2 ON ptl2.property_type_id = pt2.PropertyTypeID 
+                WHERE ptl2.property_id = p.PropertyID) AS AllPropertyTypeNames
                FROM Properties p
                LEFT JOIN PropertyTypes pt ON p.PropertyTypeID = pt.PropertyTypeID
                LEFT JOIN Employees e ON p.EmployeeID = e.EmployeeID
-               -- Unit design is now a text field, no join needed
                LEFT JOIN PropertyFinishingTypes pft ON p.finishing_type_id = pft.FinishingID";
 $sql_where = [];
 $params = [];
@@ -171,7 +178,7 @@ if (!empty($search_term)) {
 
 // Add property type filter
 if (!empty($property_type_filter)) {
-    $sql_where[] = "p.PropertyTypeID = ?";
+    $sql_where[] = "EXISTS (SELECT 1 FROM property_type_links ptl WHERE ptl.property_id = p.PropertyID AND ptl.property_type_id = ?)";
     $params[] = $property_type_filter;
     $types .= "i";
 }
@@ -1126,7 +1133,7 @@ if ($stmt = $conn->prepare($sql)) {
                                 <?php endif; ?>
                             </td>
                             <td class="cell-type" data-label="<?php echo t('property_type'); ?>">
-                                <?php echo getPropertyTypeBadge($property['PropertyTypeID'], $property['PropertyTypeName']); ?>
+                                <?php echo getPropertyTypeBadges($property); ?>
                             </td>
                             <td class="cell-design" data-label="<?php echo t('table_header_unit_design'); ?>">
                                 <?php echo formatUnitModel($property); ?>

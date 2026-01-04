@@ -122,6 +122,21 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $row = $result->fetch_assoc();
                 // Populate variables with existing data
                 $property_type_id = $row["PropertyTypeID"];
+                $linked_property_types = [];
+                $sql_pt = "SELECT property_type_id FROM property_type_links WHERE property_id = ?";
+                if ($stmt_pt = $conn->prepare($sql_pt)) {
+                    $stmt_pt->bind_param("i", $property_id);
+                    $stmt_pt->execute();
+                    $res_pt = $stmt_pt->get_result();
+                    while ($pt_row = $res_pt->fetch_assoc()) {
+                        $linked_property_types[] = (int)$pt_row['property_type_id'];
+                    }
+                    $stmt_pt->close();
+                }
+                // Fallback for non-migrated properties
+                if (empty($linked_property_types) && $property_type_id) {
+                    $linked_property_types[] = (int)$property_type_id;
+                }
                 $title = $row["Title"];
                 $description = $row["Description"];
                 $location = $row["Location"];
@@ -293,8 +308,31 @@ if ($att_stmt) {
         $errors['general'] = t('invalid_property_id');
     }
 
-    // Sanitize and retrieve data
-    $property_type_id_posted = isset($_POST['property_type_id']) ? trim($_POST['property_type_id']) : '';
+    // --- Data Sanitization ---
+    $property_type_id_posted = filter_input(INPUT_POST, 'property_type_id', FILTER_VALIDATE_INT);
+    $property_type_ids_posted = $_POST['property_type_ids'] ?? [];
+    if (!is_array($property_type_ids_posted)) { $property_type_ids_posted = [$property_type_ids_posted]; }
+    $property_type_ids_posted = array_map('intval', $property_type_ids_posted);
+    
+    $other_ids = [3, 4, 5, 6];
+    
+    // If the selected category is Residential or Coastal, ignore multi-select checkboxes
+    if (!in_array($property_type_id_posted, $other_ids)) {
+        $property_type_ids_posted = [$property_type_id_posted];
+    } else {
+        // If it is an "Other" type, make sure the primary ID is in the array
+        if (!empty($property_type_id_posted) && !in_array($property_type_id_posted, $property_type_ids_posted)) {
+            $property_type_ids_posted[] = $property_type_id_posted;
+        }
+        // If checkboxes were cleared but dropdown has a value, use dropdown
+        if (empty($property_type_ids_posted) && !empty($property_type_id_posted)) {
+            $property_type_ids_posted = [$property_type_id_posted];
+        }
+    }
+    
+    sort($property_type_ids_posted);
+    $property_type_ids_posted = array_unique($property_type_ids_posted);
+
     $title_posted = isset($_POST['title']) ? trim($_POST['title']) : '';
     $description_posted = isset($_POST['description']) ? trim($_POST['description']) : null;
     $location_posted = isset($_POST['location']) ? trim($_POST['location']) : null;
@@ -415,7 +453,7 @@ if ($att_stmt) {
     }
     
     // Property type specific validation
-    if ($property_type_id == 1 || $property_type_id == 2) // If Residential or Coastal
+    if ($property_type_id_posted == 1 || $property_type_id_posted == 2) // If Residential or Coastal
     {
         // if (empty($unit_design_posted)) {
         //     $errors['unit_design'] = t('unit_design_required');
@@ -602,6 +640,24 @@ if ($att_stmt) {
             // Log normalized seller_type right before executing the UPDATE so we can verify what is being written
             error_log("DEBUG edit_property BEFORE EXECUTE: normalized_seller_type=" . var_export($seller_type_posted, true));
             if ($stmt_update->execute()) {
+                // Sync property_type_links
+                $sql_del = "DELETE FROM property_type_links WHERE property_id = ?";
+                if ($stmt_del = $conn->prepare($sql_del)) {
+                    $stmt_del->bind_param("i", $property_id);
+                    $stmt_del->execute();
+                    $stmt_del->close();
+                }
+                if (!empty($property_type_ids_posted)) {
+                    $sql_ins = "INSERT INTO property_type_links (property_id, property_type_id) VALUES (?, ?)";
+                    if ($stmt_ins = $conn->prepare($sql_ins)) {
+                        foreach ($property_type_ids_posted as $tid) {
+                            $stmt_ins->bind_param("ii", $property_id, $tid);
+                            $stmt_ins->execute();
+                        }
+                        $stmt_ins->close();
+                    }
+                }
+
                 // Use the project's flash helper so view_property.php (which reads get_flash_messages())
                 // can show the success message immediately after redirect. Also set the legacy
                 // session key for backward compatibility with other pages.
@@ -1120,9 +1176,10 @@ if ($att_stmt) {
                         <label><?php echo t('listing_type'); ?>:</label>
                         <span class="form-display"><?php echo t($listing_type === 'Primary' ? 'primary_properties' : 'resale_properties'); ?></span>
                     </div>
-                    <div class="form-group">
-                        <label for="property_type_id"><?php echo t('property_type'); ?>:</label>
-                        <select id="property_type_id" name="property_type_id" required>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label><?php echo t('property_type'); ?>:</label>
+                        <select id="property_type_id" name="property_type_id" class="form-input" required>
+                            <option value=""><?php echo t('select_property_type'); ?></option>
                             <?php foreach ($property_types_list as $type): ?>
                                 <option value="<?php echo $type['PropertyTypeID']; ?>" <?php echo ($property_type_id == $type['PropertyTypeID']) ? 'selected' : ''; ?>>
                                     <?php
@@ -1135,6 +1192,31 @@ if ($att_stmt) {
                                 </option>
                             <?php endforeach; ?>
                         </select>
+
+                        <?php 
+                        // Area for multiple property types (Checkboxes for IDs 3, 4, 5, 6)
+                        $other_ids = [3, 4, 5, 6];
+                        ?>
+                        <div id="multi_type_selection" class="checkbox-group" style="display: none; gap: 20px; flex-wrap: wrap; margin-top: 15px; padding: 10px; background: #f0f7ff; border-radius: 8px; border: 1px solid #cce5ff;">
+                            <p style="width: 100%; margin: 0 0 8px 0; font-size: 0.9rem; font-weight: 600; color: #004085;">
+                                <i class="fas fa-layer-group"></i> <?php echo (get_lang_code() === 'ar' ? 'يمكنك اختيار أنواع إضافية:' : 'You can select additional types:'); ?>
+                            </p>
+                            <?php 
+                            foreach ($property_types_list as $type): 
+                                if (!in_array($type['PropertyTypeID'], $other_ids)) continue;
+                            ?>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: #fff; padding: 5px 10px; border-radius: 5px; border: 1px solid #dee2e6;">
+                                    <input type="checkbox" name="property_type_ids[]" value="<?php echo $type['PropertyTypeID']; ?>" <?php echo (in_array($type['PropertyTypeID'], $linked_property_types)) ? 'checked' : ''; ?>>
+                                    <?php 
+                                    if (get_lang_code() === 'ar' && !empty($type['TypeName_ar'])) {
+                                        echo htmlspecialchars($type['TypeName_ar']);
+                                    } else {
+                                        echo htmlspecialchars($type['TypeName']);
+                                    }
+                                    ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
                         <?php if (isset($errors['property_type_id'])) {
                             echo "<span class='error-message'>" . $errors['property_type_id'] . "</span>";
                         } ?>
@@ -1790,6 +1872,20 @@ if ($att_stmt) {
 
             function togglePropertyTypeFields() {
                 const selectedTypeId = parseInt(propertyTypeIdSelect.value);
+                const multiTypeSelection = document.getElementById('multi_type_selection');
+                const otherIds = [COMMERCIAL_ID, ADMINISTRATIVE_ID, HOTEL_ID, MEDICAL_ID];
+
+                // Show/Hide Multi-type selection checkboxes
+                if (multiTypeSelection) {
+                    if (otherIds.includes(selectedTypeId)) {
+                        multiTypeSelection.style.display = 'flex';
+                    } else {
+                        multiTypeSelection.style.display = 'none';
+                        // Optionally uncheck checkboxes if moving away from 'Other' types? 
+                        // Actually, better to keep them checked in case user misclicks, 
+                        // but the backend will only save what's relevant.
+                    }
+                }
 
                 if (selectedTypeId === RESIDENTIAL_ID || selectedTypeId === COASTAL_ID) {
                     residentialCoastalFields.classList.add('active');

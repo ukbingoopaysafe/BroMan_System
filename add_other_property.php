@@ -101,7 +101,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit();
     }
     // --- Data Sanitization ---
-    $property_type_id = filter_input(INPUT_POST, 'property_type_id', FILTER_VALIDATE_INT);
+    $property_type_ids = $_POST['property_type_ids'] ?? [];
+    if (!is_array($property_type_ids)) { $property_type_ids = [$property_type_ids]; }
+    $property_type_ids = array_map('intval', $property_type_ids);
+    $property_type_id = !empty($property_type_ids) ? $property_type_ids[0] : null;
     $listing_type = $_SESSION['listing_context'] ?? 'Primary';
     $project_name = trim($_POST['project_name'] ?? '');
     $title = trim($_POST['title'] ?? '');
@@ -302,6 +305,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         $insSeller->execute();
                     }
                     $insSeller->close();
+                }
+            }
+
+            // Save multiple property types to property_type_links
+            if (!empty($property_type_ids)) {
+                $insType = $conn->prepare("INSERT INTO property_type_links (property_id, property_type_id) VALUES (?, ?)");
+                if ($insType) {
+                    foreach ($property_type_ids as $tid) {
+                        $insType->bind_param("ii", $new_property_id, $tid);
+                        $insType->execute();
+                    }
+                    $insType->close();
                 }
             }
             $_SESSION['last_add_property_fp'] = ['fp'=>$submission_fp,'ts'=>$now_ts];
@@ -694,14 +709,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         ?>
                     </div>
                 </div>
-                 <div class="form-group">
-                    <label for="property_type_id"><?php echo t('property_type'); ?>: *</label>
-                    <select id="property_type_id" name="property_type_id" class="form-input" required>
-                        <option value=""><?php echo t('select_property_type'); ?></option>
+                 <div class="form-group" style="grid-column: 1 / -1;">
+                    <label><?php echo t('property_type'); ?>: *</label>
+                    <div class="checkbox-group" style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px;">
                         <?php foreach ($property_types as $type): ?>
-                            <option value="<?php echo $type['PropertyTypeID']; ?>" <?php echo (($_POST['property_type_id'] ?? '') == $type['PropertyTypeID']) ? 'selected' : ''; ?>><?php echo t(htmlspecialchars($type['TypeName'])); // Translate type name?></option>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" name="property_type_ids[]" value="<?php echo $type['PropertyTypeID']; ?>" <?php echo (in_array($type['PropertyTypeID'], $property_type_ids ?? ($_POST['property_type_ids'] ?? []))) ? 'checked' : ''; ?>>
+                                <?php echo t(htmlspecialchars($type['TypeName'])); ?>
+                            </label>
                         <?php endforeach; ?>
-                    </select>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="project_name"><?php echo t('project_name'); ?>:</label>

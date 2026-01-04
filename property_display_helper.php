@@ -118,6 +118,32 @@ if (!function_exists('getPropertyTypeBadge')) {
     }
 }
 
+// Function to get multiple property type badges HTML
+if (!function_exists('getPropertyTypeBadges')) {
+    function getPropertyTypeBadges($row) {
+        if (!empty($row['AllPropertyTypeIDs']) && !empty($row['AllPropertyTypeNames'])) {
+            $ids = explode(',', $row['AllPropertyTypeIDs']);
+            $names = explode(',', $row['AllPropertyTypeNames']);
+            
+            $html = "";
+            foreach ($ids as $index => $id) {
+                $name = isset($names[$index]) ? trim($names[$index]) : "";
+                if ($name !== "") {
+                    $html .= getPropertyTypeBadge((int)$id, $name);
+                }
+            }
+            return !empty($html) ? $html : getPropertyTypeBadge($row['PropertyTypeID'], $row['PropertyTypeName'] ?? t('undefined'));
+        }
+        
+        // Fallback for pages not yet fetching multiple types
+        if (isset($row['PropertyTypeID']) && isset($row['PropertyTypeName'])) {
+            return getPropertyTypeBadge($row['PropertyTypeID'], $row['PropertyTypeName']);
+        }
+        
+        return t('undefined');
+    }
+}
+
 /**
  * Enhanced Unit Model Logic:
  * 1. Checks legacy 'UnitDesignName' (from p.unit_design).
