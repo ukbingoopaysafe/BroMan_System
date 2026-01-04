@@ -420,13 +420,8 @@ if ($att_stmt) {
         // if (empty($unit_design_posted)) {
         //     $errors['unit_design'] = t('unit_design_required');
         // }
-        if (empty($finishing_type_id_posted)) {
-            $errors['finishing_type_id'] = t('finishing_type_required');
-        }
-    } else if ($property_type_id == 3 || $property_type_id == 4 || $property_type_id == 5 || $property_type_id == 6) { // Commercial, Administrative, Hotel, Medical
-        if (empty($finishing_type_id_posted)) {
-            $errors['finishing_type_id'] = t('finishing_type_required');
-        }
+    // Finishing Type is no longer required
+
     }
     if ($area_posted !== null && (!is_numeric($area_posted) || $area_posted < 0)) {
         $errors["area"] = t("enter_valid_area");
@@ -1294,8 +1289,8 @@ if ($att_stmt) {
                             } ?>
                         </div>
                         <div class="form-group">
-                            <label for="finishing_type_id"><?php echo t('finishing_type'); ?>: *</label>
-                            <select id="finishing_type_id" name="finishing_type_id" class="form-input" required>
+                            <label for="finishing_type_id"><?php echo t('finishing_type'); ?>:</label>
+                            <select id="finishing_type_id" name="finishing_type_id" class="form-input">
                                 <option value=""><?php echo t('select_finishing_type'); ?></option>
                                 <?php foreach ($finishing_types_list as $finish): ?>
                                     <option value="<?php echo $finish['FinishingID']; ?>"

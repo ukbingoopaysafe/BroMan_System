@@ -848,8 +848,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input type="text" id="unit_design" name="unit_design" class="form-input" value="<?php echo htmlspecialchars($_POST['unit_design'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
-                    <label for="finishing_type_id"><?php echo t('finishing_type'); ?>: *</label>
-                    <select id="finishing_type_id" name="finishing_type_id" class="form-input" required>
+                    <label for="finishing_type_id"><?php echo t('finishing_type'); ?>:</label>
+                    <select id="finishing_type_id" name="finishing_type_id" class="form-input">
                         <option value=""><?php echo t('select_finishing_type'); ?></option>
                         <?php foreach ($finishing_types as $finishing): ?>
                             <option value="<?php echo $finishing['FinishingID']; ?>" <?php echo (($_POST['finishing_type_id'] ?? '') == $finishing['FinishingID']) ? 'selected' : ''; ?>>
