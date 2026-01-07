@@ -24,12 +24,13 @@ $year_built_filter = "";
 $view_mode = isset($_GET['view']) && $_GET['view'] === 'card' ? 'card' : 'table';
 
 // Initialize sorting variables
-$sort_column = isset($_GET['sort']) ? trim($_GET['sort']) : 'DateAdded';
-$sort_direction = isset($_GET['direction']) && $_GET['direction'] === 'desc' ? 'desc' : 'asc';
+$sort_column = isset($_GET['sort']) ? trim($_GET['sort']) : 'friendly_id';
+$sort_direction = isset($_GET['direction']) && $_GET['direction'] === 'asc' ? 'asc' : 'desc'; // Default to DESC
 
 // Validate sort column to prevent SQL injection
 $allowed_sort_columns = [
     'PropertyID' => 'p.PropertyID',
+    'friendly_id' => 'p.friendly_id',
     'DateAdded' => 'p.DateAdded',
     'Price' => 'COALESCE(p.price_cash, p.price_installments, (p.meter_price_cash * p.Area), (p.meter_price_installments * p.Area))',
     'Area' => 'COALESCE(p.Area, p.avg_area)',
@@ -40,7 +41,7 @@ $allowed_sort_columns = [
 ];
 
 if (!array_key_exists($sort_column, $allowed_sort_columns)) {
-    $sort_column = 'DateAdded';
+    $sort_column = 'friendly_id';
 }
 
 // Process search and filter inputs
@@ -734,8 +735,8 @@ if ($stmt = $conn->prepare($sql)) {
             <label for="mobile-sort"><?php echo t('sort_by') ?? 'ترتيب حسب'; ?>:</label>
             <select id="mobile-sort" class="mobile-sort-select" onchange="window.location.href=this.value">
                 <option value=""><?php echo t('select_sort') ?? 'اختر الترتيب'; ?></option>
-                <option value="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'PropertyID', 'direction' => 'desc'])); ?>" <?php echo ($sort_column === 'PropertyID' && $sort_direction === 'desc') ? 'selected' : ''; ?>># (الأحدث)</option>
-                <option value="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'PropertyID', 'direction' => 'asc'])); ?>" <?php echo ($sort_column === 'PropertyID' && $sort_direction === 'asc') ? 'selected' : ''; ?>># (الأقدم)</option>
+                <option value="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'friendly_id', 'direction' => 'desc'])); ?>" <?php echo ($sort_column === 'friendly_id' && $sort_direction === 'desc') ? 'selected' : ''; ?>># (الأحدث)</option>
+                <option value="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'friendly_id', 'direction' => 'asc'])); ?>" <?php echo ($sort_column === 'friendly_id' && $sort_direction === 'asc') ? 'selected' : ''; ?>># (الأقدم)</option>
                 <option value="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'price', 'direction' => 'desc'])); ?>" <?php echo ($sort_column === 'price' && $sort_direction === 'desc') ? 'selected' : ''; ?>>السعر (الأعلى)</option>
                 <option value="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'price', 'direction' => 'asc'])); ?>" <?php echo ($sort_column === 'price' && $sort_direction === 'asc') ? 'selected' : ''; ?>>السعر (الأقل)</option>
                 <option value="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'area', 'direction' => 'desc'])); ?>" <?php echo ($sort_column === 'area' && $sort_direction === 'desc') ? 'selected' : ''; ?>>المساحة (الأكبر)</option>
@@ -747,8 +748,8 @@ if ($stmt = $conn->prepare($sql)) {
             <table class="properties-table">
                 <thead>
                     <tr>
-                        <th class="cell-id sortable" onclick="window.location.href='<?php echo getSortUrl('PropertyID', $sort_column, $sort_direction); ?>'">
-                            <?php echo t('table_header_id'); ?> <?php echo getSortIcon('PropertyID', $sort_column, $sort_direction); ?>
+                        <th class="cell-id sortable" onclick="window.location.href='<?php echo getSortUrl('friendly_id', $sort_column, $sort_direction); ?>'">
+                            <?php echo t('table_header_id'); ?> <?php echo getSortIcon('friendly_id', $sort_column, $sort_direction); ?>
                         </th>
                         <th class="cell-project sortable" onclick="window.location.href='<?php echo getSortUrl('project_or_title', $sort_column, $sort_direction); ?>'">
                             <?php echo t('table_header_project_name'); ?> <?php echo getSortIcon('project_or_title', $sort_column, $sort_direction); ?>

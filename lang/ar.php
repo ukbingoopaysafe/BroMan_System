@@ -18,6 +18,7 @@ return [
     'coastal_properties' => 'عقارات ساحلية',
     'commercial_properties' => 'عقارات تجارية وإدارية وطبية وفندقية',
     'commercial_administrative_medical_hotel' => 'تجاري وإداري وطبي وفندقي',
+    'import_excel' => 'استيراد من Excel',
 
     // Dashboard
     'dashboard_title' => 'لوحة التحكم',

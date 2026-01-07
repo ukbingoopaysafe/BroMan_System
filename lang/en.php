@@ -18,6 +18,7 @@ return [
     'coastal_properties' => 'Coastal Properties',
     'commercial_properties' => 'Commercial, Administrative, Medical & Hotel Properties',
     'commercial_administrative_medical_hotel' => 'Commercial, Administrative, Medical & Hotel',
+    'import_excel' => 'Import from Excel',
 
     // Dashboard
     'dashboard_title' => 'Dashboard',
