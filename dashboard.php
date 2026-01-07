@@ -323,9 +323,7 @@ if (!empty($current_listing_mode)) {
         <div class="quick-links">
             <h2><?php echo t('quick_actions'); ?></h2>
             <div>
-                <a href="add_residential_property.php" class="btn btn-primary"><?php echo t('add_new_residential_property'); ?></a>
-                <a href="add_coastal_property.php" class="btn btn-primary"><?php echo t('add_new_coastal_property'); ?></a>
-                <a href="add_other_property.php" class="btn btn-primary"><?php echo t('add_new_commercial_property'); ?></a>
+                <a href="add_property.php" class="btn btn-primary"><?php echo t('add_property_title'); ?></a>
                 <?php if (can_manage_employees()): ?>
                 <a href="add_employee.php" class="btn btn-primary"><?php echo t('add_new_employee'); ?></a>
                 <?php endif; ?>

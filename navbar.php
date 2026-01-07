@@ -54,14 +54,7 @@ $switch_lang_url = basename($_SERVER['PHP_SELF']) . '?' . http_build_query($quer
                 </div>
             </li>
             <?php if (can_manage_properties()): ?>
-            <li class="dropdown <?php echo (in_array($active_page, ["add_residential_property.php", "add_coastal_property.php", "add_other_property.php"])) ? "active" : ""; ?>">
-                 <a href="javascript:void(0)" class="dropbtn"><?php echo t('add_new_property'); ?> <span class="arrow">&#9662;</span></a>
-                 <div class="dropdown-content">
-                    <a href="add_residential_property.php" class="<?php echo ($active_page == "add_residential_property.php") ? "active-sub" : ""; ?>"><?php echo t('add_residential_property_title'); ?></a>
-                    <a href="add_coastal_property.php" class="<?php echo ($active_page == "add_coastal_property.php") ? "active-sub" : ""; ?>"><?php echo t('add_coastal_property_title'); ?></a>
-                    <a href="add_other_property.php" class="<?php echo ($active_page == "add_other_property.php") ? "active-sub" : ""; ?>"><?php echo t('add_other_property_title'); ?></a>
-                 </div>
-            </li>
+            <li><a href="add_property.php" class="<?php echo ($active_page == "add_property.php" || $active_page == "add_residential_property.php" || $active_page == "add_coastal_property.php" || $active_page == "add_other_property.php") ? "active" : ""; ?>"><?php echo t('add_property_title'); ?></a></li>
             <?php endif; ?>
             <?php if (can_manage_properties()): ?>
                 <li><a href="admin_duplicate_properties.php" class="<?php echo ($active_page == "admin_duplicate_properties.php") ? "active" : ""; ?>"><?php echo t('duplicates_review'); ?></a></li>
@@ -88,19 +81,20 @@ $switch_lang_url = basename($_SERVER['PHP_SELF']) . '?' . http_build_query($quer
 </nav>
 
 <style>
-/* CSS Reset for full-width navbar - Force Full Viewport Solution */
-html, body {
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow-x: hidden; /* Prevent horizontal scroll from 100vw trick */
+/* CSS Reset for full-width navbar */
+html {
+    overflow-x: hidden;
 }
 
-/* Force navbar to break out of any parent container */
+body {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Navbar styling */
 nav.navbar {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    margin-left: calc(-50vw + 50%) !important;
-    margin-right: calc(-50vw + 50%) !important;
+    width: 100% !important;
+    max-width: 100% !important;
     left: 0 !important;
     right: 0 !important;
     border-radius: 0 !important;

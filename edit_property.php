@@ -81,7 +81,7 @@ $errors = []; // Array to hold errors
 
 // Property Types
 $property_types_list = [];
-$sql_property_types = "SELECT PropertyTypeID, TypeName FROM PropertyTypes ORDER BY PropertyTypeID";
+$sql_property_types = "SELECT PropertyTypeID, TypeName, TypeName_ar FROM PropertyTypes ORDER BY PropertyTypeID";
 if ($result_property_types = $conn->query($sql_property_types)) {
     while ($row_type = $result_property_types->fetch_assoc()) {
         $property_types_list[] = $row_type;
@@ -309,27 +309,15 @@ if ($att_stmt) {
     }
 
     // --- Data Sanitization ---
-    $property_type_id_posted = filter_input(INPUT_POST, 'property_type_id', FILTER_VALIDATE_INT);
+    // Now using checkboxes for all property types (no dropdown)
     $property_type_ids_posted = $_POST['property_type_ids'] ?? [];
     if (!is_array($property_type_ids_posted)) { $property_type_ids_posted = [$property_type_ids_posted]; }
-    $property_type_ids_posted = array_map('intval', $property_type_ids_posted);
+    $property_type_ids_posted = array_filter(array_map('intval', $property_type_ids_posted));
     
-    $other_ids = [3, 4, 5, 6];
+    // Use first selected type as primary PropertyTypeID for legacy column
+    $property_type_id_posted = !empty($property_type_ids_posted) ? reset($property_type_ids_posted) : null;
     
-    // If the selected category is Residential or Coastal, ignore multi-select checkboxes
-    if (!in_array($property_type_id_posted, $other_ids)) {
-        $property_type_ids_posted = [$property_type_id_posted];
-    } else {
-        // If it is an "Other" type, make sure the primary ID is in the array
-        if (!empty($property_type_id_posted) && !in_array($property_type_id_posted, $property_type_ids_posted)) {
-            $property_type_ids_posted[] = $property_type_id_posted;
-        }
-        // If checkboxes were cleared but dropdown has a value, use dropdown
-        if (empty($property_type_ids_posted) && !empty($property_type_id_posted)) {
-            $property_type_ids_posted = [$property_type_id_posted];
-        }
-    }
-    
+    // Ensure unique and sorted
     sort($property_type_ids_posted);
     $property_type_ids_posted = array_unique($property_type_ids_posted);
 
@@ -1177,35 +1165,11 @@ if ($att_stmt) {
                         <span class="form-display"><?php echo t($listing_type === 'Primary' ? 'primary_properties' : 'resale_properties'); ?></span>
                     </div>
                     <div class="form-group" style="grid-column: 1 / -1;">
-                        <label><?php echo t('property_type'); ?>:</label>
-                        <select id="property_type_id" name="property_type_id" class="form-input" required>
-                            <option value=""><?php echo t('select_property_type'); ?></option>
+                        <label><?php echo t('property_type'); ?>: *</label>
+                        <!-- All 6 property types as checkboxes -->
+                        <div id="property_type_checkboxes" class="checkbox-group" style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">
                             <?php foreach ($property_types_list as $type): ?>
-                                <option value="<?php echo $type['PropertyTypeID']; ?>" <?php echo ($property_type_id == $type['PropertyTypeID']) ? 'selected' : ''; ?>>
-                                    <?php
-                                    if (get_lang_code() === 'ar' && !empty($type['TypeName_ar'])) {
-                                        echo htmlspecialchars($type['TypeName_ar']);
-                                    } else {
-                                        echo htmlspecialchars($type['TypeName']);
-                                    }
-                                    ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-
-                        <?php 
-                        // Area for multiple property types (Checkboxes for IDs 3, 4, 5, 6)
-                        $other_ids = [3, 4, 5, 6];
-                        ?>
-                        <div id="multi_type_selection" class="checkbox-group" style="display: none; gap: 20px; flex-wrap: wrap; margin-top: 15px; padding: 10px; background: #f0f7ff; border-radius: 8px; border: 1px solid #cce5ff;">
-                            <p style="width: 100%; margin: 0 0 8px 0; font-size: 0.9rem; font-weight: 600; color: #004085;">
-                                <i class="fas fa-layer-group"></i> <?php echo (get_lang_code() === 'ar' ? 'يمكنك اختيار أنواع إضافية:' : 'You can select additional types:'); ?>
-                            </p>
-                            <?php 
-                            foreach ($property_types_list as $type): 
-                                if (!in_array($type['PropertyTypeID'], $other_ids)) continue;
-                            ?>
-                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: #fff; padding: 5px 10px; border-radius: 5px; border: 1px solid #dee2e6;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: #fff; padding: 8px 15px; border-radius: 6px; border: 1px solid #dee2e6; transition: all 0.2s;">
                                     <input type="checkbox" name="property_type_ids[]" value="<?php echo $type['PropertyTypeID']; ?>" <?php echo (in_array($type['PropertyTypeID'], $linked_property_types)) ? 'checked' : ''; ?>>
                                     <?php 
                                     if (get_lang_code() === 'ar' && !empty($type['TypeName_ar'])) {
@@ -1217,6 +1181,8 @@ if ($att_stmt) {
                                 </label>
                             <?php endforeach; ?>
                         </div>
+                        <!-- Hidden field to store first selected type for legacy PropertyTypeID column -->
+                        <input type="hidden" name="property_type_id" id="property_type_id" value="<?php echo $property_type_id; ?>">
                         <?php if (isset($errors['property_type_id'])) {
                             echo "<span class='error-message'>" . $errors['property_type_id'] . "</span>";
                         } ?>
@@ -1859,7 +1825,9 @@ if ($att_stmt) {
     <script src="maps_loader.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const propertyTypeIdSelect = document.getElementById('property_type_id');
+            // Property type checkboxes instead of dropdown
+            const propertyTypeCheckboxes = document.querySelectorAll('input[name="property_type_ids[]"]');
+            const hiddenPropertyTypeId = document.getElementById('property_type_id');
             const residentialCoastalFields = document.getElementById('residential_coastal_fields');
             const commercialFields = document.getElementById('commercial_fields');
 
@@ -1870,46 +1838,48 @@ if ($att_stmt) {
             const HOTEL_ID = <?php echo HOTEL_PROPERTY_TYPE_ID; ?>;
             const MEDICAL_ID = <?php echo MEDICAL_PROPERTY_TYPE_ID; ?>;
 
-            function togglePropertyTypeFields() {
-                const selectedTypeId = parseInt(propertyTypeIdSelect.value);
-                const multiTypeSelection = document.getElementById('multi_type_selection');
-                const otherIds = [COMMERCIAL_ID, ADMINISTRATIVE_ID, HOTEL_ID, MEDICAL_ID];
-
-                // Show/Hide Multi-type selection checkboxes
-                if (multiTypeSelection) {
-                    if (otherIds.includes(selectedTypeId)) {
-                        multiTypeSelection.style.display = 'flex';
-                    } else {
-                        multiTypeSelection.style.display = 'none';
-                        // Optionally uncheck checkboxes if moving away from 'Other' types? 
-                        // Actually, better to keep them checked in case user misclicks, 
-                        // but the backend will only save what's relevant.
+            // Get all currently selected property type IDs
+            function getSelectedTypeIds() {
+                const selected = [];
+                propertyTypeCheckboxes.forEach(cb => {
+                    if (cb.checked) {
+                        selected.push(parseInt(cb.value));
                     }
-                }
+                });
+                return selected;
+            }
 
-                if (selectedTypeId === RESIDENTIAL_ID || selectedTypeId === COASTAL_ID) {
+            // Update hidden field with first selected type
+            function updateHiddenField() {
+                const selected = getSelectedTypeIds();
+                if (hiddenPropertyTypeId) {
+                    hiddenPropertyTypeId.value = selected.length > 0 ? selected[0] : '';
+                }
+            }
+
+            function togglePropertyTypeFields() {
+                const selectedIds = getSelectedTypeIds();
+                const residentialCoastalIds = [RESIDENTIAL_ID, COASTAL_ID];
+                const commercialIds = [COMMERCIAL_ID, ADMINISTRATIVE_ID, HOTEL_ID, MEDICAL_ID];
+                
+                const hasResidentialCoastal = selectedIds.some(id => residentialCoastalIds.includes(id));
+                const hasCommercial = selectedIds.some(id => commercialIds.includes(id));
+
+                // Show appropriate field sections based on selections
+                if (hasResidentialCoastal && !hasCommercial) {
                     residentialCoastalFields.classList.add('active');
                     commercialFields.classList.remove('active');
 
-                    // Enable/disable required attributes for residential/coastal
+                    // Enable residential fields
                     const unitDesignField = document.getElementById('unit_design');
                     const finishingTypeField = document.getElementById('finishing_type_id');
                     const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
                     
-                    // Ensure residential inputs are enabled so their values are submitted
-                    if (unitDesignField) {
-                        unitDesignField.setAttribute('required', 'required');
-                        unitDesignField.disabled = false;
-                    }
-                    if (finishingTypeField) {
-                        finishingTypeField.disabled = false;
-                    }
-                    if (finishingTypeCommercialField) {
-                        finishingTypeCommercialField.removeAttribute('required');
-                        finishingTypeCommercialField.disabled = true;
-                    }
+                    if (unitDesignField) { unitDesignField.disabled = false; }
+                    if (finishingTypeField) { finishingTypeField.disabled = false; }
+                    if (finishingTypeCommercialField) { finishingTypeCommercialField.disabled = true; }
 
-                    // Disable commercial-only fields so they don't get submitted and overwrite residential values
+                    // Disable commercial-only fields
                     const unitDesignCommercial = document.getElementById('unit_design_commercial');
                     const unitFloorCommercial = document.getElementById('unit_floor_commercial');
                     const floorsCountCommercial = document.getElementById('floors_count_commercial');
@@ -1917,28 +1887,18 @@ if ($att_stmt) {
                     if (unitFloorCommercial) unitFloorCommercial.disabled = true;
                     if (floorsCountCommercial) floorsCountCommercial.disabled = true;
 
-                } else if (selectedTypeId === COMMERCIAL_ID || selectedTypeId === ADMINISTRATIVE_ID || selectedTypeId === HOTEL_ID || selectedTypeId === MEDICAL_ID) {
+                } else if (hasCommercial) {
+                    // Commercial takes precedence if mixed, or is only selection
                     residentialCoastalFields.classList.remove('active');
                     commercialFields.classList.add('active');
 
-                    // Enable/disable required attributes for commercial
                     const unitDesignField = document.getElementById('unit_design');
                     const finishingTypeField = document.getElementById('finishing_type_id');
                     const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
                     
-                    // Ensure commercial inputs are enabled and residential ones disabled
-                    if (unitDesignField) {
-                        unitDesignField.removeAttribute('required');
-                        // disable residential main unit_design so commercial value will be the submitted one
-                        unitDesignField.disabled = true;
-                    }
-                    if (finishingTypeField) {
-                        finishingTypeField.removeAttribute('required');
-                        finishingTypeField.disabled = true;
-                    }
-                    if (finishingTypeCommercialField) {
-                        finishingTypeCommercialField.disabled = false;
-                    }
+                    if (unitDesignField) { unitDesignField.disabled = true; }
+                    if (finishingTypeField) { finishingTypeField.disabled = true; }
+                    if (finishingTypeCommercialField) { finishingTypeCommercialField.disabled = false; }
 
                     // Enable commercial-only fields
                     const unitDesignCommercial = document.getElementById('unit_design_commercial');
@@ -1949,28 +1909,18 @@ if ($att_stmt) {
                     if (floorsCountCommercial) floorsCountCommercial.disabled = false;
 
                 } else {
+                    // No types selected - hide both sections
                     residentialCoastalFields.classList.remove('active');
                     commercialFields.classList.remove('active');
 
-                    // Remove required attributes if no specific type is selected
                     const unitDesignField = document.getElementById('unit_design');
                     const finishingTypeField = document.getElementById('finishing_type_id');
                     const finishingTypeCommercialField = document.getElementById('finishing_type_id_commercial');
                     
-                    if (unitDesignField) {
-                        unitDesignField.removeAttribute('required');
-                        unitDesignField.disabled = true;
-                    }
-                    if (finishingTypeField) {
-                        finishingTypeField.removeAttribute('required');
-                        finishingTypeField.disabled = true;
-                    }
-                    if (finishingTypeCommercialField) {
-                        finishingTypeCommercialField.removeAttribute('required');
-                        finishingTypeCommercialField.disabled = true;
-                    }
+                    if (unitDesignField) { unitDesignField.disabled = true; }
+                    if (finishingTypeField) { finishingTypeField.disabled = true; }
+                    if (finishingTypeCommercialField) { finishingTypeCommercialField.disabled = true; }
 
-                    // Disable commercial-only fields as well
                     const unitDesignCommercial = document.getElementById('unit_design_commercial');
                     const unitFloorCommercial = document.getElementById('unit_floor_commercial');
                     const floorsCountCommercial = document.getElementById('floors_count_commercial');
@@ -1978,24 +1928,18 @@ if ($att_stmt) {
                     if (unitFloorCommercial) unitFloorCommercial.disabled = true;
                     if (floorsCountCommercial) floorsCountCommercial.disabled = true;
                 }
-                
-                // Force remove required attribute from unit_design if present (safeguard)
-                const unitDesign = document.getElementById('unit_design');
-                if (unitDesign && unitDesign.hasAttribute('required')) {
-                    unitDesign.removeAttribute('required');
-                }
-                const unitDesignComm = document.getElementById('unit_design_commercial');
-                 if (unitDesignComm && unitDesignComm.hasAttribute('required')) {
-                    unitDesignComm.removeAttribute('required');
-                }
-
             }
 
             // Initial call to set correct fields based on loaded property type
             togglePropertyTypeFields();
 
-            // Add event listener for changes
-            propertyTypeIdSelect.addEventListener('change', togglePropertyTypeFields);
+            // Add event listeners for checkbox changes
+            propertyTypeCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    updateHiddenField();
+                    togglePropertyTypeFields();
+                });
+            });
             
             const mapElement = document.getElementById('map');
             const latInput = document.getElementById('latitude');
