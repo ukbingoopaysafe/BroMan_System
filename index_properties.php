@@ -2,6 +2,7 @@
 require_once __DIR__ . '/security.php';
 ensure_secure_session_started();
 require_once __DIR__ . '/lang/translate.php'; // Include translation handler
+require_once 'session_check.php'; // Include session timeout check
 require_once __DIR__ . '/db.php'; // Database connection
 require_once __DIR__ . '/sorting_helpers.php'; // Include sorting helper functions
 require_once __DIR__ . '/property_image_helper.php'; // Include image helper functions
