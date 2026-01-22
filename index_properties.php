@@ -417,8 +417,11 @@ if ($stmt = $conn->prepare($sql)) {
             border-bottom: none !important;
         }
         
-        /* Label (from data-label) - Right side */
+        /* Label (from data-label) - use ::after so it appears on the right */
         .properties-table tbody td::before {
+            display: none !important;
+        }
+        .properties-table tbody td::after {
             content: attr(data-label);
             font-weight: 500 !important;
             color: #666 !important;
@@ -431,26 +434,20 @@ if ($stmt = $conn->prepare($sql)) {
         .properties-table tbody td > * {
             color: #333 !important;
             font-weight: 500 !important;
+            text-align: left !important;
         }
         
-        /* RTL Support */
-        html[dir="rtl"] .properties-table tbody td {
-            flex-direction: row !important;
-        }
-        html[dir="rtl"] .properties-table tbody td::before {
-            text-align: right !important;
-            order: 1 !important;
-        }
+        /* RTL already handled via flex order above */
         
         /* === ID CELL - Badge Style === */
         .properties-table tbody td.cell-id {
             background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%) !important;
             border-bottom: 2px solid #b08a0e !important;
             padding: 14px 16px !important;
-            justify-content: flex-start !important;
+            justify-content: space-between !important;
             gap: 10px !important;
         }
-        .properties-table tbody td.cell-id::before {
+        .properties-table tbody td.cell-id::after {
             content: "رقم العقار:" !important;
             background: #b08a0e !important;
             color: #fff !important;
@@ -458,13 +455,11 @@ if ($stmt = $conn->prepare($sql)) {
             border-radius: 4px !important;
             font-size: 0.75rem !important;
             font-weight: 600 !important;
-            order: 0 !important;
         }
         .properties-table tbody td.cell-id strong {
             font-size: 1.2rem !important;
             font-weight: 700 !important;
             color: #020d24 !important;
-            order: 1 !important;
         }
         
         /* === PROJECT/TITLE CELL === */
@@ -475,7 +470,7 @@ if ($stmt = $conn->prepare($sql)) {
             flex-direction: column !important;
             align-items: flex-start !important;
         }
-        .properties-table tbody td.cell-project::before {
+        .properties-table tbody td.cell-project::after {
             display: none !important;
         }
         .properties-table tbody td.cell-project .project-title {
@@ -495,7 +490,7 @@ if ($stmt = $conn->prepare($sql)) {
             border-bottom: 1px solid rgba(176, 138, 14, 0.2) !important;
             padding: 14px 16px !important;
         }
-        .properties-table tbody td.cell-price::before {
+        .properties-table tbody td.cell-price::after {
             color: #8a6b08 !important;
             font-weight: 600 !important;
         }
@@ -513,6 +508,9 @@ if ($stmt = $conn->prepare($sql)) {
             padding: 6px 14px !important;
             font-size: 0.8rem !important;
         }
+        
+        /* === TYPE, LOCATION CELLS === */
+        /* Already using ::after from base rule */
         
         /* === ACTIONS CELL === */
         .properties-table tbody td.cell-actions {
@@ -557,12 +555,14 @@ if ($stmt = $conn->prepare($sql)) {
             padding: 12px 16px !important;
         }
         
-        /* Hide company on very small screens */
+        /* Company cell visibility on mobile - only show for Primary mode */
+        <?php if ($current_mode !== 'Primary'): ?>
         @media (max-width: 576px) {
             .properties-table tbody td.cell-company {
                 display: none !important;
             }
         }
+        <?php endif; ?>
     }
     
     /* Extra small screens */

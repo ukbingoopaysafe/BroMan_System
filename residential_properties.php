@@ -379,29 +379,33 @@ if ($stmt = $conn->prepare($sql)) {
         .properties-table tbody tr:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important; transform: none !important; }
         .properties-table tbody td { display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 12px 16px !important; border-bottom: 1px dashed #eee !important; margin: 0 !important; min-width: unset !important; max-width: unset !important; width: auto !important; }
         .properties-table tbody td:last-child { border-bottom: none !important; }
-        .properties-table tbody td::before { content: attr(data-label); font-weight: 500 !important; color: #666 !important; font-size: 0.85rem !important; flex-shrink: 0 !important; text-align: right !important; }
-        .properties-table tbody td > * { color: #333 !important; font-weight: 500 !important; }
-        html[dir="rtl"] .properties-table tbody td { flex-direction: row !important; }
-        html[dir="rtl"] .properties-table tbody td::before { text-align: right !important; order: 1 !important; }
-        .properties-table tbody td.cell-id { background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%) !important; border-bottom: 2px solid #b08a0e !important; padding: 14px 16px !important; justify-content: flex-start !important; gap: 10px !important; }
-        .properties-table tbody td.cell-id::before { content: "رقم العقار:" !important; background: #b08a0e !important; color: #fff !important; padding: 4px 10px !important; border-radius: 4px !important; font-size: 0.75rem !important; font-weight: 600 !important; order: 0 !important; }
-        .properties-table tbody td.cell-id strong { font-size: 1.2rem !important; font-weight: 700 !important; color: #020d24 !important; order: 1 !important; }
+        .properties-table tbody td::before { display: none !important; }
+        .properties-table tbody td::after { content: attr(data-label); font-weight: 500 !important; color: #666 !important; font-size: 0.85rem !important; flex-shrink: 0 !important; text-align: right !important; }
+        .properties-table tbody td > * { color: #333 !important; font-weight: 500 !important; text-align: left !important; }
+        /* RTL already handled via ::after */
+        .properties-table tbody td.cell-id { background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%) !important; border-bottom: 2px solid #b08a0e !important; padding: 14px 16px !important; justify-content: space-between !important; gap: 10px !important; }
+        .properties-table tbody td.cell-id::after { content: "رقم العقار:" !important; background: #b08a0e !important; color: #fff !important; padding: 4px 10px !important; border-radius: 4px !important; font-size: 0.75rem !important; font-weight: 600 !important; }
+        .properties-table tbody td.cell-id strong { font-size: 1.2rem !important; font-weight: 700 !important; color: #020d24 !important; }
         .properties-table tbody td.cell-project { background: #fafafa !important; padding: 16px !important; border-bottom: 1px solid #e0e0e0 !important; flex-direction: column !important; align-items: flex-start !important; }
-        .properties-table tbody td.cell-project::before { display: none !important; }
+        .properties-table tbody td.cell-project::after { display: none !important; }
         .properties-table tbody td.cell-project .project-title { font-size: 1.15rem !important; font-weight: 700 !important; color: #1a1a2e !important; margin-bottom: 4px !important; }
         .properties-table tbody td.cell-project .project-subtitle { font-size: 0.9rem !important; color: #666 !important; }
         .properties-table tbody td.cell-price { background: linear-gradient(135deg, rgba(176, 138, 14, 0.08) 0%, rgba(176, 138, 14, 0.03) 100%) !important; border-bottom: 1px solid rgba(176, 138, 14, 0.2) !important; padding: 14px 16px !important; }
-        .properties-table tbody td.cell-price::before { color: #8a6b08 !important; font-weight: 600 !important; }
+        .properties-table tbody td.cell-price::after { color: #8a6b08 !important; font-weight: 600 !important; }
         .properties-table tbody td.cell-price > * { color: #b08a0e !important; font-weight: 700 !important; font-size: 1.05rem !important; }
         .properties-table tbody td.cell-status { padding: 14px 16px !important; }
+        .properties-table tbody td.cell-status .status-badge { padding: 6px 14px !important; font-size: 0.8rem !important; }
         .properties-table tbody td.cell-actions { background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%) !important; border-top: 1px solid #e0e0e0 !important; border-bottom: none !important; padding: 14px 16px !important; justify-content: center !important; }
-        .properties-table tbody td.cell-actions::before { display: none !important; }
+        .properties-table tbody td.cell-actions::after { display: none !important; }
         .properties-table .table-actions { display: flex !important; flex-direction: row !important; width: 100% !important; gap: 12px !important; }
         .properties-table .table-actions a, .properties-table .table-actions button, .properties-table .table-actions form { flex: 1 !important; }
         .properties-table .table-actions a, .properties-table .table-actions button { display: flex !important; align-items: center !important; justify-content: center !important; padding: 12px 16px !important; font-size: 0.9rem !important; font-weight: 600 !important; border-radius: 8px !important; min-width: unset !important; }
         .properties-table tbody td.cell-type, .properties-table tbody td.cell-design, .properties-table tbody td.cell-area, .properties-table tbody td.cell-location, .properties-table tbody td.cell-company { padding: 12px 16px !important; }
     }
+    /* Company cell visibility on mobile - only show for Primary mode */
+    <?php if ($current_mode !== 'Primary'): ?>
     @media (max-width: 576px) { .properties-table tbody td.cell-company { display: none !important; } }
+    <?php endif; ?>
     @media (max-width: 480px) {
         .properties-table tbody td { padding: 10px 12px !important; font-size: 0.9rem !important; }
         .properties-table tbody td::before { font-size: 0.8rem !important; }
