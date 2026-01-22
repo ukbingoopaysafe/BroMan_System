@@ -147,8 +147,8 @@ body {
 
 .input-group input {
     width: 100%;
-    padding: 0.9rem 0.9rem 0.9rem 2.8rem;
-    /* Slightly compact padding */
+    padding: 0.9rem 2.8rem 0.9rem 2.8rem;
+    /* Increased right padding for eye icon */
     background: var(--input-bg);
     border: 1px solid var(--glass-border);
     border-radius: 10px;
@@ -177,6 +177,15 @@ body {
 
 .input-group input:focus+i {
     color: var(--primary-color);
+}
+
+#togglePassword {
+    position: absolute;
+    right: 1rem;
+    left: auto;
+    cursor: pointer;
+    z-index: 10;
+    pointer-events: auto;
 }
 
 .actions {

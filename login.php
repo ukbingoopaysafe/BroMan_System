@@ -141,27 +141,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
                 
                 <div class="input-group">
-                    <input type="password" name="password" placeholder="Password" required autocomplete="current-password">
+                    <input type="password" name="password" id="password" placeholder="Password" required autocomplete="current-password">
                     <i class="fa-solid fa-lock"></i>
-                </div>
-
-                <div class="actions">
-                    <label class="custom-checkbox">
-                        <input type="checkbox" name="remember">
-                        <span class="checkmark"></span>
-                        Remember me
-                    </label>
-                    <a href="#" class="forgot-password">Forgot Password?</a>
+                    <i class="fa-regular fa-eye" id="togglePassword"></i>
                 </div>
 
                 <button type="submit" class="login-btn">
                     Sign In <i class="fa-solid fa-arrow-right-long" style="margin-left: 8px;"></i>
                 </button>
             </form>
-
-            <div class="footer-link">
-                <p>Not a member? <a href="#">Contact Support</a></p>
-            </div>
         </div>
     </div>
 
