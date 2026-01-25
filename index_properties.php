@@ -337,6 +337,70 @@ if ($stmt = $conn->prepare($sql)) {
     $_SESSION['error_message'] = t('db_error_prepare');
 }
 
+// Fetch sellers for each property (for Rental/Resale modes only)
+$sellers_by_property = [];
+if (($current_mode === 'Rental' || $current_mode === 'Resale') && !empty($properties)) {
+    $property_ids = array_column($properties, 'PropertyID');
+    if (!empty($property_ids)) {
+        $ids_placeholder = implode(',', array_fill(0, count($property_ids), '?'));
+        $seller_sql = "SELECT property_id, seller_type, seller_name, seller_phone 
+                       FROM property_sellers 
+                       WHERE property_id IN ($ids_placeholder) 
+                       ORDER BY id ASC";
+        $seller_stmt = $conn->prepare($seller_sql);
+        if ($seller_stmt) {
+            $seller_types = str_repeat('i', count($property_ids));
+            $seller_stmt->bind_param($seller_types, ...$property_ids);
+            if ($seller_stmt->execute()) {
+                $seller_result = $seller_stmt->get_result();
+                while ($seller_row = $seller_result->fetch_assoc()) {
+                    $prop_id = $seller_row['property_id'];
+                    if (!isset($sellers_by_property[$prop_id])) {
+                        $sellers_by_property[$prop_id] = [];
+                    }
+                    $sellers_by_property[$prop_id][] = $seller_row;
+                }
+            }
+            $seller_stmt->close();
+        }
+    }
+}
+
+// Helper function to translate seller type
+if (!function_exists('translate_seller_type_display')) {
+    function translate_seller_type_display($val) {
+        $v = $val === null ? '' : trim((string)$val);
+        if ($v === '') return t('undefined');
+        $map = [
+            'مالك' => 'seller_type_owner', 'وسيط' => 'seller_type_broker', 'وكيل' => 'seller_type_agent',
+            'بواب' => 'seller_type_doorman', 'شركة مطورة' => 'seller_type_developer_company',
+            'شركة تشطيب' => 'seller_type_finishing_company', 'شركة تسويق' => 'seller_type_marketing_company',
+            'Owner' => 'seller_type_owner', 'Broker' => 'seller_type_broker', 'Agent' => 'seller_type_agent',
+            'Doorman' => 'seller_type_doorman', 'Developer Company' => 'seller_type_developer_company',
+            'Finishing Company' => 'seller_type_finishing_company', 'Marketing Company' => 'seller_type_marketing_company',
+        ];
+        return isset($map[$v]) ? t($map[$v]) : $v;
+    }
+}
+
+// Helper function to normalize phone for tel: links
+if (!function_exists('normalize_phone_display')) {
+    function normalize_phone_display($raw) {
+        $s = trim((string)$raw);
+        if ($s === '') return '';
+        $s = preg_replace('/[^0-9+]/', '', $s);
+        if ($s === '') return '';
+        if (strpos($s, '+') === 0) return $s;
+        if (strpos($s, '00') === 0) return '+' . ltrim($s, '0');
+        if (strpos($s, '0') === 0) {
+            $without0 = substr($s, 1);
+            return '+20' . $without0;
+        }
+        if (strpos($s, '20') === 0) return '+' . $s;
+        return $s;
+    }
+}
+
 // Display functions moved to property_display_helper.php
 
 ?>
@@ -361,7 +425,15 @@ if ($stmt = $conn->prepare($sql)) {
 
     <!-- Mobile Responsive Table - Professional Card Design -->
     <style>
+    /* Hide owner cell on desktop - only show on mobile */
+    .properties-table td.cell-owner {
+        display: none !important;
+    }
     @media (max-width: 992px) {
+        /* Show owner cell on mobile */
+        .properties-table td.cell-owner {
+            display: flex !important;
+        }
         /* Container Reset */
         .table-responsive {
             overflow: visible !important;
@@ -384,150 +456,254 @@ if ($stmt = $conn->prepare($sql)) {
             display: block !important;
         }
         
-        /* === PROPERTY CARD === */
+        /* === PROPERTY CARD - COMPACT DESIGN === */
         .properties-table tbody tr {
-            display: block !important;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            grid-template-rows: auto !important;
             position: relative !important;
             overflow: hidden !important;
             background: #ffffff !important;
-            border-radius: 12px !important;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
-            border: 1px solid #e0e0e0 !important;
-            margin-bottom: 20px !important;
+            border-radius: 8px !important;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+            border: 1px solid #e8e8e8 !important;
+            margin-bottom: 10px !important;
             padding: 0 !important;
         }
         .properties-table tbody tr:hover {
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
-            transform: none !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
         }
         
         /* === ALL CELLS BASE === */
         .properties-table tbody td {
             display: flex !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            padding: 12px 16px !important;
-            border-bottom: 1px dashed #eee !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: flex-start !important;
+            padding: 6px 10px !important;
+            border-bottom: none !important;
+            border-left: 1px solid #f0f0f0 !important;
             margin: 0 !important;
             min-width: unset !important;
             max-width: unset !important;
             width: auto !important;
+            font-size: 0.8rem !important;
+            min-height: 36px !important;
         }
-        .properties-table tbody td:last-child {
-            border-bottom: none !important;
+        .properties-table tbody td:nth-child(odd) {
+            border-left: none !important;
         }
         
-        /* Label (from data-label) - use ::after so it appears on the right */
+        /* Label - Small above value */
         .properties-table tbody td::before {
             display: none !important;
         }
         .properties-table tbody td::after {
             content: attr(data-label);
-            font-weight: 500 !important;
-            color: #666 !important;
-            font-size: 0.85rem !important;
-            flex-shrink: 0 !important;
+            font-weight: 400 !important;
+            color: #888 !important;
+            font-size: 0.65rem !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.3px !important;
+            margin-bottom: 1px !important;
+            order: -1 !important;
+        }
+        
+        /* Value */
+        .properties-table tbody td > * {
+            color: #333 !important;
+            font-weight: 600 !important;
+            font-size: 0.8rem !important;
             text-align: right !important;
         }
         
-        /* Value - Left side */
-        .properties-table tbody td > * {
-            color: #333 !important;
-            font-weight: 500 !important;
-            text-align: left !important;
-        }
-        
-        /* RTL already handled via flex order above */
-        
-        /* === ID CELL - Badge Style === */
+        /* === ID CELL - Full width header === */
         .properties-table tbody td.cell-id {
-            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%) !important;
-            border-bottom: 2px solid #b08a0e !important;
-            padding: 14px 16px !important;
+            grid-column: 1 / -1 !important;
+            flex-direction: row-reverse !important;
             justify-content: space-between !important;
-            gap: 10px !important;
+            align-items: center !important;
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%) !important;
+            padding: 8px 12px !important;
+            border: none !important;
+            border-radius: 8px 8px 0 0 !important;
         }
         .properties-table tbody td.cell-id::after {
             content: "رقم العقار:" !important;
             background: #b08a0e !important;
             color: #fff !important;
-            padding: 4px 10px !important;
-            border-radius: 4px !important;
-            font-size: 0.75rem !important;
+            padding: 2px 6px !important;
+            border-radius: 3px !important;
+            font-size: 0.6rem !important;
             font-weight: 600 !important;
+            text-transform: none !important;
+            letter-spacing: 0 !important;
+            order: 0 !important;
+            margin: 0 !important;
         }
         .properties-table tbody td.cell-id strong {
-            font-size: 1.2rem !important;
+            font-size: 1.1rem !important;
             font-weight: 700 !important;
-            color: #020d24 !important;
+            color: #fff !important;
         }
         
-        /* === PROJECT/TITLE CELL === */
+        /* === PROJECT CELL - Full width === */
         .properties-table tbody td.cell-project {
-            background: #fafafa !important;
-            padding: 16px !important;
-            border-bottom: 1px solid #e0e0e0 !important;
-            flex-direction: column !important;
-            align-items: flex-start !important;
+            grid-column: 1 / -1 !important;
+            background: #f8f9fa !important;
+            padding: 6px 12px !important;
+            border-bottom: 1px solid #eee !important;
+            border-left: none !important;
         }
         .properties-table tbody td.cell-project::after {
             display: none !important;
         }
         .properties-table tbody td.cell-project .project-title {
-            font-size: 1.15rem !important;
+            font-size: 0.85rem !important;
             font-weight: 700 !important;
             color: #1a1a2e !important;
-            margin-bottom: 4px !important;
         }
         .properties-table tbody td.cell-project .project-subtitle {
-            font-size: 0.9rem !important;
+            font-size: 0.7rem !important;
             color: #666 !important;
         }
         
-        /* === PRICE CELL - Highlighted === */
+        /* === TYPE & DESIGN in grid === */
+        .properties-table tbody td.cell-type,
+        .properties-table tbody td.cell-design {
+            background: #fff !important;
+        }
+        .properties-table tbody td.cell-type .type-badge,
+        .properties-table tbody td.cell-type .badge {
+            font-size: 0.65rem !important;
+            padding: 2px 6px !important;
+        }
+        
+        /* === PRICE CELL - Highlighted full width === */
         .properties-table tbody td.cell-price {
-            background: linear-gradient(135deg, rgba(176, 138, 14, 0.08) 0%, rgba(176, 138, 14, 0.03) 100%) !important;
-            border-bottom: 1px solid rgba(176, 138, 14, 0.2) !important;
-            padding: 14px 16px !important;
+            grid-column: 1 / -1 !important;
+            flex-direction: row-reverse !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            background: linear-gradient(135deg, rgba(176, 138, 14, 0.1) 0%, rgba(176, 138, 14, 0.03) 100%) !important;
+            padding: 8px 12px !important;
+            border-left: none !important;
+            border-top: 1px solid rgba(176, 138, 14, 0.15) !important;
+            border-bottom: 1px solid rgba(176, 138, 14, 0.15) !important;
         }
         .properties-table tbody td.cell-price::after {
             color: #8a6b08 !important;
             font-weight: 600 !important;
+            font-size: 0.7rem !important;
+            order: 0 !important;
+            margin: 0 !important;
         }
         .properties-table tbody td.cell-price > * {
             color: #b08a0e !important;
             font-weight: 700 !important;
-            font-size: 1.05rem !important;
+            font-size: 0.95rem !important;
+        }
+        
+        /* === AREA & LOCATION in grid === */
+        .properties-table tbody td.cell-area,
+        .properties-table tbody td.cell-location {
+            background: #fff !important;
+        }
+        
+        /* === COMPANY CELL === */
+        .properties-table tbody td.cell-company {
+            background: #fafafa !important;
         }
         
         /* === STATUS CELL === */
         .properties-table tbody td.cell-status {
-            padding: 14px 16px !important;
+            background: #fafafa !important;
+            flex-direction: column !important;
+            align-items: flex-end !important;
+            justify-content: center !important;
+            text-align: right !important;
         }
         .properties-table tbody td.cell-status .status-badge {
-            padding: 6px 14px !important;
+            padding: 3px 8px !important;
+            font-size: 0.65rem !important;
+        }
+        
+        /* === OWNER INFO CELL - Same row as status (Rental/Resale only) === */
+        .properties-table tbody td.cell-owner {
+            background: #fff !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            justify-content: flex-start !important;
+            padding: 8px 10px !important;
+            border-left: 1px solid #f0f0f0 !important;
+            min-height: auto !important;
+        }
+        .properties-table tbody td.cell-owner::after {
+            content: "معلومات المالك" !important;
+            font-weight: 400 !important;
+            color: #888 !important;
+            font-size: 0.65rem !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.3px !important;
+            margin-bottom: 2px !important;
+            order: -1 !important;
+            background: none !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+        }
+        .properties-table tbody td.cell-owner .owner-info {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 2px !important;
+            width: 100% !important;
+        }
+        .properties-table tbody td.cell-owner .owner-type {
+            background: none !important;
+            color: #b08a0e !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+            font-size: 0.75rem !important;
+            font-weight: 700 !important;
+        }
+        .properties-table tbody td.cell-owner .owner-name {
+            font-weight: 600 !important;
+            color: #333 !important;
             font-size: 0.8rem !important;
         }
-        
-        /* === TYPE, LOCATION CELLS === */
-        /* Already using ::after from base rule */
-        
-        /* === ACTIONS CELL === */
-        .properties-table tbody td.cell-actions {
-            background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%) !important;
-            border-top: 1px solid #e0e0e0 !important;
-            border-bottom: none !important;
-            padding: 14px 16px !important;
-            justify-content: center !important;
+        .properties-table tbody td.cell-owner .owner-phone {
+            color: #27ae60 !important;
+            text-decoration: none !important;
+            font-weight: 600 !important;
+            font-size: 0.75rem !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            direction: ltr !important;
         }
-        .properties-table tbody td.cell-actions::before {
+        .properties-table tbody td.cell-owner .owner-phone i {
+            display: none !important;
+        }
+        
+        /* === ACTIONS CELL - Full width footer === */
+        .properties-table tbody td.cell-actions {
+            grid-column: 1 / -1 !important;
+            flex-direction: row !important;
+            background: #f5f5f5 !important;
+            border-top: 1px solid #e8e8e8 !important;
+            border-left: none !important;
+            padding: 8px 10px !important;
+            justify-content: center !important;
+            border-radius: 0 0 8px 8px !important;
+        }
+        .properties-table tbody td.cell-actions::after {
             display: none !important;
         }
         .properties-table .table-actions {
             display: flex !important;
             flex-direction: row !important;
             width: 100% !important;
-            gap: 12px !important;
+            gap: 8px !important;
         }
         .properties-table .table-actions a,
         .properties-table .table-actions button,
@@ -539,20 +715,16 @@ if ($stmt = $conn->prepare($sql)) {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            padding: 12px 16px !important;
-            font-size: 0.9rem !important;
+            padding: 8px 12px !important;
+            font-size: 0.75rem !important;
             font-weight: 600 !important;
-            border-radius: 8px !important;
+            border-radius: 6px !important;
             min-width: unset !important;
         }
         
-        /* === TYPE, AREA, LOCATION, COMPANY CELLS === */
-        .properties-table tbody td.cell-type,
-        .properties-table tbody td.cell-design,
-        .properties-table tbody td.cell-area,
-        .properties-table tbody td.cell-location,
-        .properties-table tbody td.cell-company {
-            padding: 12px 16px !important;
+        /* Hide model cell on mobile to save space */
+        .properties-table tbody td.cell-model {
+            display: none !important;
         }
         
         /* Company cell visibility on mobile - only show for Primary mode */
@@ -1159,6 +1331,27 @@ if ($stmt = $conn->prepare($sql)) {
                             <td class="cell-company" data-label="<?php echo t('table_header_company'); ?>">
                                 <?php echo htmlspecialchars($property['company_name'] ?? t('undefined')); ?>
                             </td>
+                            <?php if ($current_mode === 'Rental' || $current_mode === 'Resale'): ?>
+                            <td class="cell-owner" data-label="<?php echo t('owner_info') ?: 'معلومات المالك'; ?>">
+                                <?php 
+                                $sellers = $sellers_by_property[$property['PropertyID']] ?? [];
+                                if (!empty($sellers)):
+                                    $seller = $sellers[0]; // First seller
+                                ?>
+                                <div class="owner-info">
+                                    <span class="owner-type"><?php echo htmlspecialchars(translate_seller_type_display($seller['seller_type'])); ?></span>
+                                    <span class="owner-name"><?php echo htmlspecialchars($seller['seller_name'] ?? t('undefined')); ?></span>
+                                    <?php if (!empty($seller['seller_phone'])): ?>
+                                    <a href="tel:<?php echo normalize_phone_display($seller['seller_phone']); ?>" class="owner-phone">
+                                        <i class="fas fa-phone"></i> <?php echo htmlspecialchars($seller['seller_phone']); ?>
+                                    </a>
+                                    <?php endif; ?>
+                                </div>
+                                <?php else: ?>
+                                <span class="text-muted"><?php echo t('undefined'); ?></span>
+                                <?php endif; ?>
+                            </td>
+                            <?php endif; ?>
                             <td class="cell-status" data-label="<?php echo t('table_header_status'); ?>">
                                 <?php echo getStatusBadge($property['Status']); ?>
                             </td>
