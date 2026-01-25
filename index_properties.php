@@ -26,17 +26,29 @@ $view_mode = isset($_GET['view']) && $_GET['view'] === 'card' ? 'card' : 'table'
 $sort_column = isset($_GET['sort']) ? trim($_GET['sort']) : 'friendly_id';
 $sort_direction = isset($_GET['direction']) && $_GET['direction'] === 'asc' ? 'asc' : 'desc'; // Default to DESC
 
+// Define sorting logic expressions
+$projectNameSort = "COALESCE(NULLIF(p.ProjectName, ''), p.Title)";
+if ($current_mode === 'Rental') {
+    $priceSort = "COALESCE(p.monthly_rent, p.daily_rent, p.yearly_rent, p.price_cash, p.price_installments)";
+} else {
+    $priceSort = "COALESCE(p.price_cash, p.price_installments, (p.meter_price_cash * p.Area), (p.meter_price_installments * p.Area))";
+}
+
 // Validate sort column to prevent SQL injection
 $allowed_sort_columns = [
-    'PropertyID' => 'p.PropertyID',
-    'friendly_id' => 'p.friendly_id',
-    'DateAdded' => 'p.DateAdded',
-    'Price' => 'COALESCE(p.price_cash, p.price_installments)',
-    'Area' => 'COALESCE(p.Area, p.avg_area)',
-    'ProjectName' => 'p.ProjectName',
-    'Title' => 'p.Title',
-    'governorate' => 'p.governorate',
-    'Status' => 'p.Status'
+    'PropertyID'       => 'p.PropertyID',
+    'propertyid'       => 'p.PropertyID',
+    'friendly_id'      => 'p.friendly_id',
+    'DateAdded'        => 'p.DateAdded',
+    'Price'            => $priceSort,
+    'price'            => $priceSort,
+    'Area'             => 'COALESCE(p.Area, p.avg_area)',
+    'area'             => 'COALESCE(p.Area, p.avg_area)',
+    'ProjectName'      => $projectNameSort,
+    'project_or_title' => $projectNameSort,
+    'Title'            => 'p.Title',
+    'governorate'      => 'p.governorate',
+    'Status'           => 'p.Status'
 ];
 
 if (!array_key_exists($sort_column, $allowed_sort_columns)) {
