@@ -248,24 +248,32 @@ if (!empty($status_filter)) {
     $types .= "s";
 }
 
+// Define unified expressions for filtering and sorting
+$areaExpr = "COALESCE(p.Area, p.min_area, p.net_area, p.avg_area)";
+if ($current_mode === 'Rental') {
+    $priceExpr = "COALESCE(p.monthly_rent, p.daily_rent, p.yearly_rent, p.price_cash, p.price_installments)";
+} else {
+    $priceExpr = "COALESCE(p.price_cash, p.price_installments, (p.meter_price_cash * p.Area), (p.meter_price_installments * p.Area))";
+}
+
 // Add advanced filters
 if (!empty($min_price_filter)) {
-    $sql_where[] = "COALESCE(p.price_cash, p.price_installments) >= ?";
+    $sql_where[] = "{$priceExpr} >= ?";
     $params[] = $min_price_filter;
     $types .= "d";
 }
 if (!empty($max_price_filter)) {
-    $sql_where[] = "COALESCE(p.price_cash, p.price_installments) <= ?";
+    $sql_where[] = "{$priceExpr} <= ?";
     $params[] = $max_price_filter;
     $types .= "d";
 }
 if (!empty($min_area_filter)) {
-    $sql_where[] = "COALESCE(p.Area, p.min_area) >= ?";
+    $sql_where[] = "{$areaExpr} >= ?";
     $params[] = $min_area_filter;
     $types .= "d";
 }
 if (!empty($max_area_filter)) {
-    $sql_where[] = "COALESCE(p.Area, p.max_area) <= ?";
+    $sql_where[] = "{$areaExpr} <= ?";
     $params[] = $max_area_filter;
     $types .= "d";
 }
