@@ -296,37 +296,210 @@ function render_or_fallback($val, $is_seller_type = false) {
 $page_title = sprintf(t('property_details_title'), htmlspecialchars($property['Title'] ?: $property['ProjectName'] ?: t('undefined')));
 
 // Prepare WhatsApp share link (Arabic message, includes Google Maps link when coordinates exist)
-$property_name = trim((string)($property['Title'] ?: $property['ProjectName'] ?: ''));
-$property_address = '';
-if (!empty($property['Location'])) {
-    $property_address = $property['Location'];
-} else {
-    $parts = [];
-    if (!empty($property['district'])) $parts[] = $property['district'];
-    if (!empty($property['governorate'])) $parts[] = $property['governorate'];
-    $property_address = implode('، ', $parts);
+// WhatsApp share (details vs map)
+function wa_clean_text($text) {
+    $text = trim((string)$text);
+    if ($text === '') return '';
+    $text = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
+    $text = strip_tags($text);
+    return $text;
 }
+
+// Build safe, whitelisted details message (no description, no attachments, no internal data)
+function build_property_details_message($property, $types_display, $use_emojis = true) {
+    $lines = [];
+
+    $add_line = function($label, $value, $emoji = '') use (&$lines, $use_emojis) {
+        $val = wa_clean_text($value);
+        if ($val !== '') {
+            $prefix = ($use_emojis && $emoji !== '') ? ($emoji . ' ') : '';
+            $lines[] = $prefix . '*' . $label . '*: ' . $val;
+        }
+    };
+
+    $listing_type = $property['listing_type'] ?? '';
+
+    $title = wa_clean_text($property['Title'] ?? '');
+    $title_prefix = $use_emojis ? '🏷️ ' : '';
+    if ($title !== '') $lines[] = $title_prefix . '*اسم العقار*: ' . $title;
+
+    $type_clean = wa_clean_text($types_display);
+    $type_prefix = $use_emojis ? '🏢 ' : '';
+    if ($type_clean !== '') $lines[] = $type_prefix . '*نوع العقار*: ' . $type_clean;
+
+    if (!empty($property['ProjectName']) && $listing_type === 'Primary') {
+        $add_line('اسم المشروع', $property['ProjectName'], '🧩');
+    }
+
+    if (!empty($property['UnitDesignName'])) {
+        $add_line('نموذج الوحدة', $property['UnitDesignName'], '🧱');
+    }
+
+    // Location: governorate + district only (no exact map location)
+    $loc_parts = [];
+    if (!empty($property['governorate'])) $loc_parts[] = $property['governorate'];
+    if (!empty($property['district'])) $loc_parts[] = $property['district'];
+    if (!empty($loc_parts)) {
+        $loc_prefix = $use_emojis ? '📍 ' : '';
+        $lines[] = $loc_prefix . '*الموقع*: ' . implode('، ', $loc_parts);
+    }
+
+    $has_price_area_section =
+        !empty($property['price_cash']) ||
+        !empty($property['price_installments']) ||
+        !empty($property['min_price']) ||
+        !empty($property['max_price']) ||
+        !empty($property['avg_price']) ||
+        !empty($property['monthly_rent']) ||
+        !empty($property['daily_rent']) ||
+        !empty($property['yearly_rent']) ||
+        !empty($property['meter_price_cash']) ||
+        !empty($property['meter_price_installments']) ||
+        !empty($property['Area']) ||
+        !empty($property['min_area']) ||
+        !empty($property['max_area']) ||
+        !empty($property['avg_area']) ||
+        !empty($property['net_area']) ||
+        !empty($property['loading_percentage']);
+
+    if ($has_price_area_section) {
+        $lines[] = '──────────';
+
+        $currency_code = $property['currency'] ?? 'EGP';
+        $currency_label = t($currency_code);
+
+        if (!empty($property['price_cash'])) {
+            $lines[] = ($use_emojis ? '💵 ' : '') . '*سعر كاش*: ' . number_format($property['price_cash'], 0, '.', ',') . ' ' . $currency_label;
+        }
+        if (!empty($property['price_installments'])) {
+            $lines[] = ($use_emojis ? '💳 ' : '') . '*سعر بالتقسيط*: ' . number_format($property['price_installments'], 0, '.', ',') . ' ' . $currency_label;
+        }
+        if (!empty($property['min_price']) && !empty($property['max_price'])) {
+            $lines[] = ($use_emojis ? '📊 ' : '') . '*نطاق السعر*: ' . number_format($property['min_price'], 0, '.', ',') . ' - ' . number_format($property['max_price'], 0, '.', ',') . ' ' . $currency_label;
+        } elseif (!empty($property['min_price'])) {
+            $lines[] = ($use_emojis ? '📈 ' : '') . '*يبدأ من*: ' . number_format($property['min_price'], 0, '.', ',') . ' ' . $currency_label;
+        } elseif (!empty($property['max_price'])) {
+            $lines[] = ($use_emojis ? '📉 ' : '') . '*حتى*: ' . number_format($property['max_price'], 0, '.', ',') . ' ' . $currency_label;
+        } elseif (!empty($property['avg_price'])) {
+            $lines[] = ($use_emojis ? '🧮 ' : '') . '*متوسط السعر*: ' . number_format($property['avg_price'], 0, '.', ',') . ' ' . $currency_label;
+        }
+
+        if (!empty($property['monthly_rent'])) {
+            $lines[] = ($use_emojis ? '🗓️ ' : '') . '*الإيجار الشهري*: ' . number_format($property['monthly_rent'], 0, '.', ',') . ' ' . $currency_label . ' / ' . t('per_month');
+        }
+        if (!empty($property['daily_rent'])) {
+            $lines[] = ($use_emojis ? '📅 ' : '') . '*الإيجار اليومي*: ' . number_format($property['daily_rent'], 0, '.', ',') . ' ' . $currency_label . ' / ' . t('per_day');
+        }
+        if (!empty($property['yearly_rent'])) {
+            $lines[] = ($use_emojis ? '📆 ' : '') . '*الإيجار السنوي*: ' . number_format($property['yearly_rent'], 0, '.', ',') . ' ' . $currency_label . ' / ' . t('per_year');
+        }
+
+        if (!empty($property['meter_price_cash'])) {
+            $lines[] = ($use_emojis ? '📐 ' : '') . '*سعر المتر كاش*: ' . number_format($property['meter_price_cash'], 0, '.', ',') . ' ' . $currency_label;
+        }
+        if (!empty($property['meter_price_installments'])) {
+            $lines[] = ($use_emojis ? '📏 ' : '') . '*سعر المتر تقسيط*: ' . number_format($property['meter_price_installments'], 0, '.', ',') . ' ' . $currency_label;
+        }
+
+        if (!empty($property['Area'])) {
+            $lines[] = ($use_emojis ? '📐 ' : '') . '*المساحة*: ' . formatSmartNumber($property['Area'], 2) . ' ' . t('sqm');
+        }
+        if (!empty($property['min_area'])) {
+            $lines[] = ($use_emojis ? '📏 ' : '') . '*أقل مساحة*: ' . formatSmartNumber($property['min_area'], 2) . ' ' . t('sqm');
+        }
+        if (!empty($property['max_area'])) {
+            $lines[] = ($use_emojis ? '📏 ' : '') . '*أكبر مساحة*: ' . formatSmartNumber($property['max_area'], 2) . ' ' . t('sqm');
+        }
+        if (!empty($property['avg_area'])) {
+            $lines[] = ($use_emojis ? '📊 ' : '') . '*متوسط المساحة*: ' . formatSmartNumber($property['avg_area'], 2) . ' ' . t('sqm');
+        }
+        if (!empty($property['net_area'])) {
+            $lines[] = ($use_emojis ? '🧮 ' : '') . '*المساحة الصافية*: ' . formatSmartNumber($property['net_area'], 2) . ' ' . t('sqm');
+        }
+        if (!empty($property['loading_percentage'])) {
+            $lines[] = ($use_emojis ? '📎 ' : '') . '*نسبة التحميل*: ' . formatSmartNumber($property['loading_percentage'], 2) . '%';
+        }
+    }
+
+    $has_unit_section =
+        !empty($property['Bedrooms']) ||
+        !empty($property['Bathrooms']) ||
+        !empty($property['balconies']) ||
+        !empty($property['elevators']) ||
+        !empty($property['FinishingTypeName']) ||
+        !empty($property['FloorsCount']) ||
+        !empty($property['unit_floor']) ||
+        (($property['year_built'] ?? null) !== null && trim((string)($property['year_built'] ?? '')) !== '');
+
+    if ($has_unit_section) {
+        $lines[] = '──────────';
+        $lines[] = ($use_emojis ? '🏠 ' : '') . 'تفاصيل الوحدة';
+
+        if (!empty($property['Bedrooms'])) $lines[] = ($use_emojis ? '🛏️ ' : '') . '*عدد الغرف*: ' . wa_clean_text($property['Bedrooms']);
+        if (!empty($property['Bathrooms'])) $lines[] = ($use_emojis ? '🛁 ' : '') . '*عدد الحمامات*: ' . wa_clean_text($property['Bathrooms']);
+        if (!empty($property['balconies'])) $lines[] = ($use_emojis ? '🌤️ ' : '') . '*عدد البلكونات*: ' . wa_clean_text($property['balconies']);
+        if (!empty($property['elevators'])) $lines[] = ($use_emojis ? '🛗 ' : '') . '*عدد المصاعد*: ' . wa_clean_text($property['elevators']);
+        if (!empty($property['FinishingTypeName'])) {
+            $finish = (get_lang_code() === 'ar' && !empty($property['FinishingTypeName_ar'])) ? $property['FinishingTypeName_ar'] : $property['FinishingTypeName'];
+            $lines[] = ($use_emojis ? '🧱 ' : '') . '*نوع التشطيب*: ' . wa_clean_text($finish);
+        }
+        if (!empty($property['FloorsCount'])) $lines[] = ($use_emojis ? '🏢 ' : '') . '*عدد الأدوار*: ' . wa_clean_text($property['FloorsCount']);
+        if (!empty($property['unit_floor'])) $lines[] = ($use_emojis ? '📍 ' : '') . '*دور الوحدة*: ' . wa_clean_text($property['unit_floor']);
+        $year_raw = $property['year_built'] ?? null;
+        if ($year_raw !== null && trim((string)$year_raw) !== '') {
+            $lines[] = ($use_emojis ? '🏗️ ' : '') . '*سنة البناء*: ' . wa_clean_text($year_raw);
+        }
+    }
+
+    $payment_terms = formatPaymentTerms($property);
+    $has_payment_section =
+        !empty($property['delivery_date']) ||
+        !empty($property['down_payment_percentage']) ||
+        !empty($property['payment_years']) ||
+        (!empty($payment_terms) && $payment_terms !== t('undefined'));
+
+    if ($has_payment_section) {
+        $lines[] = '──────────';
+        $lines[] = ($use_emojis ? '📅 ' : '') . 'السداد والتسليم';
+
+        if (!empty($property['delivery_date'])) {
+            $lines[] = ($use_emojis ? '📦 ' : '') . '*تاريخ التسليم*: ' . date("Y-m-d", strtotime($property['delivery_date']));
+        }
+        if (!empty($property['down_payment_percentage'])) {
+            $lines[] = ($use_emojis ? '💰 ' : '') . '*المقدم*: ' . formatSmartNumber($property['down_payment_percentage'], 2) . '%';
+        }
+        if (!empty($property['payment_years'])) {
+            $years_display = formatSmartNumber($property['payment_years'], (fmod(floatval($property['payment_years']),1) !== 0.0) ? 1 : 0);
+            $lines[] = ($use_emojis ? '⏳ ' : '') . '*فترة السداد*: ' . $years_display . ' ' . t('year');
+        }
+        if (!empty($payment_terms) && $payment_terms !== t('undefined')) {
+            $lines[] = ($use_emojis ? '🧾 ' : '') . '*تفاصيل السداد*: ' . $payment_terms;
+        }
+    }
+
+    if (!empty($property['company_name']) && $listing_type === 'Primary') {
+        $lines[] = ($use_emojis ? '🏢 ' : '') . '*الشركة*: ' . wa_clean_text($property['company_name']);
+    }
+
+    return implode("\n", $lines);
+}
+
+$details_text = build_property_details_message($property, $types_display, true);
+$details_text_plain = build_property_details_message($property, $types_display, false);
+$whatsapp_details_link = 'https://wa.me/?text=' . rawurlencode($details_text);
+$whatsapp_details_plain_link = 'https://wa.me/?text=' . rawurlencode($details_text_plain);
+
+// Map link (precise location)
 $map_link = '';
 if (!empty($property['latitude']) && !empty($property['longitude'])) {
     $lat = $property['latitude'];
     $lng = $property['longitude'];
     $map_link = "https://www.google.com/maps/search/?api=1&query={$lat},{$lng}";
 }
-$wa_lines = [];
-// Keep message minimal: only the site link is shared. If coordinates missing, share the property page URL as fallback.
-$wa_lines[] = "مرحبًا، أشارك موقع هذا العقار:";
+$whatsapp_map_link = '';
 if ($map_link !== '') {
-    $wa_lines[] = $map_link;
-} else {
-    // Build absolute URL to the current property page as a sensible fallback
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $request_base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '\\/');
-    $property_page_url = $scheme . '://' . $host . $request_base . '/view_property.php?id=' . $property_id;
-    $wa_lines[] = $property_page_url;
+    $whatsapp_map_link = 'https://wa.me/?text=' . rawurlencode($map_link);
 }
-$wa_text = implode("\n", $wa_lines);
-$whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
 ?>
 
 <!DOCTYPE html>
@@ -1062,6 +1235,24 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
         .actions .btn i {
             font-size: 0.9rem;
         }
+
+        @media (max-width: 768px) {
+            .actions {
+                width: 100%;
+                flex-wrap: wrap;
+                justify-content: flex-start;
+                gap: 8px;
+            }
+
+            .actions .btn {
+                flex: 1 1 calc(50% - 8px);
+                min-width: 0;
+                justify-content: center;
+                text-align: center;
+                white-space: normal;
+                padding: 10px 12px;
+            }
+        }
         
         .property-description {
             padding: 20px;
@@ -1096,6 +1287,7 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
         .btn-whatsapp .fab.fa-whatsapp {
             font-size: 1.1rem;
         }
+
 
         /* Tooltip using title attribute is sufficient for most devices; enhance with visually hidden text */
         .sr-only {
@@ -1374,10 +1566,26 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
                 <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'manager', 'rental_admin'])): ?>
                 <a href="edit_property.php?id=<?php echo $property_id; ?>" class="btn btn-primary"><i class="fas fa-edit"></i> <?php echo t('edit'); ?></a>
                 <?php endif; ?>
-                <!-- WhatsApp share button -->
-                <a href="<?php echo htmlspecialchars($whatsapp_link); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp" title="مشاركة عبر واتساب" aria-label="مشاركة عبر واتساب">
+                <!-- WhatsApp share buttons -->
+                <a href="<?php echo htmlspecialchars($whatsapp_details_link); ?>" target="_blank" rel="noopener noreferrer"
+                   class="btn btn-whatsapp" title="مشاركة تفاصيل العقار" aria-label="مشاركة تفاصيل العقار"
+                   data-wa-link="<?php echo htmlspecialchars($whatsapp_details_link); ?>"
+                   data-wa-link-plain="<?php echo htmlspecialchars($whatsapp_details_plain_link); ?>">
                     <i class="fab fa-whatsapp"></i>
-                    <span class="sr-only">مشاركة عبر واتساب</span>
+                    مشاركة تفاصيل العقار
+                </a>
+                <?php if (!empty($whatsapp_map_link)): ?>
+                <a href="<?php echo htmlspecialchars($whatsapp_map_link); ?>" target="_blank" rel="noopener noreferrer"
+                   class="btn btn-whatsapp" title="مشاركة الموقع على الخريطة" aria-label="مشاركة الموقع على الخريطة"
+                   onclick="return confirm('أنت على وشك مشاركة الموقع الجغرافي الدقيق للعقار. هل أنت متأكد؟');">
+                    <i class="fab fa-whatsapp"></i>
+                    مشاركة الموقع على الخريطة
+                </a>
+                <?php endif; ?>
+                <a href="download_media.php?id=<?php echo (int)$property_id; ?>" class="btn btn-secondary"
+                   title="تحميل وسائط العقار" aria-label="تحميل وسائط العقار">
+                    <i class="fas fa-download"></i>
+                    تحميل وسائط العقار
                 </a>
                 <?php
                 // Smart Back Button Logic
@@ -2292,6 +2500,21 @@ $whatsapp_link = 'https://wa.me/?text=' . rawurlencode($wa_text);
             setTimeout(() => {
                 try { flash.remove(); } catch(e) {}
             }, 6000);
+        }
+    });
+    </script>
+    <script>
+    // WhatsApp details: use emoji-free text on desktop to avoid encoding issues
+    document.addEventListener('DOMContentLoaded', function() {
+        const btn = document.querySelector('.btn-whatsapp[data-wa-link]');
+        if (!btn) return;
+
+        const isMobile = /Android|iPhone|iPad|iPod|Windows Phone|Mobile/i.test(navigator.userAgent);
+        if (!isMobile) {
+            const plainLink = btn.getAttribute('data-wa-link-plain');
+            if (plainLink) {
+                btn.setAttribute('href', plainLink);
+            }
         }
     });
     </script>
