@@ -319,7 +319,7 @@ if ($employee_id > 0) {
 
 }
 
-$title = (get_lang_code() === 'ar') ? 'تقرير نشاط المستخدم' : 'User activity report';
+$title = (get_lang_code() === 'ar') ? 'سجل نشاط المستخدم' : 'User activity log';
 
 ?>
 <!DOCTYPE html>
@@ -488,7 +488,7 @@ $title = (get_lang_code() === 'ar') ? 'تقرير نشاط المستخدم' : '
         <div class="premium-page-header">
             <div>
                 <h1><?php echo htmlspecialchars($title); ?></h1>
-                <p class="analysis-subtitle"><?php echo (get_lang_code() === 'ar') ? 'ملخص النشاط حسب الفترة.' : 'Activity summary by date range.'; ?></p>
+                <p class="analysis-subtitle"><?php echo (get_lang_code() === 'ar') ? 'سجل زمني حسب الفترة المحددة.' : 'Time-ordered log for the selected range.'; ?></p>
             </div>
             <div class="activity-actions">
                 <a class="btn-premium btn-premium-outline btn-sm" href="manager_activity.php">
@@ -520,38 +520,14 @@ $title = (get_lang_code() === 'ar') ? 'تقرير نشاط المستخدم' : '
                 </div>
                 <div class="premium-filter-buttons">
                     <button class="btn-premium btn-premium-gold btn-sm" type="submit">
-                        <?php echo (get_lang_code() === 'ar') ? 'عرض التقرير' : 'Show report'; ?>
+                        <?php echo (get_lang_code() === 'ar') ? 'عرض السجل' : 'Show log'; ?>
                     </button>
                 </div>
             </form>
         </div>
     <?php if ($employee_id > 0): ?>
-        <div class="analysis-stats">
-            <div class="premium-card premium-stat-card premium-card-gold">
-                <h3><?php echo (get_lang_code() === 'ar') ? 'عدد تسجيلات الدخول' : 'Total logins'; ?></h3>
-                <p class="stat-value"><?php echo (int)($summary['login_count'] ?? 0); ?></p>
-            </div>
-            <div class="premium-card premium-stat-card premium-card-navy">
-                <h3><?php echo (get_lang_code() === 'ar') ? 'عدد زيارات العقارات' : 'Property visits'; ?></h3>
-                <p class="stat-value"><?php echo (int)($summary['visit_count'] ?? 0); ?></p>
-            </div>
-            <div class="premium-card premium-stat-card premium-card-gold">
-                <h3><?php echo (get_lang_code() === 'ar') ? 'عدد الإضافات' : 'Properties added'; ?></h3>
-                <p class="stat-value"><?php echo (int)($summary['added_count'] ?? 0); ?></p>
-            </div>
-            <div class="premium-card premium-stat-card premium-card-navy">
-                <h3><?php echo (get_lang_code() === 'ar') ? 'عدد التعديلات' : 'Properties edited'; ?></h3>
-                <p class="stat-value"><?php echo (int)($summary['edited_count'] ?? 0); ?></p>
-            </div>
-        </div>
-
-        <div class="premium-card analysis-chart">
-            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'النشاط اليومي' : 'Daily activity'; ?></h3>
-            <canvas id="activityChart" height="120"></canvas>
-        </div>
-
         <div class="premium-card">
-            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'عقارات تمت زيارتها' : 'Visited properties'; ?></h3>
+            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'سجل زيارات العقارات' : 'Property visit log'; ?></h3>
             <?php if (empty($summary['property_counts'])): ?>
                 <p class="analysis-table-note"><?php echo (get_lang_code() === 'ar') ? 'لا توجد زيارات مسجلة.' : 'No visits recorded.'; ?></p>
             <?php else: ?>
@@ -583,7 +559,7 @@ $title = (get_lang_code() === 'ar') ? 'تقرير نشاط المستخدم' : '
         </div>
         <!-- Properties added by the user -->
         <div class="premium-card" style="margin-top:12px;">
-            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'عقارات تمت إضافتها' : 'Properties added'; ?></h3>
+            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'سجل إضافة العقارات' : 'Property add log'; ?></h3>
             <?php if (empty($added_props)): ?>
                 <p class="analysis-table-note">-</p>
             <?php else: ?>
@@ -620,7 +596,7 @@ $title = (get_lang_code() === 'ar') ? 'تقرير نشاط المستخدم' : '
 
         <!-- Properties edited by the user -->
         <div class="premium-card" style="margin-top:12px;">
-            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'عقارات تم تعديلها' : 'Properties edited'; ?></h3>
+            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'سجل تعديل العقارات' : 'Property edit log'; ?></h3>
             <?php if (empty($edited_props)): ?>
                 <p class="analysis-table-note">-</p>
             <?php else: ?>
@@ -656,65 +632,9 @@ $title = (get_lang_code() === 'ar') ? 'تقرير نشاط المستخدم' : '
                 </div>
             <?php endif; ?>
         </div>
-
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script>
-            (function(){
-                const labels = <?php echo json_encode($summary['chart']['labels'] ?? []); ?>;
-                const visit = <?php echo json_encode($summary['chart']['visit'] ?? []); ?>;
-                const add = <?php echo json_encode($summary['chart']['add'] ?? []); ?>;
-                const edit = <?php echo json_encode($summary['chart']['edit'] ?? []); ?>;
-                const login = <?php echo json_encode($summary['chart']['login'] ?? []); ?>;
-
-                const ctx = document.getElementById('activityChart').getContext('2d');
-
-                // create subtle gradients matching theme
-                const gradVisit = ctx.createLinearGradient(0,0,0,180);
-                gradVisit.addColorStop(0, 'rgba(37,99,235,0.18)');
-                gradVisit.addColorStop(1, 'rgba(37,99,235,0.02)');
-
-                const gradAdd = ctx.createLinearGradient(0,0,0,180);
-                gradAdd.addColorStop(0, 'rgba(16,185,129,0.16)');
-                gradAdd.addColorStop(1, 'rgba(16,185,129,0.02)');
-
-                const gradEdit = ctx.createLinearGradient(0,0,0,180);
-                gradEdit.addColorStop(0, 'rgba(245,158,11,0.14)');
-                gradEdit.addColorStop(1, 'rgba(245,158,11,0.02)');
-
-                const gradLogin = ctx.createLinearGradient(0,0,0,180);
-                gradLogin.addColorStop(0, 'rgba(107,114,128,0.12)');
-                gradLogin.addColorStop(1, 'rgba(107,114,128,0.02)');
-
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            { label: '<?php echo addslashes((get_lang_code()==='ar')?'زيارات العقار':'Property visits'); ?>', data: visit, borderColor:'#2563eb', backgroundColor:gradVisit, pointBackgroundColor:'#2563eb', tension:0.32, fill:true, pointRadius:2, borderWidth:2 },
-                            { label: '<?php echo addslashes((get_lang_code()==='ar')?'عقارات مضافة':'Properties added'); ?>', data: add, borderColor:'#10b981', backgroundColor:gradAdd, pointBackgroundColor:'#10b981', tension:0.32, fill:true, pointRadius:2, borderWidth:2 },
-                            { label: '<?php echo addslashes((get_lang_code()==='ar')?'عقارات معدلة':'Properties edited'); ?>', data: edit, borderColor:'#f59e0b', backgroundColor:gradEdit, pointBackgroundColor:'#f59e0b', tension:0.32, fill:true, pointRadius:2, borderWidth:2 },
-                            { label: '<?php echo addslashes((get_lang_code()==='ar')?'تسجيلات الدخول':'Logins'); ?>', data: login, borderColor:'#6b7280', backgroundColor:gradLogin, pointBackgroundColor:'#6b7280', tension:0.32, fill:true, pointRadius:2, borderWidth:2 }
-                        ]
-                    },
-                    options: {
-                        responsive:true,
-                        plugins: {
-                            legend: { position: 'bottom', labels: { boxWidth:12, padding:12 } },
-                            tooltip: { mode: 'index', intersect: false }
-                        },
-                        interaction: { mode: 'nearest', axis: 'x', intersect: false },
-                        scales: {
-                            x: { ticks: { maxRotation: 0, autoSkip:true }, grid: { display:false } },
-                            y: { grid: { color: 'rgba(15,23,42,0.04)' }, beginAtZero:true }
-                        }
-                    }
-                });
-            })();
-        </script>
-
     <?php else: ?>
         <div class="premium-card">
-            <p class="analysis-table-note"><?php echo (get_lang_code() === 'ar') ? 'اختر موظف لعرض التقرير.' : 'Select an employee to view the report.'; ?></p>
+            <p class="analysis-table-note"><?php echo (get_lang_code() === 'ar') ? 'اختر موظف لعرض السجل.' : 'Select an employee to view the log.'; ?></p>
         </div>
     <?php endif; ?>
 
