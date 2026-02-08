@@ -408,6 +408,29 @@ $title = (get_lang_code() === 'ar') ? 'تقرير نشاط المستخدم' : '
             font-size: 0.85rem;
             opacity: 0.75;
         }
+        .analysis-page .premium-filter-section {
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            border-radius: var(--radius-lg);
+        }
+        .analysis-page .premium-filter-row {
+            gap: var(--space-lg);
+            align-items: end;
+        }
+        .analysis-page .premium-filter-item label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+        .analysis-page .premium-filter-item select,
+        .analysis-page .premium-filter-item input[type="date"] {
+            min-height: 42px;
+        }
+        .analysis-page .premium-filter-buttons {
+            padding-top: 14px;
+            margin-top: 4px;
+        }
         .analysis-page .premium-table td:nth-child(1),
         .analysis-page .premium-table td:nth-child(3),
         .analysis-page .premium-table td:nth-child(4) {
