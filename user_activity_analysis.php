@@ -372,6 +372,7 @@ $title = (get_lang_code() === 'ar') ? 'تقرير نشاط المستخدم' : '
         .analysis-page .premium-table tbody td {
             padding: 14px 16px;
             line-height: 1.5;
+            vertical-align: middle;
         }
         .analysis-page .premium-table tbody tr {
             height: 54px;
@@ -405,6 +406,25 @@ $title = (get_lang_code() === 'ar') ? 'تقرير نشاط المستخدم' : '
         }
         .analysis-page .analysis-table-note {
             font-size: 0.85rem;
+            opacity: 0.75;
+        }
+        .analysis-page .premium-table td:nth-child(1),
+        .analysis-page .premium-table td:nth-child(3),
+        .analysis-page .premium-table td:nth-child(4) {
+            text-align: end;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .analysis-page .premium-table td:nth-child(2) {
+            text-align: start;
+        }
+        .analysis-page .premium-table td strong {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+        .analysis-page .analysis-table-title {
+            font-size: 1rem;
+            font-weight: 600;
         }
         .analysis-stats {
             display: grid;

@@ -155,6 +155,7 @@ $export_label = t('export');
         .activity-page .premium-table tbody td {
             padding: 14px 16px;
             line-height: 1.5;
+            vertical-align: middle;
         }
         .activity-page .premium-table tbody tr {
             height: 54px;
@@ -241,13 +242,26 @@ $export_label = t('export');
         .activity-table {
             width: 100%;
         }
+        .activity-table td:nth-child(1),
+        .activity-table td:nth-child(2),
+        .activity-table td:nth-child(4) {
+            white-space: nowrap;
+        }
+        .activity-table td:nth-child(2) {
+            font-weight: 600;
+            font-size: 0.98rem;
+        }
+        .activity-table td:nth-child(4),
+        .datetime-display {
+            font-variant-numeric: tabular-nums;
+        }
         .activity-table .user-cell {
             display: flex;
             align-items: center;
             gap: 12px;
         }
         .user-name {
-            font-weight: var(--font-weight-semibold);
+            font-weight: 600;
             color: var(--premium-navy);
         }
         .activity-avatar {
@@ -303,6 +317,7 @@ $export_label = t('export');
         .dt-raw {
             color: var(--text-muted);
             font-size: 0.85rem;
+            opacity: 0.75;
         }
         .activity-table tr.subrow td {
             background: var(--bg-secondary);
