@@ -367,6 +367,14 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
             color: #4b5563;
             text-transform: none;
             letter-spacing: 0;
+            padding: 14px 16px;
+        }
+        .analysis-page .premium-table tbody td {
+            padding: 14px 16px;
+            line-height: 1.5;
+        }
+        .analysis-page .premium-table tbody tr {
+            height: 54px;
         }
         .analysis-page .premium-table tbody tr:hover {
             background: #f9fafb;
@@ -380,6 +388,23 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
         }
         .analysis-page .btn-premium-gold:hover {
             box-shadow: 0 6px 20px rgba(155, 127, 34, 0.28);
+        }
+        .analysis-page .premium-page-header {
+            margin-bottom: 22px;
+            padding-bottom: 18px;
+        }
+        .analysis-page .premium-card {
+            padding: 24px;
+        }
+        .analysis-page .analysis-stats {
+            gap: var(--space-xl);
+            margin: var(--space-xl) 0;
+        }
+        .analysis-page .analysis-table-title {
+            margin-bottom: 14px;
+        }
+        .analysis-page .analysis-table-note {
+            font-size: 0.85rem;
         }
         .analysis-stats {
             display: grid;

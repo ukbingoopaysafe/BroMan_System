@@ -144,6 +144,14 @@ $export_label = t('export');
             color: #4b5563;
             text-transform: none;
             letter-spacing: 0;
+            padding: 14px 16px;
+        }
+        .activity-page .premium-table tbody td {
+            padding: 14px 16px;
+            line-height: 1.5;
+        }
+        .activity-page .premium-table tbody tr {
+            height: 54px;
         }
         .activity-page .premium-table tbody tr:hover {
             background: #f9fafb;
@@ -178,6 +186,36 @@ $export_label = t('export');
         }
         .activity-page .btn-premium-outline:hover {
             color: #6d5a20;
+        }
+        .activity-page .premium-card {
+            padding: 24px;
+        }
+        .activity-page .premium-page-header {
+            margin-bottom: 22px;
+            padding-bottom: 18px;
+        }
+        .activity-page .activity-section-title {
+            margin-bottom: 14px;
+        }
+        .activity-page .activity-avatar {
+            width: 40px;
+            height: 40px;
+        }
+        .activity-page .status-dot {
+            margin-inline-start: 10px;
+        }
+        .activity-page .text-muted,
+        .activity-page .dt-raw {
+            font-size: 0.85rem;
+        }
+        .activity-page .icon-btn {
+            border-color: transparent;
+        }
+        .activity-page .icon-btn:hover {
+            border-color: var(--glass-border);
+        }
+        .activity-page .premium-table thead th i {
+            display: none;
         }
         .activity-actions {
             display: flex;
