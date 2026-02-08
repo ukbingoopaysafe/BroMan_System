@@ -251,6 +251,21 @@ $export_label = t('export');
             font-weight: 600;
             font-size: 0.98rem;
         }
+        .activity-table .user-username {
+            font-size: 0.85rem;
+            opacity: 0.75;
+            white-space: nowrap;
+        }
+        .activity-table .employee-row.is-recent .user-name {
+            font-weight: 700;
+        }
+        .activity-table .employee-row.is-recent .dt-raw {
+            opacity: 0.95;
+            font-weight: 600;
+        }
+        .activity-table .employee-row.is-current-user .user-name {
+            font-weight: 700;
+        }
         .activity-table td:nth-child(4),
         .datetime-display {
             font-variant-numeric: tabular-nums;
@@ -480,18 +495,32 @@ $export_label = t('export');
                 require_once 'session_activity.php';
                 cleanup_old_sessions($conn);
 
+                // Build quick lookup for employee summaries (name/username)
+                $summary_map = [];
+                foreach ($summaries as $s) {
+                    $sid = (int)($s['EmployeeID'] ?? 0);
+                    if ($sid > 0) {
+                        $summary_map[$sid] = $s;
+                    }
+                }
+
+                $current_user_name = isset($_SESSION['full_name']) ? trim((string)$_SESSION['full_name']) : '';
+
                 // Group activities by employee id (preserve order as returned)
                 $byEmployee = [];
                 foreach ($logs as $l) {
                     $eid = $l['employee_id'] ?? 0;
                     if (!isset($byEmployee[$eid])) {
                         $emp_name = 'ID ' . ($eid ?: 'N/A');
-                        if (!empty($eid)) {
-                            foreach ($summaries as $s) { if ((int)$s['EmployeeID'] === (int)$eid) { $emp_name = $s['FullName'] ?: $emp_name; break; } }
+                        $emp_username = '';
+                        if (!empty($eid) && isset($summary_map[(int)$eid])) {
+                            $emp_name = $summary_map[(int)$eid]['FullName'] ?: $emp_name;
+                            $emp_username = $summary_map[(int)$eid]['Username'] ?? '';
                         }
                         $byEmployee[$eid] = [
                             'id' => $eid,
                             'name' => $emp_name,
+                            'username' => $emp_username,
                             'online' => is_user_online($conn, $eid),
                             'activities' => []
                         ];
@@ -521,6 +550,16 @@ $export_label = t('export');
                     $empKey = 'emp_' . ($empId ?: 'x' . rand(1000,9999));
                     $latest = $emp['activities'][0] ?? null;
                     $latest_action = $latest['action'] ?? '';
+                    $latest_time = $latest['created_at'] ?? null;
+                    $is_recent = false;
+                    if (!empty($latest_time)) {
+                        $latest_ts = strtotime($latest_time);
+                        if ($latest_ts && (time() - $latest_ts) <= 900) { $is_recent = true; }
+                    }
+                    $is_current_user = false;
+                    if (!empty($current_user_name) && !empty($emp['name'])) {
+                        $is_current_user = (mb_strtolower($current_user_name) === mb_strtolower($emp['name']));
+                    }
                     $latest_cat_class = 'premium-badge-navy';
                     switch ($latest_action) {
                         case 'property_visit': $latest_cat_class = 'premium-badge-info'; break;
@@ -532,14 +571,14 @@ $export_label = t('export');
                         default: $latest_cat_class = 'premium-badge-navy'; break;
                     }
                 ?>
-                    <tr class="employee-row" data-employee-id="<?php echo htmlspecialchars($empKey); ?>" data-employee="<?php echo htmlspecialchars($emp['name']); ?>">
+                    <tr class="employee-row<?php echo $is_recent ? ' is-recent' : ''; ?><?php echo $is_current_user ? ' is-current-user' : ''; ?>" data-employee-id="<?php echo htmlspecialchars($empKey); ?>" data-employee="<?php echo htmlspecialchars($emp['name']); ?>">
                         <td>
                             <div class="user-cell">
                                 <button class="expand-toggle" data-employee-id="<?php echo htmlspecialchars($empKey); ?>" aria-label="expand">&#x25BA;</button>
                                 <div class="activity-avatar"><?php echo mb_substr($emp['name'],0,1); ?></div>
                                 <div>
                                     <div class="user-name"><?php echo htmlspecialchars($emp['name']); ?> <span class="status-dot <?php echo $emp['online'] ? 'online' : 'offline'; ?>" title="<?php echo $emp['online'] ? t('online') : t('offline'); ?>"></span></div>
-                                    <div class="text-muted user-username">&nbsp;</div>
+                                    <div class="text-muted user-username"><?php echo $emp['username'] ? htmlspecialchars($emp['username']) : '&nbsp;'; ?></div>
                                 </div>
                             </div>
                         </td>
