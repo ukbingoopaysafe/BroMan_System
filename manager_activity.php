@@ -123,71 +123,233 @@ $export_label = t('export');
     <link rel="shortcut icon" href="<?php echo htmlspecialchars($favicon_path); ?>">
     <link rel="apple-touch-icon" href="<?php echo htmlspecialchars($favicon_path); ?>">
     <link rel="stylesheet" href="modern_styles.css">
+    <link rel="stylesheet" href="css/premium_design.css">
     <?php if (get_direction() === 'rtl'): ?><link rel="stylesheet" href="rtl_styles.css"><?php endif; ?>
-    <link rel="stylesheet" href="assets/css/modern_activity_log.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="assets/js/activity_table.js" defer></script>
-    <!-- Premium UI: Google Fonts and compact theme overrides -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root{ --primary:#2563eb; --accent:#10b981; --card:#ffffff; --muted:#6b7280; --bg:#f7fafc }
-        html,body{font-family: Inter, Tajawal, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:var(--bg); color:#0b1220}
-        .container{max-width:1100px;margin:28px auto;padding:0 20px}
-        .activity-toolbar{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:18px}
-        .activity-title{margin:0;font-size:20px;font-weight:700}
-        .activity-sub{margin:4px 0 0;color:var(--muted);font-size:13px}
-        .toolbar-actions{display:flex;align-items:center;gap:10px}
-        .search-group{display:flex;align-items:center;gap:8px;background:#fff;padding:8px 10px;border-radius:10px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
-        .search-group input{border:none;outline:none;width:220px;font-size:14px}
-        .date-group input{padding:8px;border-radius:8px;border:1px solid #e6eef8;background:#fff}
-        .btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:600;background:transparent}
-        .btn-primary{background:var(--primary);color:#fff}
-        .btn-secondary{background:linear-gradient(90deg,#fff,#f8fbff);border:1px solid rgba(37,99,235,0.08);color:var(--primary)}
-        .card{background:var(--card);Padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(15,23,42,0.06);min-width:160px}
-        .table-wrap{overflow-x:auto;border-radius:10px;background:linear-gradient(180deg, #fff, #fbfdff);padding:12px}
-        .activity-table{width:100%;border-collapse:collapse;font-size:14px}
-        .activity-table thead th{background:transparent;color:var(--muted);text-align:left;padding:12px;border-bottom:1px solid #eef2f7}
-        .activity-table td{padding:12px;border-bottom:1px dashed #f1f5f9;vertical-align:middle}
-        .avatar.small-avatar{width:34px;height:34px;border-radius:8px;background:#eef2ff;color:var(--primary);display:inline-flex;align-items:center;justify-content:center;font-weight:700}
-        .status-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-left:8px}
-        .status-dot.online{background:#10b981}
-        .status-dot.offline{background:#ef4444}
-        .tag{display:inline-block;padding:6px 10px;border-radius:16px;font-size:12px;color:#fff}
-        .tag-blue{background:#2563eb}
-        .tag-green{background:#10b981}
-        .tag-orange{background:#f59e0b}
-        .tag-teal{background:#06b6d4}
-        .tag-red{background:#dc3545}
-        .tag-gray{background:#6b7280}
-        .icon-btn{background:transparent;border:0;padding:6px;border-radius:8px;cursor:pointer}
-        .expand-toggle{background:transparent;border:0;font-size:14px;margin-right:8px}
-        .small{color:var(--muted);font-size:13px}
-        /* RTL adjustments */
-        html[dir="rtl"] .activity-toolbar{direction:rtl}
-        html[dir="rtl"] .search-group input{direction:rtl}
-        html[dir="rtl"] .activity-table thead th, html[dir="rtl"] .activity-table td{text-align:right}
-        @media (max-width:820px){ .activity-toolbar{flex-direction:column;align-items:flex-start} .search-group input{width:140px} }
+        .premium-container.activity-page {
+            max-width: 1400px;
+        }
+        .activity-page {
+            --premium-navy: #0b1b3a;
+            --premium-gold: #a88d2b;
+            --premium-gold-light: rgba(168, 141, 43, 0.12);
+            --glass-bg-strong: rgba(255, 255, 255, 0.92);
+            --bg-secondary: #f6f7f9;
+            --text-muted: #6f7a86;
+        }
+        .activity-page .premium-table thead th {
+            background: #f1f3f6;
+            color: #4b5563;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .activity-page .premium-table tbody tr:hover {
+            background: #f9fafb;
+        }
+        .activity-page .premium-badge-info {
+            background: #e8eef6;
+            color: #34506f;
+        }
+        .activity-page .premium-badge-success {
+            background: #e7f3ee;
+            color: #1b5e3b;
+        }
+        .activity-page .premium-badge-warning {
+            background: #f6efe3;
+            color: #7a5a1c;
+        }
+        .activity-page .premium-badge-danger {
+            background: #f5e9e9;
+            color: #7a2d2d;
+        }
+        .activity-page .premium-badge-gold {
+            background: #f3efe4;
+            color: #6d5a20;
+        }
+        .activity-page .premium-badge-navy {
+            background: #e8edf4;
+            color: #2f3f57;
+        }
+        .activity-page .btn-premium-outline,
+        .activity-page .btn-premium-ghost {
+            color: #30415c;
+        }
+        .activity-page .btn-premium-outline:hover {
+            color: #6d5a20;
+        }
+        .activity-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .activity-subtitle {
+            margin: 6px 0 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .activity-section-title {
+            margin: 0 0 var(--space-md);
+            font-weight: var(--font-weight-semibold);
+            color: var(--premium-navy);
+        }
+        .activity-table {
+            width: 100%;
+        }
+        .activity-table .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-name {
+            font-weight: var(--font-weight-semibold);
+            color: var(--premium-navy);
+        }
+        .activity-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius-sm);
+            background: var(--premium-gold-light);
+            color: var(--premium-navy);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: var(--font-weight-semibold);
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-inline-start: 8px;
+            box-shadow: 0 0 0 4px rgba(0,0,0,0.04);
+        }
+        .status-dot.online { background: var(--status-success); }
+        .status-dot.offline { background: var(--status-danger); }
+        .icon-btn {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            padding: 6px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--premium-navy);
+        }
+        .icon-btn:hover {
+            border-color: var(--premium-gold);
+            color: var(--premium-gold);
+        }
+        .expand-toggle {
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+        .expand-toggle.expanded {
+            color: var(--premium-gold);
+            border-color: var(--premium-gold);
+        }
+        .datetime-display {
+            font-weight: var(--font-weight-semibold);
+            color: var(--premium-navy);
+        }
+        .dt-raw {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        .activity-table tr.subrow td {
+            background: var(--bg-secondary);
+        }
+        .premium-table thead th,
+        .premium-table tbody td {
+            text-align: left;
+        }
+        html[dir="rtl"] .premium-table thead th,
+        html[dir="rtl"] .premium-table tbody td {
+            text-align: right;
+        }
+        #detailsModal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            background: rgba(2, 13, 36, 0.45);
+            z-index: 9999;
+        }
+        #detailsModal.open {
+            display: flex;
+        }
+        #detailsModal .modal-card {
+            background: var(--glass-bg-strong);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-xl);
+            max-width: 860px;
+            width: 100%;
+            max-height: 80vh;
+            overflow: auto;
+            padding: var(--space-lg);
+        }
+        #detailsModal .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: var(--space-md);
+        }
+        #detailsModal .modal-title {
+            font-weight: var(--font-weight-semibold);
+            color: var(--premium-navy);
+        }
+        #detailsModal .modal-close {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+        }
+        #detailsModal .modal-body {
+            white-space: pre-wrap;
+            color: var(--text-secondary);
+        }
+        @media (max-width: 900px) {
+            .premium-page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
     </style>
 </head>
-<body>
+<body class="premium-theme">
 <?php require_once __DIR__ . '/navbar.php'; ?>
 
-<div class="container">
-    <div class="activity-toolbar">
+<div class="premium-container activity-page">
+    <div class="premium-page-header">
         <div>
-            <h1 class="activity-title"><?php echo htmlspecialchars($title); ?></h1>
-            <p class="activity-sub"><?php echo htmlspecialchars($subtitle); ?></p>
+            <h1><?php echo htmlspecialchars($title); ?></h1>
+            <p class="activity-subtitle"><?php echo htmlspecialchars($subtitle); ?></p>
         </div>
-            <div class="toolbar-actions">
-            <!-- Search and date filters removed per request -->
+        <div class="activity-actions">
             <?php // Link to the new per-user analytics page ?>
-            <button class="btn btn-secondary" onclick="location.href='user_activity_analysis.php';"><?php echo (get_lang_code() === 'ar') ? 'تحليل النشاط' : 'Analyze activity'; ?></button>
-            <button class="btn" onclick="location.reload();"><?php echo htmlspecialchars($refresh_label); ?></button>
+            <button class="btn-premium btn-premium-outline btn-sm" onclick="location.href='user_activity_analysis.php';">
+                <i class="fa fa-chart-line"></i>
+                <?php echo (get_lang_code() === 'ar') ? 'تحليل النشاط' : 'Analyze activity'; ?>
+            </button>
+            <button class="btn-premium btn-premium-ghost btn-sm" onclick="location.reload();">
+                <i class="fa fa-rotate"></i>
+                <?php echo htmlspecialchars($refresh_label); ?>
+            </button>
         </div>
     </div>
 
-    <div class="card">
-        <h3 class="small"><?php echo htmlspecialchars(t('activity_logs')); ?></h3>
+    <div class="premium-card premium-card-navy">
+        <h3 class="activity-section-title"><?php echo htmlspecialchars(t('activity_logs')); ?></h3>
 
         <?php
             // Load all logs (recent). We'll group by employee and show expandable rows per user.
@@ -280,10 +442,10 @@ $export_label = t('export');
         ?>
 
         <?php if (empty($logs)): ?>
-            <p class="small"><?php echo htmlspecialchars(t('no_activity_recorded')); ?></p>
+            <p class="text-muted"><?php echo htmlspecialchars(t('no_activity_recorded')); ?></p>
         <?php else: ?>
-            <div class="table-wrap">
-            <table id="activityTable" class="activity-table">
+            <div class="premium-table-container">
+            <table id="activityTable" class="premium-table activity-table">
                 <thead>
                     <tr>
                         <th class="col-user"><i class="fa fa-user"></i> <?php echo htmlspecialchars(t('user')); ?></th>
@@ -300,51 +462,51 @@ $export_label = t('export');
                     $empKey = 'emp_' . ($empId ?: 'x' . rand(1000,9999));
                     $latest = $emp['activities'][0] ?? null;
                     $latest_action = $latest['action'] ?? '';
-                    $latest_cat_class = 'tag-gray';
+                    $latest_cat_class = 'premium-badge-navy';
                     switch ($latest_action) {
-                        case 'property_visit': $latest_cat_class = 'tag-blue'; break;
-                        case 'add_property': $latest_cat_class = 'tag-green'; break;
-                        case 'edit_property': $latest_cat_class = 'tag-orange'; break;
-                        case 'delete_property': $latest_cat_class = 'tag-red'; break;
-                        case 'login': $latest_cat_class = 'tag-teal'; break;
-                        case 'logout': $latest_cat_class = 'tag-gray'; break;
-                        default: $latest_cat_class = 'tag-gray'; break;
+                        case 'property_visit': $latest_cat_class = 'premium-badge-info'; break;
+                        case 'add_property': $latest_cat_class = 'premium-badge-success'; break;
+                        case 'edit_property': $latest_cat_class = 'premium-badge-warning'; break;
+                        case 'delete_property': $latest_cat_class = 'premium-badge-danger'; break;
+                        case 'login': $latest_cat_class = 'premium-badge-gold'; break;
+                        case 'logout': $latest_cat_class = 'premium-badge-navy'; break;
+                        default: $latest_cat_class = 'premium-badge-navy'; break;
                     }
                 ?>
                     <tr class="employee-row" data-employee-id="<?php echo htmlspecialchars($empKey); ?>" data-employee="<?php echo htmlspecialchars($emp['name']); ?>">
                         <td>
-                            <div class="user-inline">
+                            <div class="user-cell">
                                 <button class="expand-toggle" data-employee-id="<?php echo htmlspecialchars($empKey); ?>" aria-label="expand">&#x25BA;</button>
-                                <div class="avatar small-avatar"><?php echo mb_substr($emp['name'],0,1); ?></div>
+                                <div class="activity-avatar"><?php echo mb_substr($emp['name'],0,1); ?></div>
                                 <div>
                                     <div class="user-name"><?php echo htmlspecialchars($emp['name']); ?> <span class="status-dot <?php echo $emp['online'] ? 'online' : 'offline'; ?>" title="<?php echo $emp['online'] ? t('online') : t('offline'); ?>"></span></div>
-                                    <div class="small user-username">&nbsp;</div>
+                                    <div class="text-muted user-username">&nbsp;</div>
                                 </div>
                             </div>
                         </td>
                         <td><?php echo $latest ? htmlspecialchars(t($latest['action'])) : '-'; ?></td>
-                        <td><?php if($latest): ?><span class="tag <?php echo $latest_cat_class; ?>"><?php echo htmlspecialchars(t($latest['action'])); ?></span><?php else: ?>-<?php endif; ?></td>
-                        <td><?php if($latest): ?><div class="datetime-display"><?php echo date('d M Y، h:i A', strtotime($latest['created_at'])); ?></div><div class="small"><?php echo htmlspecialchars(time_ago($latest['created_at'])); ?></div><?php else: ?>-<?php endif; ?></td>
+                        <td><?php if($latest): ?><span class="premium-badge <?php echo $latest_cat_class; ?>"><?php echo htmlspecialchars(t($latest['action'])); ?></span><?php else: ?>-<?php endif; ?></td>
+                        <td><?php if($latest): ?><div class="datetime-display"><?php echo date('d M Y، h:i A', strtotime($latest['created_at'])); ?></div><div class="dt-raw"><?php echo htmlspecialchars(time_ago($latest['created_at'])); ?></div><?php else: ?>-<?php endif; ?></td>
                         <td><?php if($latest): ?><button class="icon-btn details-toggle" data-details="<?php echo htmlspecialchars(base64_encode(format_activity_details($latest['action'], $latest['details']))); ?>"><i class="fa fa-eye"></i></button><?php else: ?>-<?php endif; ?></td>
                     </tr>
                     <?php foreach ($emp['activities'] as $act):
                         $action = $act['action'];
-                        $cat_class = 'tag-gray';
+                        $cat_class = 'premium-badge-navy';
                         switch ($action) {
-                            case 'property_visit': $cat_class = 'tag-blue'; break;
-                            case 'add_property': $cat_class = 'tag-green'; break;
-                            case 'edit_property': $cat_class = 'tag-orange'; break;
-                            case 'delete_property': $cat_class = 'tag-red'; break;
-                            case 'login': $cat_class = 'tag-teal'; break;
-                            case 'logout': $cat_class = 'tag-gray'; break;
-                            default: $cat_class = 'tag-gray'; break;
+                            case 'property_visit': $cat_class = 'premium-badge-info'; break;
+                            case 'add_property': $cat_class = 'premium-badge-success'; break;
+                            case 'edit_property': $cat_class = 'premium-badge-warning'; break;
+                            case 'delete_property': $cat_class = 'premium-badge-danger'; break;
+                            case 'login': $cat_class = 'premium-badge-gold'; break;
+                            case 'logout': $cat_class = 'premium-badge-navy'; break;
+                            default: $cat_class = 'premium-badge-navy'; break;
                         }
                     ?>
                     <tr class="subrow" data-parent="<?php echo htmlspecialchars($empKey); ?>" style="display:none" data-action="<?php echo htmlspecialchars($action); ?>" data-datetime="<?php echo htmlspecialchars($act['created_at']); ?>">
                         <td></td>
                         <td><?php echo htmlspecialchars(t($action)); ?></td>
-                        <td><span class="tag <?php echo $cat_class; ?>"><?php echo htmlspecialchars(t($action)); ?></span></td>
-                        <td><div class="datetime-display"><?php echo date('d M Y، h:i A', strtotime($act['created_at'])); ?></div><div class="small dt-raw"><?php echo htmlspecialchars($act['created_at']); ?></div></td>
+                        <td><span class="premium-badge <?php echo $cat_class; ?>"><?php echo htmlspecialchars(t($action)); ?></span></td>
+                        <td><div class="datetime-display"><?php echo date('d M Y، h:i A', strtotime($act['created_at'])); ?></div><div class="dt-raw"><?php echo htmlspecialchars($act['created_at']); ?></div></td>
                         <td><button class="icon-btn details-toggle" data-details="<?php echo htmlspecialchars(base64_encode(format_activity_details($act['action'], $act['details']))); ?>"><i class="fa fa-eye"></i></button></td>
                     </tr>
                     <?php endforeach; ?>

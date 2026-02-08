@@ -338,194 +338,254 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
     <link rel="shortcut icon" href="<?php echo htmlspecialchars($favicon_path); ?>">
     <link rel="apple-touch-icon" href="<?php echo htmlspecialchars($favicon_path); ?>">
     <link rel="stylesheet" href="modern_styles.css">
+    <link rel="stylesheet" href="css/premium_design.css">
     <?php if (get_direction() === 'rtl'): ?><link rel="stylesheet" href="rtl_styles.css"><?php endif; ?>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* Premium page styles */
-        :root{ --bg:#f6f8fb; --card:#ffffff; --muted:#6b7280; --primary:#2563eb; --accent:#10b981 }
-        html,body{height:100%;background:var(--bg);font-family:Inter, Tajawal, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial}
-        .container{max-width:1100px;margin:28px auto;padding:20px}
-        .page-hero{background:linear-gradient(90deg, rgba(37,99,235,0.12), rgba(16,185,129,0.08));padding:18px;border-radius:12px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}
-        .page-hero h1{margin:0;font-size:20px;font-weight:700;color:#0f172a}
-        .page-hero p{margin:0;color:var(--muted);font-size:13px}
-
-        .filters .card{padding:14px;background:transparent;box-shadow:none}
-        form select, form input[type=date]{padding:8px 10px;border-radius:8px;border:1px solid #e6eef8;background:#fff;margin-left:8px;margin-right:8px}
-        form label{font-size:13px;color:var(--muted);margin-right:6px}
-        .btn{display:inline-block;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
-        .btn-primary{background:var(--primary);color:#fff}
-        .btn-secondary{background:transparent;color:var(--primary);border:1px solid rgba(37,99,235,0.12);text-decoration:none;padding:8px 10px;border-radius:8px}
-
-        .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:14px 0}
-        .card{background:var(--card);Padding:18px;border-radius:12px;box-shadow:0 6px 24px rgba(15,23,42,0.06);min-width:160px;transition:transform .12s ease}
-        .card:hover{transform:translateY(-4px)}
-        .card h3{margin:0 0 8px 0;font-size:13px;color:var(--muted);font-weight:600}
-        .card p{margin:0;font-size:22px;font-weight:700;color:#0b1220}
-
-        .table-wrap{overflow-x:auto;border-radius:10px;background:linear-gradient(180deg, #fff, #fbfdff);padding:12px}
-        .small-table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
-        .small-table thead th{background:transparent;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid #eef2f7}
-        .small-table td{padding:12px;border-bottom:1px dashed #f1f5f9}
-        .small-table tbody tr:hover td{background:rgba(37,99,235,0.03)}
-        .small-table a{color:var(--primary);text-decoration:none}
-        .small-table a:hover{text-decoration:underline}
-
-        @media (max-width:640px){ .page-hero{flex-direction:column;align-items:flex-start} form label, form select, form input[type=date]{display:block;margin:6px 0} }
-
-        /* RTL fixes: ensure table headers and cells align to the right in Arabic/RTL mode */
-        html[dir="rtl"] .small-table thead th,
-        html[dir="rtl"] .small-table td {
+        .premium-container.analysis-page {
+            max-width: 1400px;
+        }
+        .analysis-subtitle {
+            margin: 6px 0 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .activity-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .analysis-page {
+            --premium-navy: #0b1b3a;
+            --premium-gold: #a88d2b;
+            --premium-gold-light: rgba(168, 141, 43, 0.12);
+            --glass-bg-strong: rgba(255, 255, 255, 0.92);
+            --bg-secondary: #f6f7f9;
+            --text-muted: #6f7a86;
+        }
+        .analysis-page .premium-table thead th {
+            background: #f1f3f6;
+            color: #4b5563;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .analysis-page .premium-table tbody tr:hover {
+            background: #f9fafb;
+        }
+        .analysis-page .premium-stat-card:hover .stat-value {
+            color: var(--premium-navy);
+        }
+        .analysis-page .btn-premium-gold {
+            background: linear-gradient(135deg, #b79a3a 0%, #9b7f22 100%);
+            box-shadow: 0 4px 16px rgba(155, 127, 34, 0.22);
+        }
+        .analysis-page .btn-premium-gold:hover {
+            box-shadow: 0 6px 20px rgba(155, 127, 34, 0.28);
+        }
+        .analysis-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-lg);
+            margin: var(--space-lg) 0;
+        }
+        .analysis-chart {
+            margin-bottom: var(--space-lg);
+        }
+        .analysis-table-title {
+            margin: 0 0 var(--space-md);
+            font-weight: var(--font-weight-semibold);
+            color: var(--premium-navy);
+        }
+        .premium-table thead th,
+        .premium-table tbody td {
+            text-align: left;
+        }
+        html[dir="rtl"] .premium-table thead th,
+        html[dir="rtl"] .premium-table tbody td {
             text-align: right;
         }
-        /* Use logical padding to avoid left/right mismatches in RTL */
-        html[dir="rtl"] .small-table thead th { padding-inline-start:12px; padding-inline-end:10px }
-        html[dir="rtl"] .small-table td { padding-inline-start:12px; padding-inline-end:10px }
+        .analysis-table-note {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        @media (max-width: 640px) {
+            .premium-filter-row {
+                flex-direction: column;
+            }
+        }
     </style>
     </head>
-    <body>
+    <body class="premium-theme">
     <?php include __DIR__ . '/navbar.php'; ?>
-    <div class="container">
-        <h1><?php echo htmlspecialchars($title); ?></h1>
-
-    <div class="card" style="margin-bottom:12px;">
-        <form method="get" action="user_activity_analysis.php">
-            <label for="employee_id"><?php echo (get_lang_code() === 'ar') ? 'اختر موظف' : 'Select employee'; ?></label>
-            <select name="employee_id" id="employee_id">
-                <option value="0"><?php echo (get_lang_code() === 'ar') ? '--- اختر ---' : '--- choose ---'; ?></option>
-                <?php foreach ($employees as $e): ?>
-                    <option value="<?php echo (int)$e['EmployeeID']; ?>" <?php echo ($employee_id == $e['EmployeeID']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($e['FullName'] ?: $e['Username']); ?></option>
-                <?php endforeach; ?>
-            </select>
-            <label for="fromDate"><?php echo (get_lang_code() === 'ar') ? 'من' : 'From'; ?></label>
-            <input type="date" name="fromDate" id="fromDate" value="<?php echo htmlspecialchars($fromDate); ?>" />
-            <label for="toDate"><?php echo (get_lang_code() === 'ar') ? 'إلى' : 'To'; ?></label>
-            <input type="date" name="toDate" id="toDate" value="<?php echo htmlspecialchars($toDate); ?>" />
-            <button class="btn btn-primary" type="submit"><?php echo (get_lang_code() === 'ar') ? 'عرض التحليل' : 'Show analysis'; ?></button>
-        </form>
-    </div>
-    <?php if ($employee_id > 0): ?>
-        <div class="stats">
-            <div class="card">
-                <h3><?php echo (get_lang_code() === 'ar') ? 'عدد تسجيلات الدخول' : 'Total logins'; ?></h3>
-                <p><?php echo (int)($summary['login_count'] ?? 0); ?></p>
+    <div class="premium-container analysis-page">
+        <div class="premium-page-header">
+            <div>
+                <h1><?php echo htmlspecialchars($title); ?></h1>
+                <p class="analysis-subtitle"><?php echo (get_lang_code() === 'ar') ? 'لوحة ملخصة لأداء المستخدم مع التفاصيل الزمنية.' : 'A focused dashboard with user performance and timeline insights.'; ?></p>
             </div>
-            <div class="card">
-                <h3><?php echo (get_lang_code() === 'ar') ? 'عدد زيارات العقارات' : 'Property visits'; ?></h3>
-                <p><?php echo (int)($summary['visit_count'] ?? 0); ?></p>
-            </div>
-            <div class="card">
-                <h3><?php echo (get_lang_code() === 'ar') ? 'عدد الإضافات' : 'Properties added'; ?></h3>
-                <p><?php echo (int)($summary['added_count'] ?? 0); ?></p>
-            </div>
-            <div class="card">
-                <h3><?php echo (get_lang_code() === 'ar') ? 'عدد التعديلات' : 'Properties edited'; ?></h3>
-                <p><?php echo (int)($summary['edited_count'] ?? 0); ?></p>
+            <div class="activity-actions">
+                <a class="btn-premium btn-premium-outline btn-sm" href="manager_activity.php">
+                    <?php echo (get_lang_code() === 'ar') ? 'سجل النشاط' : 'Activity log'; ?>
+                </a>
             </div>
         </div>
 
-        <div class="card" style="margin-bottom:12px;">
-            <h3><?php echo (get_lang_code() === 'ar') ? 'الاتجاه اليومي للأنشطة' : 'Daily activity trends'; ?></h3>
+        <div class="premium-filter-section">
+            <form method="get" action="user_activity_analysis.php">
+                <div class="premium-filter-row">
+                    <div class="premium-filter-item">
+                        <label for="employee_id"><?php echo (get_lang_code() === 'ar') ? 'اختر موظف' : 'Select employee'; ?></label>
+                        <select class="premium-select" name="employee_id" id="employee_id">
+                            <option value="0"><?php echo (get_lang_code() === 'ar') ? '--- اختر ---' : '--- choose ---'; ?></option>
+                            <?php foreach ($employees as $e): ?>
+                                <option value="<?php echo (int)$e['EmployeeID']; ?>" <?php echo ($employee_id == $e['EmployeeID']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($e['FullName'] ?: $e['Username']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="premium-filter-item">
+                        <label for="fromDate"><?php echo (get_lang_code() === 'ar') ? 'من' : 'From'; ?></label>
+                        <input class="premium-input" type="date" name="fromDate" id="fromDate" value="<?php echo htmlspecialchars($fromDate); ?>" />
+                    </div>
+                    <div class="premium-filter-item">
+                        <label for="toDate"><?php echo (get_lang_code() === 'ar') ? 'إلى' : 'To'; ?></label>
+                        <input class="premium-input" type="date" name="toDate" id="toDate" value="<?php echo htmlspecialchars($toDate); ?>" />
+                    </div>
+                </div>
+                <div class="premium-filter-buttons">
+                    <button class="btn-premium btn-premium-gold btn-sm" type="submit">
+                        <?php echo (get_lang_code() === 'ar') ? 'عرض التحليل' : 'Show analysis'; ?>
+                    </button>
+                </div>
+            </form>
+        </div>
+    <?php if ($employee_id > 0): ?>
+        <div class="analysis-stats">
+            <div class="premium-card premium-stat-card premium-card-gold">
+                <h3><?php echo (get_lang_code() === 'ar') ? 'عدد تسجيلات الدخول' : 'Total logins'; ?></h3>
+                <p class="stat-value"><?php echo (int)($summary['login_count'] ?? 0); ?></p>
+            </div>
+            <div class="premium-card premium-stat-card premium-card-navy">
+                <h3><?php echo (get_lang_code() === 'ar') ? 'عدد زيارات العقارات' : 'Property visits'; ?></h3>
+                <p class="stat-value"><?php echo (int)($summary['visit_count'] ?? 0); ?></p>
+            </div>
+            <div class="premium-card premium-stat-card premium-card-gold">
+                <h3><?php echo (get_lang_code() === 'ar') ? 'عدد الإضافات' : 'Properties added'; ?></h3>
+                <p class="stat-value"><?php echo (int)($summary['added_count'] ?? 0); ?></p>
+            </div>
+            <div class="premium-card premium-stat-card premium-card-navy">
+                <h3><?php echo (get_lang_code() === 'ar') ? 'عدد التعديلات' : 'Properties edited'; ?></h3>
+                <p class="stat-value"><?php echo (int)($summary['edited_count'] ?? 0); ?></p>
+            </div>
+        </div>
+
+        <div class="premium-card analysis-chart">
+            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'الاتجاه اليومي للأنشطة' : 'Daily activity trends'; ?></h3>
             <canvas id="activityChart" height="120"></canvas>
         </div>
 
-        <div class="card">
-            <h3><?php echo (get_lang_code() === 'ar') ? 'قائمة العقارات التي زارها الموظف' : 'List of visited properties'; ?></h3>
+        <div class="premium-card">
+            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'قائمة العقارات التي زارها الموظف' : 'List of visited properties'; ?></h3>
             <?php if (empty($summary['property_counts'])): ?>
-                <p class="small"><?php echo (get_lang_code() === 'ar') ? 'لا توجد زيارات مسجلة لهذا الموظف.' : 'No property visits recorded for this user.'; ?></p>
+                <p class="analysis-table-note"><?php echo (get_lang_code() === 'ar') ? 'لا توجد زيارات مسجلة لهذا الموظف.' : 'No property visits recorded for this user.'; ?></p>
             <?php else: ?>
-                <table class="small-table">
-                    <thead>
-                        <tr><th><?php echo (get_lang_code() === 'ar') ? 'رقم العقار' : 'Property ID'; ?></th><th><?php echo (get_lang_code() === 'ar') ? 'العنوان' : 'Title'; ?></th><th><?php echo (get_lang_code() === 'ar') ? 'عدد الزيارات' : 'Visits'; ?></th></tr>
-                    </thead>
-                    <tbody>
-                    <?php foreach ($summary['property_counts'] as $pid => $info): 
-                        $lookup = $titles_map[$pid] ?? null;
-                        $display_title = $lookup['title'] ?? ($info['title'] ?? '-'); 
-                        $fid = $lookup['friendly_id'] ?? $pid;
-                        $ftype = $lookup['type'] ?? '';
-                    ?>
-                        <tr>
-                            <td>
-                                <strong>#<?php echo htmlspecialchars($fid); ?></strong>
-                                <?php if($ftype): ?><span style="font-size:0.85em;color:#666"> (<?php echo htmlspecialchars($ftype); ?>)</span><?php endif; ?>
-                            </td>
-                            <td><?php if ((int)$pid > 0) { echo '<a href="view_property.php?id=' . (int)$pid . '" target="_blank" rel="noopener">' . htmlspecialchars($display_title) . '</a>'; } else { echo htmlspecialchars($display_title); } ?></td>
-                            <td><?php echo (int)$info['count']; ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
+                <div class="premium-table-container">
+                    <table class="premium-table">
+                        <thead>
+                            <tr><th><?php echo (get_lang_code() === 'ar') ? 'رقم العقار' : 'Property ID'; ?></th><th><?php echo (get_lang_code() === 'ar') ? 'العنوان' : 'Title'; ?></th><th><?php echo (get_lang_code() === 'ar') ? 'عدد الزيارات' : 'Visits'; ?></th></tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($summary['property_counts'] as $pid => $info): 
+                            $lookup = $titles_map[$pid] ?? null;
+                            $display_title = $lookup['title'] ?? ($info['title'] ?? '-'); 
+                            $fid = $lookup['friendly_id'] ?? $pid;
+                            $ftype = $lookup['type'] ?? '';
+                        ?>
+                            <tr>
+                                <td>
+                                    <strong>#<?php echo htmlspecialchars($fid); ?></strong>
+                                    <?php if($ftype): ?><span class="analysis-table-note"> (<?php echo htmlspecialchars($ftype); ?>)</span><?php endif; ?>
+                                </td>
+                                <td><?php if ((int)$pid > 0) { echo '<a href="view_property.php?id=' . (int)$pid . '" target="_blank" rel="noopener">' . htmlspecialchars($display_title) . '</a>'; } else { echo htmlspecialchars($display_title); } ?></td>
+                                <td><?php echo (int)$info['count']; ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php endif; ?>
         </div>
         <!-- Properties added by the user -->
-        <div class="card" style="margin-top:12px;">
-            <h3><?php echo (get_lang_code() === 'ar') ? 'العقارات التي أضافها المستخدم' : 'Properties added by user'; ?></h3>
+        <div class="premium-card" style="margin-top:12px;">
+            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'العقارات التي أضافها المستخدم' : 'Properties added by user'; ?></h3>
             <?php if (empty($added_props)): ?>
-                <p class="small">-</p>
+                <p class="analysis-table-note">-</p>
             <?php else: ?>
-                <table class="small-table">
-                    <thead>
-                        <tr>
-                            <th><?php echo (get_lang_code() === 'ar') ? 'رقم العقار' : 'Property ID'; ?></th>
-                            <th><?php echo (get_lang_code() === 'ar') ? 'اسم العقار' : 'Title'; ?></th>
-                            <th><?php echo (get_lang_code() === 'ar') ? 'تاريخ ووقت الإضافة' : 'Added at'; ?></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php foreach ($added_props as $pid => $info): 
-                        $lookup = $titles_map[$pid] ?? null;
-                        $display_title = $lookup['title'] ?? ($info['title'] ?? '-'); 
-                        $fid = $lookup['friendly_id'] ?? $pid;
-                        $ftype = $lookup['type'] ?? '';
-                    ?>
-                        <tr>
-                            <td>
-                                <strong>#<?php echo htmlspecialchars($fid); ?></strong>
-                                <?php if($ftype): ?><span style="font-size:0.85em;color:#666"> (<?php echo htmlspecialchars($ftype); ?>)</span><?php endif; ?>
-                            </td>
-                            <td><?php if ((int)$pid > 0) { echo '<a href="view_property.php?id=' . (int)$pid . '" target="_blank" rel="noopener">' . htmlspecialchars($display_title) . '</a>'; } else { echo htmlspecialchars($display_title); } ?></td>
-                            <td><?php echo htmlspecialchars($info['added_at'] ? date('Y-m-d H:i:s', strtotime($info['added_at'])) : '-'); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
+                <div class="premium-table-container">
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th><?php echo (get_lang_code() === 'ar') ? 'رقم العقار' : 'Property ID'; ?></th>
+                                <th><?php echo (get_lang_code() === 'ar') ? 'اسم العقار' : 'Title'; ?></th>
+                                <th><?php echo (get_lang_code() === 'ar') ? 'تاريخ ووقت الإضافة' : 'Added at'; ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($added_props as $pid => $info): 
+                            $lookup = $titles_map[$pid] ?? null;
+                            $display_title = $lookup['title'] ?? ($info['title'] ?? '-'); 
+                            $fid = $lookup['friendly_id'] ?? $pid;
+                            $ftype = $lookup['type'] ?? '';
+                        ?>
+                            <tr>
+                                <td>
+                                    <strong>#<?php echo htmlspecialchars($fid); ?></strong>
+                                    <?php if($ftype): ?><span class="analysis-table-note"> (<?php echo htmlspecialchars($ftype); ?>)</span><?php endif; ?>
+                                </td>
+                                <td><?php if ((int)$pid > 0) { echo '<a href="view_property.php?id=' . (int)$pid . '" target="_blank" rel="noopener">' . htmlspecialchars($display_title) . '</a>'; } else { echo htmlspecialchars($display_title); } ?></td>
+                                <td><?php echo htmlspecialchars($info['added_at'] ? date('Y-m-d H:i:s', strtotime($info['added_at'])) : '-'); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php endif; ?>
         </div>
 
         <!-- Properties edited by the user -->
-        <div class="card" style="margin-top:12px;">
-            <h3><?php echo (get_lang_code() === 'ar') ? 'العقارات التي قام بتعديلها المستخدم' : 'Properties edited by user'; ?></h3>
+        <div class="premium-card" style="margin-top:12px;">
+            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'العقارات التي قام بتعديلها المستخدم' : 'Properties edited by user'; ?></h3>
             <?php if (empty($edited_props)): ?>
-                <p class="small">-</p>
+                <p class="analysis-table-note">-</p>
             <?php else: ?>
-                <table class="small-table">
-                    <thead>
-                        <tr>
-                            <th><?php echo (get_lang_code() === 'ar') ? 'رقم العقار' : 'Property ID'; ?></th>
-                            <th><?php echo (get_lang_code() === 'ar') ? 'اسم العقار' : 'Title'; ?></th>
-                            <th><?php echo (get_lang_code() === 'ar') ? 'عدد التعديلات' : 'Edit count'; ?></th>
-                            <th><?php echo (get_lang_code() === 'ar') ? 'تاريخ آخر تعديل' : 'Last edited at'; ?></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php foreach ($edited_props as $pid => $info): 
-                        $lookup = $titles_map[$pid] ?? null;
-                        $display_title = $lookup['title'] ?? ($info['title'] ?? '-'); 
-                        $fid = $lookup['friendly_id'] ?? $pid;
-                        $ftype = $lookup['type'] ?? '';
-                    ?>
-                        <tr>
-                            <td>
-                                <strong>#<?php echo htmlspecialchars($fid); ?></strong>
-                                <?php if($ftype): ?><span style="font-size:0.85em;color:#666"> (<?php echo htmlspecialchars($ftype); ?>)</span><?php endif; ?>
-                            </td>
-                            <td><?php if ((int)$pid > 0) { echo '<a href="view_property.php?id=' . (int)$pid . '" target="_blank" rel="noopener">' . htmlspecialchars($display_title) . '</a>'; } else { echo htmlspecialchars($display_title); } ?></td>
-                            <td><?php echo (int)($info['edits'] ?? 0); ?></td>
-                            <td><?php echo htmlspecialchars($info['last_edited'] ? date('Y-m-d H:i:s', strtotime($info['last_edited'])) : '-'); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
+                <div class="premium-table-container">
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th><?php echo (get_lang_code() === 'ar') ? 'رقم العقار' : 'Property ID'; ?></th>
+                                <th><?php echo (get_lang_code() === 'ar') ? 'اسم العقار' : 'Title'; ?></th>
+                                <th><?php echo (get_lang_code() === 'ar') ? 'عدد التعديلات' : 'Edit count'; ?></th>
+                                <th><?php echo (get_lang_code() === 'ar') ? 'تاريخ آخر تعديل' : 'Last edited at'; ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($edited_props as $pid => $info): 
+                            $lookup = $titles_map[$pid] ?? null;
+                            $display_title = $lookup['title'] ?? ($info['title'] ?? '-'); 
+                            $fid = $lookup['friendly_id'] ?? $pid;
+                            $ftype = $lookup['type'] ?? '';
+                        ?>
+                            <tr>
+                                <td>
+                                    <strong>#<?php echo htmlspecialchars($fid); ?></strong>
+                                    <?php if($ftype): ?><span class="analysis-table-note"> (<?php echo htmlspecialchars($ftype); ?>)</span><?php endif; ?>
+                                </td>
+                                <td><?php if ((int)$pid > 0) { echo '<a href="view_property.php?id=' . (int)$pid . '" target="_blank" rel="noopener">' . htmlspecialchars($display_title) . '</a>'; } else { echo htmlspecialchars($display_title); } ?></td>
+                                <td><?php echo (int)($info['edits'] ?? 0); ?></td>
+                                <td><?php echo htmlspecialchars($info['last_edited'] ? date('Y-m-d H:i:s', strtotime($info['last_edited'])) : '-'); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php endif; ?>
         </div>
 
@@ -585,8 +645,8 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
         </script>
 
     <?php else: ?>
-        <div class="card small">
-            <p><?php echo (get_lang_code() === 'ar') ? 'اختر موظف لعرض تحليلات النشاط الخاصة به.' : 'Select an employee to view activity analysis.'; ?></p>
+        <div class="premium-card">
+            <p class="analysis-table-note"><?php echo (get_lang_code() === 'ar') ? 'اختر موظف لعرض تحليلات النشاط الخاصة به.' : 'Select an employee to view activity analysis.'; ?></p>
         </div>
     <?php endif; ?>
 
