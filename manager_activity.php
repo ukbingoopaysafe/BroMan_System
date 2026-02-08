@@ -100,8 +100,14 @@ function time_ago($datetime)
 
 // Strings (support Arabic/English fallback)
 $is_ar = get_lang_code() === 'ar';
-$title = t('manager_activity_title');
-$subtitle = t('manager_activity_description');
+$title = $is_ar ? 'سجل نشاط الموظفين' : 'Staff activity log';
+$subtitle = $is_ar ? 'متابعة نشاط المستخدمين.' : 'Monitor user activity.';
+$label_user = $is_ar ? 'الموظف' : 'Employee';
+$label_action = $is_ar ? 'الإجراء' : 'Action';
+$label_type = $is_ar ? 'النوع' : 'Type';
+$label_time = $is_ar ? 'الوقت' : 'Time';
+$label_details = $is_ar ? 'تفاصيل' : 'Details';
+$label_report = $is_ar ? 'تقرير النشاط' : 'Activity report';
 $view_logs_label = t('view_logs');
 $refresh_label = t('refresh');
 $export_label = t('export');
@@ -377,7 +383,7 @@ $export_label = t('export');
             <?php // Link to the new per-user analytics page ?>
             <button class="btn-premium btn-premium-outline btn-sm" onclick="location.href='user_activity_analysis.php';">
                 <i class="fa fa-chart-line"></i>
-                <?php echo (get_lang_code() === 'ar') ? 'تحليل النشاط' : 'Analyze activity'; ?>
+                <?php echo htmlspecialchars($label_report); ?>
             </button>
             <button class="btn-premium btn-premium-ghost btn-sm" onclick="location.reload();">
                 <i class="fa fa-rotate"></i>
@@ -486,11 +492,11 @@ $export_label = t('export');
             <table id="activityTable" class="premium-table activity-table">
                 <thead>
                     <tr>
-                        <th class="col-user"><i class="fa fa-user"></i> <?php echo htmlspecialchars(t('user')); ?></th>
-                        <th class="col-event"><i class="fa fa-bolt"></i> <?php echo htmlspecialchars(t('event')); ?></th>
-                        <th class="col-category"><i class="fa fa-tag"></i> <?php echo htmlspecialchars(t('category')); ?></th>
-                        <th class="col-datetime"><i class="fa fa-calendar"></i> <?php echo htmlspecialchars(t('date_time')); ?></th>
-                        <th class="col-actions"><i class="fa fa-eye"></i> <?php echo htmlspecialchars(t('details')); ?></th>
+                        <th class="col-user"><i class="fa fa-user"></i> <?php echo htmlspecialchars($label_user); ?></th>
+                        <th class="col-event"><i class="fa fa-bolt"></i> <?php echo htmlspecialchars($label_action); ?></th>
+                        <th class="col-category"><i class="fa fa-tag"></i> <?php echo htmlspecialchars($label_type); ?></th>
+                        <th class="col-datetime"><i class="fa fa-calendar"></i> <?php echo htmlspecialchars($label_time); ?></th>
+                        <th class="col-actions"><i class="fa fa-eye"></i> <?php echo htmlspecialchars($label_details); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -561,7 +567,7 @@ $export_label = t('export');
 <div id="detailsModal" aria-hidden="true">
     <div class="modal-card">
         <div class="modal-header">
-            <div class="modal-title"><?php echo htmlspecialchars(t('details')); ?></div>
+            <div class="modal-title"><?php echo htmlspecialchars($label_details); ?></div>
             <button class="modal-close" aria-label="close">&times;</button>
         </div>
         <div class="modal-body">&nbsp;</div>

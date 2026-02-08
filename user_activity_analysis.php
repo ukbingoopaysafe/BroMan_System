@@ -319,7 +319,7 @@ if ($employee_id > 0) {
 
 }
 
-$title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : 'User activity analysis';
+$title = (get_lang_code() === 'ar') ? 'تقرير نشاط المستخدم' : 'User activity report';
 
 ?>
 <!DOCTYPE html>
@@ -445,7 +445,7 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
         <div class="premium-page-header">
             <div>
                 <h1><?php echo htmlspecialchars($title); ?></h1>
-                <p class="analysis-subtitle"><?php echo (get_lang_code() === 'ar') ? 'لوحة ملخصة لأداء المستخدم مع التفاصيل الزمنية.' : 'A focused dashboard with user performance and timeline insights.'; ?></p>
+                <p class="analysis-subtitle"><?php echo (get_lang_code() === 'ar') ? 'ملخص النشاط حسب الفترة.' : 'Activity summary by date range.'; ?></p>
             </div>
             <div class="activity-actions">
                 <a class="btn-premium btn-premium-outline btn-sm" href="manager_activity.php">
@@ -458,7 +458,7 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
             <form method="get" action="user_activity_analysis.php">
                 <div class="premium-filter-row">
                     <div class="premium-filter-item">
-                        <label for="employee_id"><?php echo (get_lang_code() === 'ar') ? 'اختر موظف' : 'Select employee'; ?></label>
+                        <label for="employee_id"><?php echo (get_lang_code() === 'ar') ? 'الموظف' : 'Employee'; ?></label>
                         <select class="premium-select" name="employee_id" id="employee_id">
                             <option value="0"><?php echo (get_lang_code() === 'ar') ? '--- اختر ---' : '--- choose ---'; ?></option>
                             <?php foreach ($employees as $e): ?>
@@ -477,7 +477,7 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
                 </div>
                 <div class="premium-filter-buttons">
                     <button class="btn-premium btn-premium-gold btn-sm" type="submit">
-                        <?php echo (get_lang_code() === 'ar') ? 'عرض التحليل' : 'Show analysis'; ?>
+                        <?php echo (get_lang_code() === 'ar') ? 'عرض التقرير' : 'Show report'; ?>
                     </button>
                 </div>
             </form>
@@ -503,14 +503,14 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
         </div>
 
         <div class="premium-card analysis-chart">
-            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'الاتجاه اليومي للأنشطة' : 'Daily activity trends'; ?></h3>
+            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'النشاط اليومي' : 'Daily activity'; ?></h3>
             <canvas id="activityChart" height="120"></canvas>
         </div>
 
         <div class="premium-card">
-            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'قائمة العقارات التي زارها الموظف' : 'List of visited properties'; ?></h3>
+            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'عقارات تمت زيارتها' : 'Visited properties'; ?></h3>
             <?php if (empty($summary['property_counts'])): ?>
-                <p class="analysis-table-note"><?php echo (get_lang_code() === 'ar') ? 'لا توجد زيارات مسجلة لهذا الموظف.' : 'No property visits recorded for this user.'; ?></p>
+                <p class="analysis-table-note"><?php echo (get_lang_code() === 'ar') ? 'لا توجد زيارات مسجلة.' : 'No visits recorded.'; ?></p>
             <?php else: ?>
                 <div class="premium-table-container">
                     <table class="premium-table">
@@ -540,7 +540,7 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
         </div>
         <!-- Properties added by the user -->
         <div class="premium-card" style="margin-top:12px;">
-            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'العقارات التي أضافها المستخدم' : 'Properties added by user'; ?></h3>
+            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'عقارات تمت إضافتها' : 'Properties added'; ?></h3>
             <?php if (empty($added_props)): ?>
                 <p class="analysis-table-note">-</p>
             <?php else: ?>
@@ -549,8 +549,8 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
                         <thead>
                             <tr>
                                 <th><?php echo (get_lang_code() === 'ar') ? 'رقم العقار' : 'Property ID'; ?></th>
-                                <th><?php echo (get_lang_code() === 'ar') ? 'اسم العقار' : 'Title'; ?></th>
-                                <th><?php echo (get_lang_code() === 'ar') ? 'تاريخ ووقت الإضافة' : 'Added at'; ?></th>
+                                <th><?php echo (get_lang_code() === 'ar') ? 'العنوان' : 'Title'; ?></th>
+                                <th><?php echo (get_lang_code() === 'ar') ? 'وقت الإضافة' : 'Added time'; ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -577,7 +577,7 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
 
         <!-- Properties edited by the user -->
         <div class="premium-card" style="margin-top:12px;">
-            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'العقارات التي قام بتعديلها المستخدم' : 'Properties edited by user'; ?></h3>
+            <h3 class="analysis-table-title"><?php echo (get_lang_code() === 'ar') ? 'عقارات تم تعديلها' : 'Properties edited'; ?></h3>
             <?php if (empty($edited_props)): ?>
                 <p class="analysis-table-note">-</p>
             <?php else: ?>
@@ -586,9 +586,9 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
                         <thead>
                             <tr>
                                 <th><?php echo (get_lang_code() === 'ar') ? 'رقم العقار' : 'Property ID'; ?></th>
-                                <th><?php echo (get_lang_code() === 'ar') ? 'اسم العقار' : 'Title'; ?></th>
+                                <th><?php echo (get_lang_code() === 'ar') ? 'العنوان' : 'Title'; ?></th>
                                 <th><?php echo (get_lang_code() === 'ar') ? 'عدد التعديلات' : 'Edit count'; ?></th>
-                                <th><?php echo (get_lang_code() === 'ar') ? 'تاريخ آخر تعديل' : 'Last edited at'; ?></th>
+                                <th><?php echo (get_lang_code() === 'ar') ? 'وقت آخر تعديل' : 'Last edit time'; ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -647,9 +647,9 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
                     data: {
                         labels: labels,
                         datasets: [
-                            { label: '<?php echo addslashes((get_lang_code()==='ar')?'زيارات':'Visits'); ?>', data: visit, borderColor:'#2563eb', backgroundColor:gradVisit, pointBackgroundColor:'#2563eb', tension:0.32, fill:true, pointRadius:2, borderWidth:2 },
-                            { label: '<?php echo addslashes((get_lang_code()==='ar')?'إضافات':'Adds'); ?>', data: add, borderColor:'#10b981', backgroundColor:gradAdd, pointBackgroundColor:'#10b981', tension:0.32, fill:true, pointRadius:2, borderWidth:2 },
-                            { label: '<?php echo addslashes((get_lang_code()==='ar')?'تعديلات':'Edits'); ?>', data: edit, borderColor:'#f59e0b', backgroundColor:gradEdit, pointBackgroundColor:'#f59e0b', tension:0.32, fill:true, pointRadius:2, borderWidth:2 },
+                            { label: '<?php echo addslashes((get_lang_code()==='ar')?'زيارات العقار':'Property visits'); ?>', data: visit, borderColor:'#2563eb', backgroundColor:gradVisit, pointBackgroundColor:'#2563eb', tension:0.32, fill:true, pointRadius:2, borderWidth:2 },
+                            { label: '<?php echo addslashes((get_lang_code()==='ar')?'عقارات مضافة':'Properties added'); ?>', data: add, borderColor:'#10b981', backgroundColor:gradAdd, pointBackgroundColor:'#10b981', tension:0.32, fill:true, pointRadius:2, borderWidth:2 },
+                            { label: '<?php echo addslashes((get_lang_code()==='ar')?'عقارات معدلة':'Properties edited'); ?>', data: edit, borderColor:'#f59e0b', backgroundColor:gradEdit, pointBackgroundColor:'#f59e0b', tension:0.32, fill:true, pointRadius:2, borderWidth:2 },
                             { label: '<?php echo addslashes((get_lang_code()==='ar')?'تسجيلات الدخول':'Logins'); ?>', data: login, borderColor:'#6b7280', backgroundColor:gradLogin, pointBackgroundColor:'#6b7280', tension:0.32, fill:true, pointRadius:2, borderWidth:2 }
                         ]
                     },
@@ -671,7 +671,7 @@ $title = (get_lang_code() === 'ar') ? 'تحليل نشاط المستخدم' : '
 
     <?php else: ?>
         <div class="premium-card">
-            <p class="analysis-table-note"><?php echo (get_lang_code() === 'ar') ? 'اختر موظف لعرض تحليلات النشاط الخاصة به.' : 'Select an employee to view activity analysis.'; ?></p>
+            <p class="analysis-table-note"><?php echo (get_lang_code() === 'ar') ? 'اختر موظف لعرض التقرير.' : 'Select an employee to view the report.'; ?></p>
         </div>
     <?php endif; ?>
 
