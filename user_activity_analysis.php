@@ -73,6 +73,36 @@ function extract_property_info($details): array
     return ['id' => $pid ? (int)$pid : null, 'friendly_id' => $fid, 'title' => $title];
 }
 
+function extract_change_fields($details): array
+{
+    $decoded = null;
+    if (is_string($details)) {
+        $decoded = json_decode($details, true);
+    } elseif (is_array($details)) {
+        $decoded = $details;
+    }
+    if (!is_array($decoded)) return [];
+    $raw = $decoded['raw'] ?? [];
+    $changes = $raw['changes'] ?? [];
+    if (!is_array($changes)) return [];
+    $fields = [];
+    foreach ($changes as $c) {
+        if (!is_string($c) || trim($c) === '') continue;
+        $field = '';
+        if (strpos($c, ':') !== false) {
+            $field = trim(strtok($c, ':'));
+        } elseif (strpos($c, '->') !== false) {
+            $field = trim(strtok($c, '-'));
+        } elseif (strpos($c, '→') !== false) {
+            $field = trim(strtok($c, '→'));
+        }
+        if ($field !== '') {
+            $fields[$field] = true;
+        }
+    }
+    return array_keys($fields);
+}
+
 function format_relative_time($timestamp): string
 {
     $ts = strtotime($timestamp);
@@ -145,6 +175,54 @@ if ($stmt = $conn->prepare($sql_views)) {
     $stmt->close();
 }
 
+// Section 2: Property Updates (العقارات المُعدّلة)
+$updates_by_property = [];
+$sql_updates = "SELECT employee_id, details, created_at
+                FROM activity_logs
+                WHERE $where AND action = 'edit_property'
+                ORDER BY created_at DESC";
+if ($stmt = $conn->prepare($sql_updates)) {
+    $refs = [];
+    $refs[] = &$types;
+    foreach ($params as $k => $v) { $refs[] = &$params[$k]; }
+    call_user_func_array([$stmt, 'bind_param'], $refs);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $prop = extract_property_info($row['details']);
+        $pid = $prop['id'] ?? 0;
+        if ($pid <= 0) continue;
+        if (!isset($updates_by_property[$pid])) {
+            $updates_by_property[$pid] = [
+                'property_id' => $pid,
+                'friendly_id' => $prop['friendly_id'] ?? null,
+                'title' => $prop['title'] ?? '',
+                'total' => 0,
+                'last_time' => $row['created_at'],
+                'actors' => [],
+                'fields' => [],
+            ];
+        }
+        $updates_by_property[$pid]['total']++;
+        if (strtotime($row['created_at']) > strtotime($updates_by_property[$pid]['last_time'])) {
+            $updates_by_property[$pid]['last_time'] = $row['created_at'];
+        }
+        $eid = (int)$row['employee_id'];
+        if (!isset($updates_by_property[$pid]['actors'][$eid])) {
+            $updates_by_property[$pid]['actors'][$eid] = 0;
+        }
+        $updates_by_property[$pid]['actors'][$eid]++;
+
+        $fields = extract_change_fields($row['details']);
+        if (!empty($fields)) {
+            foreach ($fields as $f) {
+                $updates_by_property[$pid]['fields'][$f] = true;
+            }
+        }
+    }
+    $stmt->close();
+}
+
 // sort properties by total views desc
 uasort($views_by_property, function($a, $b) {
     if ($b['total'] !== $a['total']) return $b['total'] <=> $a['total'];
@@ -155,6 +233,19 @@ uasort($views_by_property, function($a, $b) {
 foreach ($views_by_property as $pid => $row) {
     if (!empty($views_by_property[$pid]['actors'])) {
         arsort($views_by_property[$pid]['actors']);
+    }
+}
+
+// sort properties by total updates desc
+uasort($updates_by_property, function($a, $b) {
+    if ($b['total'] !== $a['total']) return $b['total'] <=> $a['total'];
+    return strtotime($b['last_time']) <=> strtotime($a['last_time']);
+});
+
+// sort actors per property by update count desc
+foreach ($updates_by_property as $pid => $row) {
+    if (!empty($updates_by_property[$pid]['actors'])) {
+        arsort($updates_by_property[$pid]['actors']);
     }
 }
 
@@ -197,6 +288,7 @@ $title = 'تحليلات النشاط التشغيلي';
         .actor-list { display: flex; flex-direction: column; gap: 4px; }
         .actor-item { font-size: 0.85rem; color: #1f2937; }
         .actor-item span { color: var(--text-muted); font-size: 0.82rem; }
+        .field-list { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         @media (max-width: 640px) { .premium-filter-row { flex-direction: column; } }
     </style>
     </head>
@@ -261,6 +353,59 @@ $title = 'تحليلات النشاط التشغيلي';
                                 <td>#<?php echo htmlspecialchars($row['friendly_id'] ?: $row['property_id']); ?></td>
                                 <td><?php echo htmlspecialchars($row['title'] ?: '-'); ?></td>
                                 <td><?php echo (int)$row['total']; ?></td>
+                                <td>
+                                    <div class="actor-list">
+                                        <?php foreach ($row['actors'] as $eid => $count): ?>
+                                            <div class="actor-item">
+                                                <?php echo htmlspecialchars(get_employee_label($employee_map, $eid)); ?>
+                                                <span>— <?php echo (int)$count; ?> مرة</span>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </td>
+                                <td>
+                                    <?php echo htmlspecialchars(format_relative_time($row['last_time'])); ?>
+                                    <div class="analysis-table-note"><?php echo htmlspecialchars($row['last_time']); ?></div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <div class="premium-card" style="margin-top:12px;">
+            <h3 class="analysis-table-title">العقارات المُعدّلة</h3>
+            <?php if (empty($updates_by_property)): ?>
+                <p class="analysis-table-note">لا توجد تعديلات على العقارات ضمن الفترة المحددة.</p>
+            <?php else: ?>
+                <div class="premium-table-container">
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th>العقار</th>
+                                <th>العنوان</th>
+                                <th>عدد التعديلات</th>
+                                <th>الحقول التي تم تعديلها</th>
+                                <th>بواسطة</th>
+                                <th>آخر تعديل</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($updates_by_property as $row): ?>
+                            <?php
+                            $fields_list = !empty($row['fields']) ? implode('، ', array_keys($row['fields'])) : 'تم تعديل بيانات العقار';
+                            ?>
+                            <tr>
+                                <td>#<?php echo htmlspecialchars($row['friendly_id'] ?: $row['property_id']); ?></td>
+                                <td><?php echo htmlspecialchars($row['title'] ?: '-'); ?></td>
+                                <td><?php echo (int)$row['total']; ?></td>
+                                <td>
+                                    <div class="field-list" title="<?php echo htmlspecialchars($fields_list); ?>">
+                                        <?php echo htmlspecialchars($fields_list); ?>
+                                    </div>
+                                </td>
                                 <td>
                                     <div class="actor-list">
                                         <?php foreach ($row['actors'] as $eid => $count): ?>
