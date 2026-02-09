@@ -514,10 +514,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             try {
                 require_once __DIR__ . '/activity_log.php';
                 $employee_id = $_SESSION['employee_id'] ?? null;
-                if (function_exists('log_activity') && $employee_id) {
+                if (function_exists('activity_log_event') && $employee_id) {
+                    activity_log_event($conn, $employee_id, 'PROPERTY_CREATE', [
+                        'property_id' => $new_property_id,
+                        'source' => 'add_property'
+                    ]);
+                } elseif (function_exists('log_activity') && $employee_id) {
                     log_activity($conn, $employee_id, 'add_property', [
                         'property_id' => $new_property_id,
-                        'type' => 'commercial'
+                        'source' => 'add_property'
                     ]);
                 }
             } catch (Exception $e) {
@@ -1265,5 +1270,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </body>
 </html>
-
 

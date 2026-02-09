@@ -9,8 +9,14 @@ try {
     require_once __DIR__ . '/db.php';
     require_once __DIR__ . '/activity_log.php';
     $emp = $_SESSION['employee_id'] ?? null;
-    if (isset($conn) && function_exists('log_activity')) {
-        log_activity($conn, $emp, 'logout', json_encode(['username' => $_SESSION['username'] ?? null]));
+    if (isset($conn) && function_exists('activity_log_event')) {
+        activity_log_event($conn, $emp, 'AUTH_LOGOUT', [
+            'username' => $_SESSION['username'] ?? null
+        ]);
+    } elseif (isset($conn) && function_exists('log_activity')) {
+        log_activity($conn, $emp, 'logout', [
+            'username' => $_SESSION['username'] ?? null
+        ]);
     }
     // Remove session from active_sessions table
     try {

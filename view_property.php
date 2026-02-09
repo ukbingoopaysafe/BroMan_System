@@ -1,4 +1,11 @@
 <?php
+/*
+Manual Test Checklist (WhatsApp Sharing)
+1) Share details on mobile: emojis enabled, message formatted.
+2) Share details on desktop: emojis stripped, message formatted.
+3) Property with partial data: only present sections appear.
+4) Property without coordinates: location share button not shown.
+*/
 session_start();
 // Debug: log session id and any flash messages or legacy success message at the start of the page load
 error_log("FLASH-DEBUG view_property ON LOAD session=" . session_id() . " name=" . session_name() . " save_path=" . session_save_path() . " flash=" . var_export(
@@ -305,9 +312,40 @@ function wa_clean_text($text) {
     return $text;
 }
 
+function wa_normalize_newlines($text) {
+    $text = str_replace(["\r\n", "\r"], "\n", $text);
+    // Collapse double (or more) blank lines to single
+    $text = preg_replace("/\n{2,}/", "\n", $text);
+    // Trim empty lines from start/end
+    $text = trim($text, "\n");
+    return $text;
+}
+
+function wa_strip_emojis($text) {
+    // Basic emoji strip: remove common emoji ranges
+    return preg_replace('/[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}]/u', '', $text);
+}
+
+function wa_encode_message($text, $strip_emojis = false) {
+    $normalized = wa_normalize_newlines($text);
+    if ($strip_emojis) {
+        $normalized = wa_strip_emojis($normalized);
+    }
+    return $normalized;
+}
+
 // Build safe, whitelisted details message (no description, no attachments, no internal data)
 function build_property_details_message($property, $types_display, $use_emojis = true) {
     $lines = [];
+    $sections_added = [];
+    $undefined = function_exists('t') ? t('undefined') : 'undefined';
+    $is_placeholder = function($val) use ($undefined) {
+        $v = wa_clean_text($val);
+        if ($v === '') return true;
+        if (mb_strtolower($v) === mb_strtolower($undefined)) return true;
+        if (mb_strtolower($v) === 'undefined') return true;
+        return false;
+    };
 
     $add_line = function($label, $value, $emoji = '') use (&$lines, $use_emojis) {
         $val = wa_clean_text($value);
@@ -317,21 +355,29 @@ function build_property_details_message($property, $types_display, $use_emojis =
         }
     };
 
+    $add_section = function($key, $title, $emoji = '') use (&$lines, &$sections_added, $use_emojis) {
+        if (isset($sections_added[$key])) return;
+        $sections_added[$key] = true;
+        $lines[] = '──────────';
+        $prefix = ($use_emojis && $emoji !== '') ? ($emoji . ' ') : '';
+        $lines[] = $prefix . $title;
+    };
+
     $listing_type = $property['listing_type'] ?? '';
 
     $title = wa_clean_text($property['Title'] ?? '');
     $title_prefix = $use_emojis ? '🏷️ ' : '';
-    if ($title !== '') $lines[] = $title_prefix . '*اسم العقار*: ' . $title;
+    if ($title !== '' && !$is_placeholder($title)) $lines[] = $title_prefix . '*اسم العقار*: ' . $title;
 
     $type_clean = wa_clean_text($types_display);
     $type_prefix = $use_emojis ? '🏢 ' : '';
-    if ($type_clean !== '') $lines[] = $type_prefix . '*نوع العقار*: ' . $type_clean;
+    if ($type_clean !== '' && !$is_placeholder($type_clean)) $lines[] = $type_prefix . '*نوع العقار*: ' . $type_clean;
 
-    if (!empty($property['ProjectName']) && $listing_type === 'Primary') {
+    if (!empty($property['ProjectName']) && !$is_placeholder($property['ProjectName']) && $listing_type === 'Primary') {
         $add_line('اسم المشروع', $property['ProjectName'], '🧩');
     }
 
-    if (!empty($property['UnitDesignName'])) {
+    if (!empty($property['UnitDesignName']) && !$is_placeholder($property['UnitDesignName'])) {
         $add_line('نموذج الوحدة', $property['UnitDesignName'], '🧱');
     }
 
@@ -363,7 +409,7 @@ function build_property_details_message($property, $types_display, $use_emojis =
         !empty($property['loading_percentage']);
 
     if ($has_price_area_section) {
-        $lines[] = '──────────';
+        $add_section('price_area', 'الأسعار والمساحات', '💵');
 
         $currency_code = $property['currency'] ?? 'EGP';
         $currency_label = t($currency_code);
@@ -432,8 +478,7 @@ function build_property_details_message($property, $types_display, $use_emojis =
         (($property['year_built'] ?? null) !== null && trim((string)($property['year_built'] ?? '')) !== '');
 
     if ($has_unit_section) {
-        $lines[] = '──────────';
-        $lines[] = ($use_emojis ? '🏠 ' : '') . 'تفاصيل الوحدة';
+        $add_section('unit_details', 'تفاصيل الوحدة', '🏠');
 
         if (!empty($property['Bedrooms'])) $lines[] = ($use_emojis ? '🛏️ ' : '') . '*عدد الغرف*: ' . wa_clean_text($property['Bedrooms']);
         if (!empty($property['Bathrooms'])) $lines[] = ($use_emojis ? '🛁 ' : '') . '*عدد الحمامات*: ' . wa_clean_text($property['Bathrooms']);
@@ -459,8 +504,7 @@ function build_property_details_message($property, $types_display, $use_emojis =
         (!empty($payment_terms) && $payment_terms !== t('undefined'));
 
     if ($has_payment_section) {
-        $lines[] = '──────────';
-        $lines[] = ($use_emojis ? '📅 ' : '') . 'السداد والتسليم';
+        $add_section('payment', 'السداد والتسليم', '📅');
 
         if (!empty($property['delivery_date'])) {
             $lines[] = ($use_emojis ? '📦 ' : '') . '*تاريخ التسليم*: ' . date("Y-m-d", strtotime($property['delivery_date']));
@@ -481,13 +525,14 @@ function build_property_details_message($property, $types_display, $use_emojis =
         $lines[] = ($use_emojis ? '🏢 ' : '') . '*الشركة*: ' . wa_clean_text($property['company_name']);
     }
 
-    return implode("\n", $lines);
+    return wa_normalize_newlines(implode("\n", $lines));
 }
 
-$details_text = build_property_details_message($property, $types_display, true);
-$details_text_plain = build_property_details_message($property, $types_display, false);
+$details_text = wa_encode_message(build_property_details_message($property, $types_display, true), false);
+$details_text_plain = wa_encode_message(build_property_details_message($property, $types_display, false), true);
 $whatsapp_details_link = 'https://wa.me/?text=' . rawurlencode($details_text);
 $whatsapp_details_plain_link = 'https://wa.me/?text=' . rawurlencode($details_text_plain);
+$whatsapp_details_plain_redirect = 'share_redirect.php?type=details&property_id=' . (int)$property_id . '&url=' . rawurlencode($whatsapp_details_plain_link);
 
 // Map link (precise location)
 $map_link = '';
@@ -498,7 +543,7 @@ if (!empty($property['latitude']) && !empty($property['longitude'])) {
 }
 $whatsapp_map_link = '';
 if ($map_link !== '') {
-    $whatsapp_map_link = 'https://wa.me/?text=' . rawurlencode($map_link);
+    $whatsapp_map_link = 'https://wa.me/?text=' . rawurlencode(wa_encode_message($map_link, false));
 }
 ?>
 
@@ -1567,15 +1612,15 @@ if ($map_link !== '') {
                 <a href="edit_property.php?id=<?php echo $property_id; ?>" class="btn btn-primary"><i class="fas fa-edit"></i> <?php echo t('edit'); ?></a>
                 <?php endif; ?>
                 <!-- WhatsApp share buttons -->
-                <a href="<?php echo htmlspecialchars($whatsapp_details_link); ?>" target="_blank" rel="noopener noreferrer"
+                <a href="<?php echo htmlspecialchars('share_redirect.php?type=details&property_id=' . (int)$property_id . '&url=' . rawurlencode($whatsapp_details_link)); ?>" target="_blank" rel="noopener noreferrer"
                    class="btn btn-whatsapp" title="مشاركة تفاصيل العقار" aria-label="مشاركة تفاصيل العقار"
                    data-wa-link="<?php echo htmlspecialchars($whatsapp_details_link); ?>"
-                   data-wa-link-plain="<?php echo htmlspecialchars($whatsapp_details_plain_link); ?>">
+                   data-wa-link-plain="<?php echo htmlspecialchars($whatsapp_details_plain_redirect); ?>">
                     <i class="fab fa-whatsapp"></i>
                     مشاركة تفاصيل العقار
                 </a>
                 <?php if (!empty($whatsapp_map_link)): ?>
-                <a href="<?php echo htmlspecialchars($whatsapp_map_link); ?>" target="_blank" rel="noopener noreferrer"
+                <a href="<?php echo htmlspecialchars('share_redirect.php?type=location&property_id=' . (int)$property_id . '&url=' . rawurlencode($whatsapp_map_link)); ?>" target="_blank" rel="noopener noreferrer"
                    class="btn btn-whatsapp" title="مشاركة الموقع على الخريطة" aria-label="مشاركة الموقع على الخريطة"
                    onclick="return confirm('أنت على وشك مشاركة الموقع الجغرافي الدقيق للعقار. هل أنت متأكد؟');">
                     <i class="fab fa-whatsapp"></i>

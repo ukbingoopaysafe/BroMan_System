@@ -141,6 +141,24 @@ function block_ip(mysqli $conn, string $ip, int $duration = null): bool {
     
     // Log the block
     error_log("Rate Limiter: Blocked IP $ip until $blocked_until");
+
+    // Activity log (security event)
+    if (file_exists(__DIR__ . '/activity_log.php')) {
+        require_once __DIR__ . '/activity_log.php';
+        if (function_exists('activity_log_event')) {
+            activity_log_event($conn, null, 'AUTH_USER_BLOCKED', [
+                'reason' => 'ip_attempts_exceeded',
+                'ip_address' => $ip,
+                'blocked_until' => $blocked_until
+            ]);
+        } elseif (function_exists('log_activity')) {
+            log_activity($conn, null, 'auth_user_blocked', [
+                'reason' => 'ip_attempts_exceeded',
+                'ip_address' => $ip,
+                'blocked_until' => $blocked_until
+            ]);
+        }
+    }
     
     return $result;
 }
@@ -246,14 +264,58 @@ function handle_failed_login(mysqli $conn, ?string $username = null): array {
     
     // Record the failed attempt
     record_login_attempt($conn, $ip, $username, false);
-    
+
     // Check if we need to block now
     $ip_attempts = get_ip_failed_attempts($conn, $ip);
     if ($ip_attempts >= MAX_IP_ATTEMPTS) {
         block_ip($conn, $ip);
     }
+
+    if ($username) {
+        $username_attempts = get_username_failed_attempts($conn, $username);
+        if ($username_attempts >= MAX_USERNAME_ATTEMPTS) {
+            if (file_exists(__DIR__ . '/activity_log.php')) {
+                require_once __DIR__ . '/activity_log.php';
+                if (function_exists('activity_log_event')) {
+                    activity_log_event($conn, null, 'AUTH_USER_BLOCKED', [
+                        'reason' => 'username_attempts_exceeded',
+                        'username' => $username
+                    ]);
+                } elseif (function_exists('log_activity')) {
+                    log_activity($conn, null, 'auth_user_blocked', [
+                        'reason' => 'username_attempts_exceeded',
+                        'username' => $username
+                    ]);
+                }
+            }
+        }
+    }
     
     $remaining = MAX_IP_ATTEMPTS - $ip_attempts;
+
+    // Activity log (failed login)
+    if (file_exists(__DIR__ . '/activity_log.php')) {
+        require_once __DIR__ . '/activity_log.php';
+        $resolved_id = null;
+        if (function_exists('activity_resolve_employee_id')) {
+            $resolved_id = activity_resolve_employee_id($conn, $username);
+        }
+        if (function_exists('activity_log_event')) {
+            activity_log_event($conn, $resolved_id, 'AUTH_LOGIN_FAILED', [
+                'username' => $username,
+                'ip_address' => $ip,
+                'attempts_remaining' => max(0, $remaining),
+                'unauthenticated' => $resolved_id === null
+            ]);
+        } elseif (function_exists('log_activity')) {
+            log_activity($conn, $resolved_id, 'auth_login_failed', [
+                'username' => $username,
+                'ip_address' => $ip,
+                'attempts_remaining' => max(0, $remaining),
+                'unauthenticated' => $resolved_id === null
+            ]);
+        }
+    }
     
     return [
         'attempts_remaining' => max(0, $remaining),

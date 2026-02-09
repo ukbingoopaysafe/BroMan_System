@@ -16,32 +16,37 @@ function log_property_visit($property_id) {
     $employee_id = $_SESSION['employee_id'];
     error_log("Employee ID from session: " . $employee_id);
     
-    // Get property details for logging
-    $stmt = $conn->prepare("SELECT p.PropertyID, p.Title, pt.TypeName_ar as property_type 
-                           FROM properties p 
-                           LEFT JOIN propertytypes pt ON p.PropertyTypeID = pt.PropertyTypeID 
-                           WHERE p.PropertyID = ?");
-    $stmt->bind_param("i", $property_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $property = $result->fetch_assoc();
-    
-    if (!$property) {
-        return false;
+    // Debounce repeated views within the same session
+    if (!isset($_SESSION['last_property_view'])) {
+        $_SESSION['last_property_view'] = [];
     }
-    
-    // Create details for activity log
+    $now = time();
+    $last = $_SESSION['last_property_view'][$property_id] ?? 0;
+    $ref = $_SERVER['HTTP_REFERER'] ?? '';
+    $skip_referrers = ['download_media.php', 'serve_media.php', 'serve_document.php', 'serve_attachment.php', 'share_redirect.php'];
+    foreach ($skip_referrers as $skip) {
+        if ($ref && strpos($ref, $skip) !== false) {
+            return true;
+        }
+    }
+    if ($last && ($now - (int)$last) < 120) {
+        return true;
+    }
+    $_SESSION['last_property_view'][$property_id] = $now;
+
+    // Log the visit (use centralized logging + final saved data snapshot)
     $details = [
-        'property_id' => $property['PropertyID'],
-        'property_type' => $property['property_type'] ?? 'غير محدد',
-        'property_title' => $property['Title']
+        'property_id' => (int)$property_id,
+        'source' => 'view_property'
     ];
-    
-    error_log("Property details: " . print_r($details, true));
-    
-    // Log the visit
+    error_log("Property visit details: " . print_r($details, true));
+
     error_log("Attempting to log activity for employee_id: " . $employee_id);
-    $result = log_activity($conn, $employee_id, 'property_visit', $details);
+    if (function_exists('activity_log_event')) {
+        $result = activity_log_event($conn, $employee_id, 'PROPERTY_VIEW', $details);
+    } else {
+        $result = log_activity($conn, $employee_id, 'property_visit', $details);
+    }
     error_log("Log activity result: " . ($result ? "success" : "failed"));
     
     return true;

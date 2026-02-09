@@ -14,13 +14,13 @@ $error = '';
 $success = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Check rate limit
-    $limit_check = check_rate_limit($conn);
+    $username = trim($_POST['username'] ?? '');
+    // Check rate limit (use username for per-user throttling)
+    $limit_check = check_rate_limit($conn, $username);
     
     if (!$limit_check['allowed']) {
         $error = $limit_check['message'];
     } else {
-        $username = trim($_POST['username']);
         $password = $_POST['password'];
 
         if (empty($username) || empty($password)) {
@@ -72,8 +72,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     // Add activity log if module exists
                     if (file_exists('activity_log.php')) {
                         require_once 'activity_log.php';
-                        if (function_exists('log_activity')) {
-                            log_activity($conn, $user['EmployeeID'], 'login', 'User logged in via VIP Portal');
+                        if (function_exists('activity_log_event')) {
+                            activity_log_event($conn, $user['EmployeeID'], 'AUTH_LOGIN_SUCCESS', [
+                                'username' => $user['Username'] ?? $username,
+                                'role' => $user['Role'] ?? null
+                            ]);
+                        } elseif (function_exists('log_activity')) {
+                            log_activity($conn, $user['EmployeeID'], 'login', [
+                                'username' => $user['Username'] ?? $username,
+                                'role' => $user['Role'] ?? null
+                            ]);
                         }
                     }
 

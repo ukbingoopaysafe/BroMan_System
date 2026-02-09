@@ -121,6 +121,8 @@ foreach ($files as $f) {
     $url = '';
     if (($f['dir'] ?? '') === 'documents' && !empty($f['document_id'])) {
         $url = build_absolute_url('serve_document.php?id=' . intval($f['document_id']) . '&download=1');
+    } elseif (in_array(($f['dir'] ?? ''), ['images', 'videos'], true)) {
+        $url = build_absolute_url('serve_media.php?property_id=' . intval($property_id) . '&path=' . rawurlencode($rel));
     } else {
         $url = build_absolute_url($rel);
     }

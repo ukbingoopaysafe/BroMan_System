@@ -5,44 +5,293 @@
  *        log_activity($conn, $employee_id, 'login', $details);
  */
 
+if (!function_exists('activity_taxonomy_map')) {
+    function activity_taxonomy_map(): array
+    {
+        return [
+            'PROPERTY_CREATE' => 'add_property',
+            'PROPERTY_UPDATE' => 'edit_property',
+            'PROPERTY_DELETE' => 'delete_property',
+            'PROPERTY_VIEW' => 'property_visit',
+            'PROPERTY_SHARE_DETAILS' => 'property_share_details',
+            'PROPERTY_SHARE_LOCATION' => 'property_share_location',
+            'PROPERTY_MEDIA_DOWNLOAD' => 'property_media_download',
+            'AUTH_LOGIN_SUCCESS' => 'login',
+            'AUTH_LOGIN_FAILED' => 'auth_login_failed',
+            'AUTH_USER_BLOCKED' => 'auth_user_blocked',
+            'AUTH_LOGOUT' => 'logout',
+        ];
+    }
+}
+
+if (!function_exists('activity_event_label_key')) {
+    function activity_event_label_key(string $event_type): string
+    {
+        $map = [
+            'PROPERTY_CREATE' => 'event_property_create',
+            'PROPERTY_UPDATE' => 'event_property_update',
+            'PROPERTY_DELETE' => 'event_property_delete',
+            'PROPERTY_VIEW' => 'event_property_view',
+            'PROPERTY_SHARE_DETAILS' => 'event_property_share_details',
+            'PROPERTY_SHARE_LOCATION' => 'event_property_share_location',
+            'PROPERTY_MEDIA_DOWNLOAD' => 'event_property_media_download',
+            'AUTH_LOGIN_SUCCESS' => 'event_auth_login_success',
+            'AUTH_LOGIN_FAILED' => 'event_auth_login_failed',
+            'AUTH_USER_BLOCKED' => 'event_auth_user_blocked',
+            'AUTH_LOGOUT' => 'event_auth_logout',
+        ];
+        return $map[$event_type] ?? $event_type;
+    }
+}
+
+if (!function_exists('activity_label')) {
+    function activity_label(string $event_type): string
+    {
+        $key = activity_event_label_key($event_type);
+        if (function_exists('t')) {
+            $translated = t($key);
+            if ($translated !== $key) {
+                return $translated;
+            }
+        }
+        return $event_type;
+    }
+}
+
+if (!function_exists('activity_build_presentation')) {
+    function activity_build_presentation(string $event_type, array $context, ?array $property): array
+    {
+        $summary = activity_label($event_type);
+        $fields = [];
+
+        $add_field = function(string $label_key, $value) use (&$fields) {
+            if ($value === null || $value === '') return;
+            $label = function_exists('t') ? t($label_key) : $label_key;
+            if ($label === $label_key) {
+                $label = $label_key;
+            }
+            $fields[] = ['label' => $label, 'value' => $value];
+        };
+
+        $property_id = $property['property_id'] ?? ($context['property_id'] ?? null);
+        $friendly_id = $property['friendly_id'] ?? null;
+        $title = $property['title'] ?? null;
+        $listing_type = $property['listing_type'] ?? null;
+        $types = $property['property_type_names'] ?? null;
+
+        switch ($event_type) {
+            case 'PROPERTY_CREATE':
+            case 'PROPERTY_UPDATE':
+            case 'PROPERTY_DELETE':
+            case 'PROPERTY_VIEW':
+            case 'PROPERTY_SHARE_DETAILS':
+            case 'PROPERTY_SHARE_LOCATION':
+            case 'PROPERTY_MEDIA_DOWNLOAD':
+                if ($friendly_id) {
+                    $add_field('event_field_property', '#' . $friendly_id);
+                } elseif ($property_id) {
+                    $add_field('event_field_property', '#' . $property_id);
+                }
+                if (!empty($title)) {
+                    $add_field('event_field_title', $title);
+                }
+                if (!empty($listing_type)) {
+                    $add_field('event_field_listing', $listing_type);
+                }
+                if (!empty($types) && is_array($types)) {
+                    $type_names = [];
+                    foreach ($types as $t) {
+                        if (!empty($t['ar']) && function_exists('get_lang_code') && get_lang_code() === 'ar') {
+                            $type_names[] = $t['ar'];
+                        } elseif (!empty($t['en'])) {
+                            $type_names[] = $t['en'];
+                        }
+                    }
+                    if (!empty($type_names)) {
+                        $add_field('event_field_type', implode(' / ', $type_names));
+                    }
+                }
+                if (!empty($context['file_name'])) {
+                    $add_field('event_field_file', $context['file_name']);
+                }
+                if (!empty($context['media_type'])) {
+                    $add_field('event_field_media_type', $context['media_type']);
+                }
+                break;
+            case 'AUTH_LOGIN_SUCCESS':
+            case 'AUTH_LOGIN_FAILED':
+            case 'AUTH_USER_BLOCKED':
+            case 'AUTH_LOGOUT':
+                if (!empty($context['username'])) {
+                    $add_field('event_field_username', $context['username']);
+                }
+                if (!empty($context['unauthenticated']) && empty($context['reason'])) {
+                    $context['reason'] = function_exists('t') ? t('event_reason_unauthenticated') : 'unauthenticated';
+                }
+                if (!empty($context['reason'])) {
+                    $add_field('event_field_reason', $context['reason']);
+                }
+                if (!empty($context['ip_address'])) {
+                    $add_field('event_field_ip', $context['ip_address']);
+                }
+                if (isset($context['attempts_remaining'])) {
+                    $add_field('event_field_attempts_remaining', $context['attempts_remaining']);
+                }
+                if (!empty($context['role'])) {
+                    $add_field('event_field_role', $context['role']);
+                }
+                break;
+        }
+
+        return [
+            'summary' => $summary,
+            'fields' => $fields
+        ];
+    }
+}
+
+if (!function_exists('activity_resolve_employee_id')) {
+    function activity_resolve_employee_id(mysqli $conn, ?string $username): ?int
+    {
+        if (!$username) return null;
+        $stmt = $conn->prepare("SELECT EmployeeID FROM employees WHERE Username = ? LIMIT 1");
+        if (!$stmt) return null;
+        $stmt->bind_param('s', $username);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $stmt->close();
+        return $row ? (int)$row['EmployeeID'] : null;
+    }
+}
+
+if (!function_exists('activity_get_client_ip')) {
+    function activity_get_client_ip(): ?string
+    {
+        if (function_exists('get_client_ip')) {
+            return get_client_ip();
+        }
+        return $_SERVER['REMOTE_ADDR'] ?? null;
+    }
+}
+
+if (!function_exists('activity_property_snapshot')) {
+    function activity_property_snapshot(mysqli $conn, int $property_id): ?array
+    {
+        $sql = "SELECT PropertyID, friendly_id, PropertyTypeID, listing_type, Title, ProjectName, Status, governorate, district, Location, latitude, longitude
+                FROM properties WHERE PropertyID = ? LIMIT 1";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) return null;
+        $stmt->bind_param('i', $property_id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $stmt->close();
+        if (!$row) return null;
+
+        $type_ids = [];
+        $type_names = [];
+        $type_stmt = $conn->prepare("SELECT ptl.property_type_id, pt.TypeName, pt.TypeName_ar FROM property_type_links ptl LEFT JOIN propertytypes pt ON pt.PropertyTypeID = ptl.property_type_id WHERE ptl.property_id = ?");
+        if ($type_stmt) {
+            $type_stmt->bind_param('i', $property_id);
+            $type_stmt->execute();
+            $type_res = $type_stmt->get_result();
+            while ($t = $type_res->fetch_assoc()) {
+                if (!empty($t['property_type_id'])) {
+                    $type_ids[] = (int)$t['property_type_id'];
+                }
+                $type_names[] = [
+                    'en' => $t['TypeName'] ?? null,
+                    'ar' => $t['TypeName_ar'] ?? null,
+                ];
+            }
+            $type_stmt->close();
+        }
+
+        return [
+            'property_id' => (int)$row['PropertyID'],
+            'friendly_id' => $row['friendly_id'] ?? null,
+            'listing_type' => $row['listing_type'] ?? null,
+            'property_type_id' => isset($row['PropertyTypeID']) ? (int)$row['PropertyTypeID'] : null,
+            'property_type_ids' => $type_ids ?: null,
+            'property_type_names' => $type_names ?: null,
+            'title' => $row['Title'] ?? null,
+            'project_name' => $row['ProjectName'] ?? null,
+            'status' => $row['Status'] ?? null,
+            'governorate' => $row['governorate'] ?? null,
+            'district' => $row['district'] ?? null,
+            'location' => $row['Location'] ?? null,
+            'latitude' => isset($row['latitude']) ? (float)$row['latitude'] : null,
+            'longitude' => isset($row['longitude']) ? (float)$row['longitude'] : null,
+        ];
+    }
+}
+
+if (!function_exists('activity_log_event')) {
+    function activity_log_event(mysqli $conn, $employee_id, string $event_type, array $context = []): bool
+    {
+        $taxonomy = activity_taxonomy_map();
+        $action = $taxonomy[$event_type] ?? $event_type;
+
+        $session_id = session_status() === PHP_SESSION_ACTIVE ? session_id() : null;
+        $ip = activity_get_client_ip();
+        $ua = $_SERVER['HTTP_USER_AGENT'] ?? null;
+
+        $identity = [
+            'employee_id' => $employee_id === null ? null : (int)$employee_id,
+            'username' => $context['username'] ?? null,
+            'unauthenticated' => $employee_id === null,
+        ];
+
+        $details = [
+            'event_type' => $event_type,
+            'identity' => $identity,
+            'raw' => $context,
+        ];
+
+        $snapshot = null;
+        if (!empty($context['property_id'])) {
+            $snapshot = activity_property_snapshot($conn, (int)$context['property_id']);
+            if ($snapshot) {
+                $details['property'] = $snapshot;
+            }
+        }
+
+        $details['display'] = activity_build_presentation($event_type, $context, $snapshot);
+
+        $details_json = json_encode($details, JSON_UNESCAPED_UNICODE);
+        if ($details_json === false) {
+            $details_json = json_encode(['event_type' => $event_type], JSON_UNESCAPED_UNICODE);
+        }
+
+        $sql = "INSERT INTO activity_logs (employee_id, session_id, action, details, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?)";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            error_log('activity_log_event prepare failed: ' . $conn->error);
+            return false;
+        }
+
+        $emp = $employee_id === null ? null : (int)$employee_id;
+        $stmt->bind_param('isssss', $emp, $session_id, $action, $details_json, $ip, $ua);
+        $result = $stmt->execute();
+        if (!$result) {
+            error_log('activity_log_event execute failed: ' . $stmt->error);
+        }
+        $stmt->close();
+        return (bool)$result;
+    }
+}
+
 if (!function_exists('log_activity')) {
     function log_activity(mysqli $conn, $employee_id, string $action, $details = null)
     {
-        error_log("log_activity called with: employee_id=" . $employee_id . ", action=" . $action);
-        
-        $session_id = session_status() === PHP_SESSION_ACTIVE ? session_id() : null;
-        $ip = $_SERVER['REMOTE_ADDR'] ?? null;
-        $ua = $_SERVER['HTTP_USER_AGENT'] ?? null;
-
-        $sql = "INSERT INTO activity_logs (employee_id, session_id, action, details, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?)";
-        if ($stmt = $conn->prepare($sql)) {
-            // bind params: i s s s s s (employee_id may be null)
-            $emp = $employee_id === null ? null : (int)$employee_id;
-            $session_id_val = $session_id;
-            $action_val = $action;
-            $details_val = is_scalar($details) ? (string)$details : json_encode($details);
-            $ip_val = $ip;
-            $ua_val = $ua;
-
-            // mysqli requires types string; use 'isssss' but allow null employee
-            $stmt->bind_param('isssss', $emp, $session_id_val, $action_val, $details_val, $ip_val, $ua_val);
-            
-            error_log("Executing query with params: " .
-                     "emp=$emp, " .
-                     "session=$session_id_val, " .
-                     "action=$action_val, " .
-                     "details=$details_val, " .
-                     "ip=$ip_val");
-            
-            $result = $stmt->execute();
-            if (!$result) {
-                error_log("Query execution failed: " . $stmt->error);
-            }
-            $stmt->close();
-            return $result;
-        } else {
-            error_log('log_activity prepare failed: ' . $conn->error);
+        $context = [];
+        if (is_array($details)) {
+            $context = $details;
+        } elseif (is_scalar($details) && $details !== null) {
+            $context = ['message' => (string)$details];
         }
+        return activity_log_event($conn, $employee_id, $action, $context);
     }
 }
 
@@ -114,6 +363,160 @@ if (!function_exists('format_activity_details')) {
             }
         } elseif (is_array($details)) {
             $decoded = $details;
+        }
+
+        $is_ar = function_exists('get_lang_code') && get_lang_code() === 'ar';
+
+        $format_property_block = function(array $prop) {
+            $lines = [];
+            $fid = $prop['friendly_id'] ?? null;
+            $pid = $prop['property_id'] ?? null;
+            if ($fid) {
+                $lines[] = 'العقار: #' . $fid;
+            } elseif ($pid) {
+                $lines[] = 'العقار: #' . $pid;
+            }
+            if (!empty($prop['title'])) {
+                $lines[] = 'العنوان: ' . $prop['title'];
+            }
+            if (!empty($prop['listing_type'])) {
+                $lines[] = 'نظام القائمة: ' . $prop['listing_type'];
+            }
+            if (!empty($prop['property_type_names']) && is_array($prop['property_type_names'])) {
+                $type_names = [];
+                foreach ($prop['property_type_names'] as $t) {
+                    if (!empty($t['ar'])) {
+                        $type_names[] = $t['ar'];
+                    } elseif (!empty($t['en'])) {
+                        $type_names[] = $t['en'];
+                    }
+                }
+                if (!empty($type_names)) {
+                    $lines[] = 'النوع: ' . implode(' / ', $type_names);
+                }
+            }
+            return $lines;
+        };
+
+        if ($is_ar && is_array($decoded) && !empty($decoded['event_type'])) {
+            $event_type = $decoded['event_type'];
+            $raw = is_array($decoded['raw'] ?? null) ? $decoded['raw'] : [];
+            $prop = is_array($decoded['property'] ?? null) ? $decoded['property'] : [];
+
+            $lines = [];
+            switch ($event_type) {
+                case 'PROPERTY_CREATE':
+                    $lines[] = 'تمت إضافة عقار جديد';
+                    $lines = array_merge($lines, $format_property_block($prop));
+                    break;
+                case 'PROPERTY_UPDATE':
+                    $lines[] = 'تم تعديل بيانات العقار';
+                    $lines = array_merge($lines, $format_property_block($prop));
+                    if (!empty($raw['changes']) && is_array($raw['changes'])) {
+                        $lines[] = 'التعديلات:';
+                        foreach ($raw['changes'] as $c) {
+                            $lines[] = '- ' . $c;
+                        }
+                    }
+                    break;
+                case 'PROPERTY_DELETE':
+                    $lines[] = 'تم حذف العقار';
+                    $lines = array_merge($lines, $format_property_block($prop));
+                    break;
+                case 'PROPERTY_VIEW':
+                    $lines[] = 'تم عرض العقار';
+                    $lines = array_merge($lines, $format_property_block($prop));
+                    break;
+                case 'PROPERTY_SHARE_DETAILS':
+                    $lines[] = 'تمت مشاركة تفاصيل العقار';
+                    $lines = array_merge($lines, $format_property_block($prop));
+                    if (!empty($raw['destination'])) {
+                        $lines[] = 'الوجهة: ' . $raw['destination'];
+                    }
+                    break;
+                case 'PROPERTY_SHARE_LOCATION':
+                    $lines[] = 'تمت مشاركة موقع العقار';
+                    $lines = array_merge($lines, $format_property_block($prop));
+                    if (!empty($raw['destination'])) {
+                        $lines[] = 'الوجهة: ' . $raw['destination'];
+                    }
+                    break;
+                case 'PROPERTY_MEDIA_DOWNLOAD':
+                    $lines[] = 'تم تنزيل وسائط العقار';
+                    $lines = array_merge($lines, $format_property_block($prop));
+                    if (!empty($raw['file_name'])) {
+                        $lines[] = 'الملف: ' . $raw['file_name'];
+                    }
+                    if (!empty($raw['media_type'])) {
+                        $lines[] = 'نوع الوسيط: ' . $raw['media_type'];
+                    }
+                    break;
+                case 'AUTH_LOGIN_SUCCESS':
+                    $lines[] = 'تسجيل دخول ناجح';
+                    if (!empty($raw['username'])) {
+                        $lines[] = 'اسم المستخدم: ' . $raw['username'];
+                    }
+                    if (!empty($raw['role'])) {
+                        $lines[] = 'الدور: ' . $raw['role'];
+                    }
+                    break;
+                case 'AUTH_LOGIN_FAILED':
+                    $lines[] = 'تسجيل دخول فاشل';
+                    if (!empty($raw['username'])) {
+                        $lines[] = 'اسم المستخدم: ' . $raw['username'];
+                    } else {
+                        $lines[] = 'الهوية: محاولة غير موثقة';
+                    }
+                    if (!empty($raw['ip_address'])) {
+                        $lines[] = 'عنوان IP: ' . $raw['ip_address'];
+                    }
+                    if (isset($raw['attempts_remaining'])) {
+                        $lines[] = 'المحاولات المتبقية: ' . $raw['attempts_remaining'];
+                    }
+                    break;
+                case 'AUTH_USER_BLOCKED':
+                    $lines[] = 'تم حظر المستخدم';
+                    if (!empty($raw['username'])) {
+                        $lines[] = 'اسم المستخدم: ' . $raw['username'];
+                    }
+                    if (!empty($raw['ip_address'])) {
+                        $lines[] = 'عنوان IP: ' . $raw['ip_address'];
+                    }
+                    if (!empty($raw['reason'])) {
+                        $lines[] = 'السبب: ' . $raw['reason'];
+                    }
+                    break;
+                case 'AUTH_LOGOUT':
+                    $lines[] = 'تسجيل خروج';
+                    if (!empty($raw['username'])) {
+                        $lines[] = 'اسم المستخدم: ' . $raw['username'];
+                    }
+                    break;
+                default:
+                    break;
+            }
+            if (!empty($lines)) {
+                return implode("\n", $lines);
+            }
+        }
+
+        if (is_array($decoded) && isset($decoded['display']['summary'])) {
+            $summary = $decoded['display']['summary'];
+            $fields = $decoded['display']['fields'] ?? [];
+            if (!empty($fields) && is_array($fields)) {
+                $lines = [];
+                foreach ($fields as $f) {
+                    if (!is_array($f)) continue;
+                    $label = $f['label'] ?? '';
+                    $value = $f['value'] ?? '';
+                    if ($label === '' || $value === '') continue;
+                    $lines[] = $label . ': ' . $value;
+                }
+                if (!empty($lines)) {
+                    return $summary . "\n" . implode("\n", $lines);
+                }
+            }
+            return $summary;
         }
 
         // Helper to format listing type
@@ -257,9 +660,9 @@ if (!function_exists('format_activity_details')) {
                 break;
         }
 
-        // Fallback: return original string or JSON pretty
-        if (is_array($decoded)) return json_encode($decoded, JSON_UNESCAPED_UNICODE);
-        return is_string($details) ? $details : json_encode($details);
+        // Fallback: return safe string without dumping raw JSON
+        if (is_string($details)) return $details;
+        return '';
     }
 }
 

@@ -727,10 +727,17 @@ if ($att_stmt) {
                     // Get the changes between old and new data
                     $changes = track_property_changes($old_property_data, $new_property_data);
                     
-                    if (function_exists('log_activity') && !empty($changes)) {
+                    if (function_exists('activity_log_event') && !empty($changes)) {
+                        activity_log_event($conn, $emp_for_log, 'PROPERTY_UPDATE', [
+                            'property_id' => $property_id,
+                            'changes' => $changes,
+                            'source' => 'edit_property'
+                        ]);
+                    } elseif (function_exists('log_activity') && !empty($changes)) {
                         log_activity($conn, $emp_for_log, 'edit_property', [
                             'property_id' => $property_id,
-                            'changes' => $changes
+                            'changes' => $changes,
+                            'source' => 'edit_property'
                         ]);
                     }
                 } catch (Exception $e) {

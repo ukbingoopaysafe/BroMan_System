@@ -21,7 +21,7 @@ if ($id <= 0) {
     exit;
 }
 
-$stmt = $conn->prepare('SELECT FilePath, FileName, FileType FROM property_attachments WHERE AttachmentID = ? LIMIT 1');
+$stmt = $conn->prepare('SELECT AttachmentID, PropertyID, FilePath, FileName, FileType FROM property_attachments WHERE AttachmentID = ? LIMIT 1');
 if (!$stmt) {
     http_response_code(500);
     exit;
@@ -44,6 +44,32 @@ if (!file_exists($path) || !is_readable($path)) {
 
 $filename = $row['FileName'] ?: basename($path);
 $mime = $row['FileType'] ?: mime_content_type($path) ?: 'application/octet-stream';
+        $disposition = (strpos($mime, 'image/') === 0) ? 'inline' : 'attachment';
+
+// Activity log for attachment download
+try {
+    require_once __DIR__ . '/activity_log.php';
+    $employee_id = $_SESSION['employee_id'] ?? null;
+    if (function_exists('activity_log_event')) {
+        activity_log_event($conn, $employee_id, 'PROPERTY_MEDIA_DOWNLOAD', [
+            'property_id' => (int)($row['PropertyID'] ?? 0),
+            'attachment_id' => (int)($row['AttachmentID'] ?? $id),
+            'file_name' => $filename,
+            'media_type' => 'attachment',
+            'download' => ($disposition === 'attachment')
+        ]);
+    } elseif (function_exists('log_activity')) {
+        log_activity($conn, $employee_id, 'property_media_download', [
+            'property_id' => (int)($row['PropertyID'] ?? 0),
+            'attachment_id' => (int)($row['AttachmentID'] ?? $id),
+            'file_name' => $filename,
+            'media_type' => 'attachment',
+            'download' => ($disposition === 'attachment')
+        ]);
+    }
+} catch (Exception $e) {
+    error_log('serve_attachment log failed: ' . $e->getMessage());
+}
 
 // Clear any accidental output buffering that might have started
 while (ob_get_level() > 0) {
