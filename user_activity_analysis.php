@@ -223,6 +223,46 @@ if ($stmt = $conn->prepare($sql_updates)) {
     $stmt->close();
 }
 
+// Section 3: Property Adds (العقارات المُضافة)
+$adds_by_property = [];
+$sql_adds = "SELECT employee_id, details, created_at
+             FROM activity_logs
+             WHERE $where AND action = 'add_property'
+             ORDER BY created_at DESC";
+if ($stmt = $conn->prepare($sql_adds)) {
+    $refs = [];
+    $refs[] = &$types;
+    foreach ($params as $k => $v) { $refs[] = &$params[$k]; }
+    call_user_func_array([$stmt, 'bind_param'], $refs);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $prop = extract_property_info($row['details']);
+        $pid = $prop['id'] ?? 0;
+        if ($pid <= 0) continue;
+        if (!isset($adds_by_property[$pid])) {
+            $adds_by_property[$pid] = [
+                'property_id' => $pid,
+                'friendly_id' => $prop['friendly_id'] ?? null,
+                'title' => $prop['title'] ?? '',
+                'total' => 0,
+                'last_time' => $row['created_at'],
+                'actors' => [],
+            ];
+        }
+        $adds_by_property[$pid]['total']++;
+        if (strtotime($row['created_at']) > strtotime($adds_by_property[$pid]['last_time'])) {
+            $adds_by_property[$pid]['last_time'] = $row['created_at'];
+        }
+        $eid = (int)$row['employee_id'];
+        if (!isset($adds_by_property[$pid]['actors'][$eid])) {
+            $adds_by_property[$pid]['actors'][$eid] = 0;
+        }
+        $adds_by_property[$pid]['actors'][$eid]++;
+    }
+    $stmt->close();
+}
+
 // sort properties by total views desc
 uasort($views_by_property, function($a, $b) {
     if ($b['total'] !== $a['total']) return $b['total'] <=> $a['total'];
@@ -246,6 +286,18 @@ uasort($updates_by_property, function($a, $b) {
 foreach ($updates_by_property as $pid => $row) {
     if (!empty($updates_by_property[$pid]['actors'])) {
         arsort($updates_by_property[$pid]['actors']);
+    }
+}
+
+// sort properties by creation time desc
+uasort($adds_by_property, function($a, $b) {
+    return strtotime($b['last_time']) <=> strtotime($a['last_time']);
+});
+
+// sort actors per property by add count desc
+foreach ($adds_by_property as $pid => $row) {
+    if (!empty($adds_by_property[$pid]['actors'])) {
+        arsort($adds_by_property[$pid]['actors']);
     }
 }
 
@@ -406,6 +458,50 @@ $title = 'تحليلات النشاط التشغيلي';
                                         <?php echo htmlspecialchars($fields_list); ?>
                                     </div>
                                 </td>
+                                <td>
+                                    <div class="actor-list">
+                                        <?php foreach ($row['actors'] as $eid => $count): ?>
+                                            <div class="actor-item">
+                                                <?php echo htmlspecialchars(get_employee_label($employee_map, $eid)); ?>
+                                                <span>— <?php echo (int)$count; ?> مرة</span>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </td>
+                                <td>
+                                    <?php echo htmlspecialchars(format_relative_time($row['last_time'])); ?>
+                                    <div class="analysis-table-note"><?php echo htmlspecialchars($row['last_time']); ?></div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <div class="premium-card" style="margin-top:12px;">
+            <h3 class="analysis-table-title">العقارات المُضافة</h3>
+            <?php if (empty($adds_by_property)): ?>
+                <p class="analysis-table-note">لا توجد عقارات مضافة ضمن الفترة المحددة.</p>
+            <?php else: ?>
+                <div class="premium-table-container">
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th>العقار</th>
+                                <th>العنوان</th>
+                                <th>عدد الإضافات</th>
+                                <th>بواسطة</th>
+                                <th>وقت الإضافة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($adds_by_property as $row): ?>
+                            <tr>
+                                <td>#<?php echo htmlspecialchars($row['friendly_id'] ?: $row['property_id']); ?></td>
+                                <td><?php echo htmlspecialchars($row['title'] ?: '-'); ?></td>
+                                <td><?php echo (int)$row['total']; ?></td>
                                 <td>
                                     <div class="actor-list">
                                         <?php foreach ($row['actors'] as $eid => $count): ?>
