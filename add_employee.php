@@ -123,6 +123,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $param_role = $role;
             
             if ($stmt->execute()) {
+                // Log add_employee action for OIS monitoring
+                $new_emp_id = $conn->insert_id;
+                require_once __DIR__ . '/activity_log.php';
+                log_activity($conn, $_SESSION['employee_id'] ?? null, 'add_employee', json_encode([
+                    'new_employee_id' => $new_emp_id,
+                    'name' => $full_name,
+                    'username' => $username,
+                    'role' => $role,
+                    'allowed_modes' => $allowed_modes_str ?? ''
+                ], JSON_UNESCAPED_UNICODE));
                 require_once __DIR__ . '/flash.php';
                 if (function_exists('add_flash')) { add_flash("Employee added successfully!", 6); }
                 header("Location: employees_list.php"); // Redirect to employees list or dashboard

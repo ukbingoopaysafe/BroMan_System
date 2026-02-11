@@ -82,6 +82,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 } else {
                     // Failed login
                     handle_failed_login($conn, $username);
+                    // Track failed login in activity_logs for OIS monitoring
+                    if (file_exists('activity_log.php')) {
+                        require_once 'activity_log.php';
+                        if (function_exists('log_activity')) {
+                            log_activity($conn, null, 'failed_login', json_encode([
+                                'username' => $username,
+                                'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+                                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? ''
+                            ]));
+                        }
+                    }
                     $error = "Invalid username or password.";
                 }
             } else {

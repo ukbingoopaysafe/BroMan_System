@@ -1566,18 +1566,21 @@ if ($map_link !== '') {
                 <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'manager', 'rental_admin'])): ?>
                 <a href="edit_property.php?id=<?php echo $property_id; ?>" class="btn btn-primary"><i class="fas fa-edit"></i> <?php echo t('edit'); ?></a>
                 <?php endif; ?>
-                <!-- WhatsApp share buttons -->
+                <!-- WhatsApp share buttons (with OIS tracking) -->
                 <a href="<?php echo htmlspecialchars($whatsapp_details_link); ?>" target="_blank" rel="noopener noreferrer"
                    class="btn btn-whatsapp" title="مشاركة تفاصيل العقار" aria-label="مشاركة تفاصيل العقار"
+                   id="btnShareDetails"
                    data-wa-link="<?php echo htmlspecialchars($whatsapp_details_link); ?>"
-                   data-wa-link-plain="<?php echo htmlspecialchars($whatsapp_details_plain_link); ?>">
+                   data-wa-link-plain="<?php echo htmlspecialchars($whatsapp_details_plain_link); ?>"
+                   onclick="trackShare('share_details')">
                     <i class="fab fa-whatsapp"></i>
                     مشاركة تفاصيل العقار
                 </a>
                 <?php if (!empty($whatsapp_map_link)): ?>
                 <a href="<?php echo htmlspecialchars($whatsapp_map_link); ?>" target="_blank" rel="noopener noreferrer"
                    class="btn btn-whatsapp" title="مشاركة الموقع على الخريطة" aria-label="مشاركة الموقع على الخريطة"
-                   onclick="return confirm('أنت على وشك مشاركة الموقع الجغرافي الدقيق للعقار. هل أنت متأكد؟');">
+                   id="btnShareLocation"
+                   onclick="if(!confirm('أنت على وشك مشاركة الموقع الجغرافي الدقيق للعقار. هل أنت متأكد؟')) return false; trackShare('share_location');">
                     <i class="fab fa-whatsapp"></i>
                     مشاركة الموقع على الخريطة
                 </a>
@@ -2569,6 +2572,28 @@ if ($map_link !== '') {
     // Legacy function for backward compatibility
     function changeHeroImage(thumbElement, imageSrc) {
         showMedia(thumbElement, 'image', imageSrc);
+    }
+    </script>
+    <script>
+    // ─── OIS Share Tracking ──────────────────────────────────
+    function trackShare(action) {
+        try {
+            fetch('api/activity_data.php?section=log_share', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    section: 'log_share',
+                    action: action,
+                    property_id: <?php echo (int)$property_id; ?>,
+                    friendly_id: <?php echo json_encode($property['friendly_id'] ?? ''); ?>,
+                    listing_type: <?php echo json_encode($property['listing_type'] ?? ''); ?>,
+                    property_type: <?php echo json_encode($property['TypeName'] ?? ''); ?>,
+                    share_method: 'WhatsApp'
+                })
+            }).catch(function(e) { console.warn('Share tracking failed:', e); });
+        } catch(e) {
+            console.warn('Share tracking error:', e);
+        }
     }
     </script>
 </body>

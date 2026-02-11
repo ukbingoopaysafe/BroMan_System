@@ -255,6 +255,107 @@ if (!function_exists('format_activity_details')) {
                     return implode(' | ', $parts);
                 }
                 break;
+
+            case 'failed_login':
+                if (is_array($decoded)) {
+                    $u = $decoded['username'] ?? 'unknown';
+                    $ip = $decoded['ip'] ?? '';
+                    $is_ar = function_exists('get_lang_code') && get_lang_code() === 'ar';
+                    return $is_ar
+                        ? sprintf('محاولة تسجيل دخول فاشلة | المستخدم: %s | IP: %s', $u, $ip)
+                        : sprintf('Failed login attempt | User: %s | IP: %s', $u, $ip);
+                }
+                break;
+
+            case 'download_media':
+                if (is_array($decoded)) {
+                    $pid = $decoded['property_id'] ?? '';
+                    $cnt = $decoded['file_count'] ?? 0;
+                    $is_ar = function_exists('get_lang_code') && get_lang_code() === 'ar';
+                    return $is_ar
+                        ? sprintf('تحميل وسائط | عقار: %s | عدد الملفات: %d', $pid, $cnt)
+                        : sprintf('Media download | Property: %s | Files: %d', $pid, $cnt);
+                }
+                break;
+
+            case 'upload_media':
+                if (is_array($decoded)) {
+                    $pid = $decoded['property_id'] ?? '';
+                    $type = $decoded['upload_type'] ?? '';
+                    $type_map_ar = ['image' => 'صورة', 'audio' => 'صوت', 'video' => 'فيديو', 'document' => 'مستند'];
+                    $is_ar = function_exists('get_lang_code') && get_lang_code() === 'ar';
+                    $type_disp = $is_ar ? ($type_map_ar[$type] ?? $type) : $type;
+                    return $is_ar
+                        ? sprintf('رفع وسائط | عقار: %s | النوع: %s', $pid, $type_disp)
+                        : sprintf('Media upload | Property: %s | Type: %s', $pid, $type_disp);
+                }
+                break;
+
+            case 'upload_attachment':
+                if (is_array($decoded)) {
+                    $pid = $decoded['property_id'] ?? '';
+                    $cnt = $decoded['file_count'] ?? 0;
+                    $is_ar = function_exists('get_lang_code') && get_lang_code() === 'ar';
+                    return $is_ar
+                        ? sprintf('رفع مرفقات | عقار: %s | عدد الملفات: %d', $pid, $cnt)
+                        : sprintf('Attachment upload | Property: %s | Files: %d', $pid, $cnt);
+                }
+                break;
+
+            case 'add_employee':
+                if (is_array($decoded)) {
+                    $name = $decoded['name'] ?? '';
+                    $role = $decoded['role'] ?? '';
+                    $is_ar = function_exists('get_lang_code') && get_lang_code() === 'ar';
+                    return $is_ar
+                        ? sprintf('إضافة موظف جديد | الاسم: %s | الدور: %s', $name, $role)
+                        : sprintf('Added employee | Name: %s | Role: %s', $name, $role);
+                }
+                break;
+
+            case 'edit_employee':
+                if (is_array($decoded)) {
+                    $name = $decoded['name'] ?? '';
+                    $changes = $decoded['changes'] ?? [];
+                    $is_ar = function_exists('get_lang_code') && get_lang_code() === 'ar';
+                    $ch = is_array($changes) ? implode(', ', $changes) : '';
+                    return $is_ar
+                        ? sprintf('تعديل موظف | الاسم: %s | التغييرات: %s', $name, $ch ?: 'لا يوجد')
+                        : sprintf('Edited employee | Name: %s | Changes: %s', $name, $ch ?: 'none');
+                }
+                break;
+
+            case 'delete_employee':
+                if (is_array($decoded)) {
+                    $eid = $decoded['deleted_employee_id'] ?? '';
+                    $is_ar = function_exists('get_lang_code') && get_lang_code() === 'ar';
+                    return $is_ar
+                        ? sprintf('حذف موظف | رقم الموظف: %s', $eid)
+                        : sprintf('Deleted employee | ID: %s', $eid);
+                }
+                break;
+
+            case 'share_details':
+                if (is_array($decoded)) {
+                    $fid = $decoded['friendly_id'] ?? ($decoded['property_id'] ?? '');
+                    $method = $decoded['share_method'] ?? 'WhatsApp';
+                    $is_ar = function_exists('get_lang_code') && get_lang_code() === 'ar';
+                    return $is_ar
+                        ? sprintf('مشاركة تفاصيل عقار #%s عبر %s', $fid, $method)
+                        : sprintf('Shared property #%s details via %s', $fid, $method);
+                }
+                break;
+
+            case 'share_location':
+                if (is_array($decoded)) {
+                    $fid = $decoded['friendly_id'] ?? ($decoded['property_id'] ?? '');
+                    $method = $decoded['share_method'] ?? 'WhatsApp';
+                    $is_ar = function_exists('get_lang_code') && get_lang_code() === 'ar';
+                    return $is_ar
+                        ? sprintf('مشاركة موقع عقار #%s على الخريطة عبر %s', $fid, $method)
+                        : sprintf('Shared property #%s location via %s', $fid, $method);
+                }
+                break;
         }
 
         // Fallback: return original string or JSON pretty

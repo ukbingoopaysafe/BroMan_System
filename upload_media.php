@@ -75,6 +75,14 @@ if (!is_dir($temp_document_dir)) {
     mkdir($temp_document_dir, 0755, true);
 }
 
+// Log upload_media action for OIS monitoring
+require_once __DIR__ . '/activity_log.php';
+$emp_id = $_SESSION['employee_id'] ?? null;
+log_activity($conn, $emp_id, 'upload_media', json_encode([
+    'property_id' => $property_id,
+    'upload_type' => $upload_type
+]));
+
 // Handle file upload
 if ($upload_type === 'image') {
     handleImageUpload($property_id, $image_dir, $conn, $temp_image_dir);

@@ -227,6 +227,23 @@ if (empty($role_err)) { // proceed if no error from self-demotion check
             $param_employee_id_update = $employee_id;
             
             if ($stmt_update->execute()) {
+                // Log edit_employee action for OIS monitoring
+                require_once __DIR__ . '/activity_log.php';
+                $changes_made = [];
+                if ($full_name_posted !== $full_name) $changes_made[] = 'name';
+                if ($username_posted !== $username) $changes_made[] = 'username';
+                if (isset($role_posted) && $role_posted !== $role) $changes_made[] = 'role';
+                if ($hashed_password_to_update !== null) $changes_made[] = 'password';
+                if (isset($allowed_modes_str_update) && isset($allowed_modes) && $allowed_modes_str_update !== $allowed_modes) $changes_made[] = 'allowed_modes';
+                log_activity($conn, $_SESSION['employee_id'] ?? null, 'edit_employee', json_encode([
+                    'edited_employee_id' => (int)$employee_id,
+                    'name' => $full_name_posted,
+                    'old_role' => $role ?? '',
+                    'new_role' => $role_posted ?? '',
+                    'old_allowed_modes' => $allowed_modes ?? '',
+                    'new_allowed_modes' => $allowed_modes_str_update ?? '',
+                    'changes' => $changes_made
+                ], JSON_UNESCAPED_UNICODE));
                 require_once __DIR__ . '/flash.php';
                 if (function_exists('add_flash')) { add_flash("Employee details updated successfully!", 6); }
                 // If admin edited their own role and demoted themselves, log them out or redirect to login

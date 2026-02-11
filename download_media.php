@@ -94,6 +94,17 @@ if ($doc_stmt) {
     $doc_stmt->close();
 }
 
+// Log download_media action for OIS monitoring
+if (!empty($files)) {
+    require_once __DIR__ . '/activity_log.php';
+    $emp_id = $_SESSION['employee_id'] ?? null;
+    log_activity($conn, $emp_id, 'download_media', json_encode([
+        'property_id' => $property_id,
+        'file_count' => count($files),
+        'listing_type' => $property['listing_type'] ?? ''
+    ]));
+}
+
 if (empty($files)) {
     http_response_code(404);
     echo 'No media files found';

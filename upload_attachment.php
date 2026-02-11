@@ -100,6 +100,16 @@ foreach ($_FILES['attachments']['name'] as $index => $origName) {
     }
 }
 
+// Log upload_attachment action for OIS monitoring
+$uploaded_count = count(array_filter($results, fn($r) => !empty($r['success'])));
+if ($uploaded_count > 0) {
+    require_once __DIR__ . '/activity_log.php';
+    log_activity($conn, $_SESSION['employee_id'] ?? null, 'upload_attachment', json_encode([
+        'property_id' => $property_id,
+        'file_count' => $uploaded_count
+    ]));
+}
+
 echo json_encode(['success' => true, 'results' => $results]);
 exit;
 

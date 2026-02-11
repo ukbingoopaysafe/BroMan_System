@@ -50,6 +50,11 @@ if (isset($_POST["id"]) && !empty(trim($_POST["id"]))) {
 
         if ($stmt->execute()) {
             if ($stmt->affected_rows > 0) {
+                // Log delete_employee action for OIS monitoring
+                require_once __DIR__ . '/activity_log.php';
+                log_activity($conn, $_SESSION['employee_id'] ?? null, 'delete_employee', json_encode([
+                    'deleted_employee_id' => $employee_id_to_delete
+                ]));
                 require_once __DIR__ . '/flash.php';
                 if (function_exists('add_flash')) { add_flash("Employee deleted successfully.", 6); }
             } else {
