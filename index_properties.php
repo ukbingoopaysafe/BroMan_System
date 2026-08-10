@@ -182,12 +182,84 @@ $types .= "s";
 
 // Add search term filter
 if (!empty($search_term)) {
-    // unit design is stored on Properties.unit_design (text), so reference p.unit_design here
-    // Also search in seller_name for owner/seller search
-    $sql_where[] = "(p.Title LIKE ? OR p.ProjectName LIKE ? OR p.governorate LIKE ? OR p.district LIKE ? OR p.Location LIKE ? OR p.company_name LIKE ? OR p.unit_design LIKE ? OR p.seller_name LIKE ?)";
     $search_param = "%" . $search_term . "%";
-    array_push($params, $search_param, $search_param, $search_param, $search_param, $search_param, $search_param, $search_param, $search_param);
-    $types .= "ssssssss";
+    $digits = preg_replace('/\D/', '', $search_term);
+
+    $or_clauses = [
+        "p.Title LIKE ?",
+        "p.ProjectName LIKE ?",
+        "p.governorate LIKE ?",
+        "p.district LIKE ?",
+        "p.Location LIKE ?",
+        "p.company_name LIKE ?",
+        "p.unit_design LIKE ?",
+        "p.seller_name LIKE ?",
+        "EXISTS (SELECT 1 FROM property_sellers ps WHERE ps.property_id = p.PropertyID AND ps.seller_name LIKE ?)"
+    ];
+
+    $search_params_add = [
+        $search_param, $search_param, $search_param, $search_param,
+        $search_param, $search_param, $search_param, $search_param,
+        $search_param
+    ];
+    $search_types_add = "sssssssss";
+
+    if (!empty($digits)) {
+        // Match user-facing property code (# friendly_id) and DB PropertyID
+        $or_clauses[] = "p.friendly_id = ?";
+        $search_params_add[] = intval($digits);
+        $search_types_add .= "i";
+
+        $or_clauses[] = "p.PropertyID = ?";
+        $search_params_add[] = intval($digits);
+        $search_types_add .= "i";
+
+        // Only search phone numbers if input has 6 or more digits
+        if (strlen($digits) >= 6) {
+            $or_clauses[] = "p.seller_phone LIKE ?";
+            $or_clauses[] = "p.sales_manager_phone LIKE ?";
+            $or_clauses[] = "p.salesperson_phone LIKE ?";
+            $or_clauses[] = "EXISTS (SELECT 1 FROM property_sellers ps WHERE ps.property_id = p.PropertyID AND ps.seller_phone LIKE ?)";
+
+            $search_params_add[] = $search_param;
+            $search_params_add[] = $search_param;
+            $search_params_add[] = $search_param;
+            $search_params_add[] = $search_param;
+            $search_types_add .= "ssss";
+
+            $phone_digit_param = "%" . $digits . "%";
+            $or_clauses[] = "REPLACE(REPLACE(REPLACE(REPLACE(p.seller_phone, '+', ''), ' ', ''), '-', ''), '(', '') LIKE ?";
+            $or_clauses[] = "REPLACE(REPLACE(REPLACE(REPLACE(p.sales_manager_phone, '+', ''), ' ', ''), '-', ''), '(', '') LIKE ?";
+            $or_clauses[] = "REPLACE(REPLACE(REPLACE(REPLACE(p.salesperson_phone, '+', ''), ' ', ''), '-', ''), '(', '') LIKE ?";
+            $or_clauses[] = "EXISTS (SELECT 1 FROM property_sellers ps WHERE ps.property_id = p.PropertyID AND REPLACE(REPLACE(REPLACE(REPLACE(ps.seller_phone, '+', ''), ' ', ''), '-', ''), '(', '') LIKE ?)";
+
+            $search_params_add[] = $phone_digit_param;
+            $search_params_add[] = $phone_digit_param;
+            $search_params_add[] = $phone_digit_param;
+            $search_params_add[] = $phone_digit_param;
+            $search_types_add .= "ssss";
+
+            if (substr($digits, 0, 1) === '0' && strlen($digits) > 4) {
+                $trimmed_digits_param = "%" . substr($digits, 1) . "%";
+                $or_clauses[] = "REPLACE(REPLACE(REPLACE(REPLACE(p.seller_phone, '+', ''), ' ', ''), '-', ''), '(', '') LIKE ?";
+                $or_clauses[] = "REPLACE(REPLACE(REPLACE(REPLACE(p.sales_manager_phone, '+', ''), ' ', ''), '-', ''), '(', '') LIKE ?";
+                $or_clauses[] = "REPLACE(REPLACE(REPLACE(REPLACE(p.salesperson_phone, '+', ''), ' ', ''), '-', ''), '(', '') LIKE ?";
+                $or_clauses[] = "EXISTS (SELECT 1 FROM property_sellers ps WHERE ps.property_id = p.PropertyID AND REPLACE(REPLACE(REPLACE(REPLACE(ps.seller_phone, '+', ''), ' ', ''), '-', ''), '(', '') LIKE ?)";
+
+                $search_params_add[] = $trimmed_digits_param;
+                $search_params_add[] = $trimmed_digits_param;
+                $search_params_add[] = $trimmed_digits_param;
+                $search_params_add[] = $trimmed_digits_param;
+                $search_types_add .= "ssss";
+            }
+        }
+    }
+
+    $sql_where[] = "(" . implode(" OR ", $or_clauses) . ")";
+    foreach ($search_params_add as $p_val) {
+        $params[] = $p_val;
+    }
+    $types .= $search_types_add;
 }
 
 // Add property type filter

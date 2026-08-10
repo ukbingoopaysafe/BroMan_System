@@ -74,7 +74,7 @@ return [
     'property_list' => 'Property List',
     'search' => 'Search',
     'search_properties' => 'Search Properties',
-    'search_properties_placeholder' => 'Name, project, location, governorate...',
+    'search_properties_placeholder' => 'Name, project, location, code, phone...',
     'property_type' => 'Property Type',
     'all_types' => 'All Types',
     'status' => 'Status',

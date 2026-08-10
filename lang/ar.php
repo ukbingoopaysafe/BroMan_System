@@ -79,7 +79,7 @@ return [
     'property_list' => 'قائمة العقارات',
     'search' => 'بحث',
     'search_properties' => 'بحث في العقارات',
-    'search_properties_placeholder' => 'اسم، مشروع، موقع، محافظة...',
+    'search_properties_placeholder' => 'اسم، مشروع، موقع، كود، رقم هاتف...',
     'property_type' => 'نوع العقار',
     'all_types' => 'جميع الأنواع',
     'status' => 'الحالة',
