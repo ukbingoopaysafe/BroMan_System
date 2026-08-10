@@ -1196,15 +1196,44 @@ document.addEventListener('DOMContentLoaded', function () {
             parseBtn.addEventListener('click', function () {
                 const input = document.getElementById('google_map_link');
                 const val = input ? input.value.trim() : '';
+                if (!val) {
+                    alert('يرجى إدخال رابط خرائط جوجل أولاً.');
+                    return;
+                }
+
                 const coords = extractLatLngFromGoogleUrl(val);
                 if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
                     latInput.value = coords.lat.toFixed(6);
                     lngInput.value = coords.lng.toFixed(6);
                     placeMarker({ lat: coords.lat, lng: coords.lng });
                     map.setZoom(15);
-                } else {
-                    alert('لم يتم العثور على إحداثيات في الرابط. الرجاء التحقق من أن الرابط من خرائط جوجل ويتضمن إحداثيات.');
+                    return;
                 }
+
+                const originalText = parseBtn.innerText;
+                parseBtn.disabled = true;
+                parseBtn.innerText = 'جاري التحقق...';
+
+                fetch('../resolve_map_url.php?url=' + encodeURIComponent(val))
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.success && !isNaN(data.lat) && !isNaN(data.lng)) {
+                            latInput.value = parseFloat(data.lat).toFixed(6);
+                            lngInput.value = parseFloat(data.lng).toFixed(6);
+                            placeMarker({ lat: parseFloat(data.lat), lng: parseFloat(data.lng) });
+                            map.setZoom(15);
+                        } else {
+                            alert(data && data.message ? data.message : 'لم يتم العثور على إحداثيات في الرابط. الرجاء التحقق من أن الرابط من خرائط جوجل ويتضمن إحداثيات.');
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error resolving map URL:', err);
+                        alert('حدث خطأ أثناء جلب إحداثيات الرابط. يرجى التأكد من أن الرابط صحيح أو من الاتصال بالإنترنت.');
+                    })
+                    .finally(() => {
+                        parseBtn.disabled = false;
+                        parseBtn.innerText = originalText;
+                    });
             });
         }
     }
