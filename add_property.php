@@ -1106,19 +1106,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 return null;
             }
 
-            const atMatch = url.match(/@([0-9.+-]+),([0-9.+-]+)/);
-            if (atMatch) {
-                return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
+            // Do not attempt direct parsing on short links (they must be resolved by server)
+            if (url.includes('maps.app.goo.gl') || url.includes('goo.gl/maps') || url.includes('bit.ly') || url.includes('tinyurl.com') || url.includes('t.co')) {
+                return null;
             }
 
-            const qMatch = url.match(/[?&](?:query|q)=\s*([0-9.+-]+),\s*([0-9.+-]+)/);
+            // Pattern 1: !3dlat!4dlng (Highest precision pin marker)
+            const dMatch = url.match(/!3d(-?[0-9.]+)!4d(-?[0-9.]+)/i);
+            if (dMatch) {
+                return { lat: parseFloat(dMatch[1]), lng: parseFloat(dMatch[2]) };
+            }
+
+            // Pattern 2: query=lat,lng or q=lat,lng or ll=lat,lng
+            const qMatch = url.match(/[?&](?:query|q|ll|destination|loc|point)=\s*(-?[0-9.]+)(?:%2C|,)\s*(-?[0-9.]+)/i);
             if (qMatch) {
                 return { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) };
             }
 
-            const dMatch = url.match(/!3d([0-9.+-]+)!4d([0-9.+-]+)/);
-            if (dMatch) {
-                return { lat: parseFloat(dMatch[1]), lng: parseFloat(dMatch[2]) };
+            // Pattern 3: /place/lat,lng or /search/lat,lng
+            const pMatch = url.match(/\/(?:place|search|dir)\/(-?[0-9]{1,2}\.[0-9]+),(?:%2C|,)?\s*(-?[0-9]{1,3}\.[0-9]+)/i);
+            if (pMatch) {
+                return { lat: parseFloat(pMatch[1]), lng: parseFloat(pMatch[2]) };
+            }
+
+            // Pattern 4: /@lat,lng (Camera center)
+            const atMatch = url.match(/@(-?[0-9.]+),(-?[0-9.]+)/);
+            if (atMatch) {
+                return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
             }
 
             return null;
@@ -1138,7 +1152,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         map = new google.maps.Map(mapElement, {
             center: center,
-            zoom: hasCoordinates ? 15 : 10,
+            zoom: hasCoordinates ? 16 : 10,
             gestureHandling: 'greedy',
             mapTypeControl: true,
             streetViewControl: true,
@@ -1157,48 +1171,64 @@ document.addEventListener('DOMContentLoaded', function () {
             placeMarker({ lat: clickedLat, lng: clickedLng });
         });
 
-        if (parseBtn) {
-            parseBtn.addEventListener('click', function () {
-                const input = document.getElementById('google_map_link');
-                const val = input ? input.value.trim() : '';
-                if (!val) {
-                    alert('يرجى إدخال رابط خرائط جوجل أولاً.');
-                    return;
-                }
+        function handleLinkResolution() {
+            const input = document.getElementById('google_map_link');
+            const val = input ? input.value.trim() : '';
+            if (!val) {
+                alert('يرجى إدخال رابط خرائط جوجل أولاً.');
+                return;
+            }
 
-                const coords = extractLatLngFromGoogleUrl(val);
-                if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
-                    latInput.value = coords.lat.toFixed(6);
-                    lngInput.value = coords.lng.toFixed(6);
-                    placeMarker({ lat: coords.lat, lng: coords.lng });
-                    map.setZoom(15);
-                    return;
-                }
+            const coords = extractLatLngFromGoogleUrl(val);
+            if (coords && !isNaN(coords.lat) && !isNaN(coords.lng) && (coords.lat !== 0 || coords.lng !== 0)) {
+                latInput.value = coords.lat.toFixed(6);
+                lngInput.value = coords.lng.toFixed(6);
+                placeMarker({ lat: coords.lat, lng: coords.lng });
+                map.setZoom(16);
+                return;
+            }
 
-                const originalText = parseBtn.innerText;
+            const originalText = parseBtn ? parseBtn.innerText : 'تحديد من الرابط';
+            if (parseBtn) {
                 parseBtn.disabled = true;
                 parseBtn.innerText = 'جاري التحقق...';
+            }
 
-                fetch('resolve_map_url.php?url=' + encodeURIComponent(val))
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data && data.success && !isNaN(data.lat) && !isNaN(data.lng)) {
-                            latInput.value = parseFloat(data.lat).toFixed(6);
-                            lngInput.value = parseFloat(data.lng).toFixed(6);
-                            placeMarker({ lat: parseFloat(data.lat), lng: parseFloat(data.lng) });
-                            map.setZoom(15);
-                        } else {
-                            alert(data && data.message ? data.message : 'لم يتم العثور على إحداثيات في الرابط. الرجاء التحقق من أن الرابط من خرائط جوجل ويتضمن إحداثيات.');
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Error resolving map URL:', err);
-                        alert('حدث خطأ أثناء جلب إحداثيات الرابط. يرجى التأكد من أن الرابط صحيح أو من الاتصال بالإنترنت.');
-                    })
-                    .finally(() => {
+            fetch('resolve_map_url.php?url=' + encodeURIComponent(val))
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.success && !isNaN(data.lat) && !isNaN(data.lng)) {
+                        latInput.value = parseFloat(data.lat).toFixed(6);
+                        lngInput.value = parseFloat(data.lng).toFixed(6);
+                        placeMarker({ lat: parseFloat(data.lat), lng: parseFloat(data.lng) });
+                        map.setZoom(16);
+                    } else {
+                        alert(data && data.message ? data.message : 'لم يتم العثور على إحداثيات في الرابط. الرجاء التحقق من أن الرابط من خرائط جوجل ويتضمن إحداثيات.');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error resolving map URL:', err);
+                    alert('حدث خطأ أثناء جلب إحداثيات الرابط. يرجى التأكد من أن الرابط صحيح أو من الاتصال بالإنترنت.');
+                })
+                .finally(() => {
+                    if (parseBtn) {
                         parseBtn.disabled = false;
                         parseBtn.innerText = originalText;
-                    });
+                    }
+                });
+        }
+
+        if (parseBtn) {
+            parseBtn.addEventListener('click', handleLinkResolution);
+        }
+
+        const mapLinkInput = document.getElementById('google_map_link');
+        if (mapLinkInput) {
+            mapLinkInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleLinkResolution();
+                }
             });
         }
     }
