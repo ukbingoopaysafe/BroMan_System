@@ -61,17 +61,22 @@ $elevators = null; // Added
 $unit_design = "";
 $finishing_type_id = null;
 $compound_area = $down_payment_percentage = null;
+$cash_discount_percentage = $maintenance_percentage = null;
 $payment_years = null;
-$delivery_date = "";
-$project_name = "";
+$delivery_date = $delivery_status = $construction_status = "";
+$project_name = $phase_name = "";
 $min_area = $max_area = $avg_area = null;
-$district = $governorate = $company_name = "";
+$district = $governorate = $company_name = $company_phone = "";
+$sales_director_name = $sales_director_phone = "";
+$operation_manager_name = $operation_manager_phone = "";
 $floors_count = null;
 $sales_manager_name = $sales_manager_phone = $salesperson_name = $salesperson_phone = "";
 $year_built = $unit_floor = "";
 $net_area = $loading_percentage = null;
 $price_cash = $price_installments = $monthly_rent = $daily_rent = $yearly_rent = $meter_price_cash = $meter_price_installments = null;
+$min_price = $max_price = $min_meter_price = $max_meter_price = null;
 $seller_type = $seller_name = $seller_phone = "";
+$offer_title = $offer_description = $offer_start_date = $offer_end_date = $brochure_url = "";
 $latitude = $longitude = null;
 $property_sellers = [];
 
@@ -137,29 +142,38 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 if (empty($linked_property_types) && $property_type_id) {
                     $linked_property_types[] = (int)$property_type_id;
                 }
-                $title = $row["Title"];
-                $description = $row["Description"];
-                $location = $row["Location"];
+                $title = $row["Title"] ?? '';
+                $description = $row["Description"] ?? '';
+                $location = $row["Location"] ?? '';
                 $area = $row["Area"];
                 $rooms = $row["Bedrooms"]; // Mapped to rooms
                 $bathrooms = $row["Bathrooms"];
                 $balconies = ($row["balconies"] == 0) ? '' : $row["balconies"];
                 $elevators = $row["elevators"];
-                $status = $row["Status"];
-                $unit_design = $row["unit_design"];
+                $status = $row["Status"] ?? 'available';
+                $unit_design = $row["unit_design"] ?? '';
                 $finishing_type_id = $row["finishing_type_id"];
                 $compound_area = $row["compound_area"];
                 $down_payment_percentage = $row["down_payment_percentage"];
+                $cash_discount_percentage = $row["cash_discount_percentage"] ?? null;
+                $maintenance_percentage = $row["maintenance_percentage"] ?? null;
                 $payment_years = $row["payment_years"];
-                $delivery_date = $row["delivery_date"];
-                $project_name = $row["ProjectName"];
-                // Price columns removed from schema
+                $delivery_date = $row["delivery_date"] ?? '';
+                $delivery_status = $row["delivery_status"] ?? '';
+                $construction_status = $row["construction_status"] ?? '';
+                $project_name = $row["ProjectName"] ?? '';
+                $phase_name = $row["phase_name"] ?? '';
                 $min_area = $row["min_area"];
                 $max_area = $row["max_area"];
                 $avg_area = $row["avg_area"];
-                $district = $row["district"];
-                $governorate = $row["governorate"];
+                $district = $row["district"] ?? '';
+                $governorate = $row["governorate"] ?? '';
                 $company_name = $row["company_name"] ?? '';
+                $company_phone = $row["company_phone"] ?? '';
+                $sales_director_name = $row["sales_director_name"] ?? '';
+                $sales_director_phone = $row["sales_director_phone"] ?? '';
+                $operation_manager_name = $row["operation_manager_name"] ?? '';
+                $operation_manager_phone = $row["operation_manager_phone"] ?? '';
                 $floors_count = $row["FloorsCount"] ?? null;
                 $sales_manager_name = $row["sales_manager_name"] ?? '';
                 $sales_manager_phone = $row["sales_manager_phone"] ?? '';
@@ -168,6 +182,11 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $listing_type = $row["listing_type"] ?? 'Primary';
                 $latitude = $row["latitude"] ?? '';
                 $longitude = $row["longitude"] ?? '';
+                $offer_title = $row["offer_title"] ?? '';
+                $offer_description = $row["offer_description"] ?? '';
+                $offer_start_date = $row["offer_start_date"] ?? '';
+                $offer_end_date = $row["offer_end_date"] ?? '';
+                $brochure_url = $row["brochure_url"] ?? '';
 
                 if (!is_mode_allowed_for_role($listing_type)) {
                     $_SESSION["error_message"] = t('mode_not_allowed_for_role');
@@ -188,11 +207,15 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $loading_percentage = $row["loading_percentage"] ?? null;
                 $price_cash = $row["price_cash"] ?? null;
                 $price_installments = $row["price_installments"] ?? null;
+                $min_price = $row["min_price"] ?? null;
+                $max_price = $row["max_price"] ?? null;
                 $monthly_rent = $row["monthly_rent"] ?? null;
                 $daily_rent = $row["daily_rent"] ?? null;
                 $yearly_rent = $row["yearly_rent"] ?? null;
                 $meter_price_cash = $row["meter_price_cash"] ?? null;
                 $meter_price_installments = $row["meter_price_installments"] ?? null;
+                $min_meter_price = $row["min_meter_price"] ?? null;
+                $max_meter_price = $row["max_meter_price"] ?? null;
                 $seller_type = $row["seller_type"] ?? null;
                 $seller_name = $row["seller_name"] ?? null;
                 $seller_phone = $row["seller_phone"] ?? null;
@@ -275,16 +298,26 @@ if ($att_stmt) {
         'unit_design' => $unit_design,
         'compound_area' => $compound_area,
         'down_payment_percentage' => $down_payment_percentage,
+        'cash_discount_percentage' => $cash_discount_percentage,
+        'maintenance_percentage' => $maintenance_percentage,
         'payment_years' => $payment_years,
         'delivery_date' => $delivery_date,
+        'delivery_status' => $delivery_status,
+        'construction_status' => $construction_status,
         'ProjectName' => $project_name,
+        'phase_name' => $phase_name,
         'min_area' => $min_area,
         'max_area' => $max_area,
         'avg_area' => $avg_area,
         'district' => $district,
         'governorate' => $governorate,
         'company_name' => $company_name,
+        'company_phone' => $company_phone,
         'FloorsCount' => $floors_count,
+        'sales_director_name' => $sales_director_name,
+        'sales_director_phone' => $sales_director_phone,
+        'operation_manager_name' => $operation_manager_name,
+        'operation_manager_phone' => $operation_manager_phone,
         'sales_manager_name' => $sales_manager_name,
         'sales_manager_phone' => $sales_manager_phone,
         'salesperson_name' => $salesperson_name,
@@ -295,11 +328,20 @@ if ($att_stmt) {
         'loading_percentage' => $loading_percentage,
         'price_cash' => $price_cash,
         'price_installments' => $price_installments,
+        'min_price' => $min_price,
+        'max_price' => $max_price,
         'meter_price_cash' => $meter_price_cash,
         'meter_price_installments' => $meter_price_installments,
+        'min_meter_price' => $min_meter_price,
+        'max_meter_price' => $max_meter_price,
         'seller_type' => $seller_type,
         'seller_name' => $seller_name,
         'seller_phone' => $seller_phone,
+        'offer_title' => $offer_title,
+        'offer_description' => $offer_description,
+        'offer_start_date' => $offer_start_date,
+        'offer_end_date' => $offer_end_date,
+        'brochure_url' => $brochure_url,
         'daily_rent' => $daily_rent
     ];
 
@@ -336,9 +378,14 @@ if ($att_stmt) {
     $finishing_type_id_posted = isset($_POST['finishing_type_id']) && trim($_POST['finishing_type_id']) !== '' ? trim($_POST['finishing_type_id']) : null;
     $compound_area_posted = isset($_POST['compound_area']) && trim($_POST['compound_area']) !== '' ? trim($_POST['compound_area']) : null;
     $down_payment_percentage_posted = isset($_POST['down_payment_percentage']) && trim($_POST['down_payment_percentage']) !== '' ? trim($_POST['down_payment_percentage']) : null;
+    $cash_discount_percentage_posted = isset($_POST['cash_discount_percentage']) && trim($_POST['cash_discount_percentage']) !== '' ? trim($_POST['cash_discount_percentage']) : null;
+    $maintenance_percentage_posted = isset($_POST['maintenance_percentage']) && trim($_POST['maintenance_percentage']) !== '' ? trim($_POST['maintenance_percentage']) : null;
     $payment_years_posted = isset($_POST['payment_years']) && trim($_POST['payment_years']) !== '' ? trim($_POST['payment_years']) : null;
     $delivery_date_posted = isset($_POST['delivery_date']) && trim($_POST['delivery_date']) !== '' ? trim($_POST['delivery_date']) : null;
+    $delivery_status_posted = isset($_POST['delivery_status']) ? trim($_POST['delivery_status']) : null;
+    $construction_status_posted = isset($_POST['construction_status']) ? trim($_POST['construction_status']) : null;
     $project_name_posted = isset($_POST['project_name']) ? trim($_POST['project_name']) : null;
+    $phase_name_posted = isset($_POST['phase_name']) ? trim($_POST['phase_name']) : null;
     // Price columns removed from schema
     $min_area_posted = isset($_POST['min_area']) && trim($_POST['min_area']) !== '' ? trim($_POST['min_area']) : null;
     $max_area_posted = isset($_POST['max_area']) && trim($_POST['max_area']) !== '' ? trim($_POST['max_area']) : null;
@@ -346,6 +393,22 @@ if ($att_stmt) {
     $district_posted = isset($_POST['district']) ? trim($_POST['district']) : null;
     $governorate_posted = isset($_POST['governorate']) ? trim($_POST['governorate']) : null;
     $company_name_posted = isset($_POST['company_name']) ? trim($_POST['company_name']) : null;
+    
+    // Concatenate Company Phone
+    $cp_code = $_POST['company_phone_code'] ?? '';
+    $cp_number = $_POST['company_phone_number'] ?? '';
+    $company_phone_posted = ($cp_code !== '' && $cp_number !== '') ? $cp_code . $cp_number : null;
+
+    $sales_director_name_posted = isset($_POST['sales_director_name']) ? trim($_POST['sales_director_name']) : null;
+    $sd_code = $_POST['sales_director_phone_code'] ?? '';
+    $sd_number = $_POST['sales_director_phone_number'] ?? '';
+    $sales_director_phone_posted = ($sd_code !== '' && $sd_number !== '') ? $sd_code . $sd_number : null;
+
+    $operation_manager_name_posted = isset($_POST['operation_manager_name']) ? trim($_POST['operation_manager_name']) : null;
+    $om_code = $_POST['operation_manager_phone_code'] ?? '';
+    $om_number = $_POST['operation_manager_phone_number'] ?? '';
+    $operation_manager_phone_posted = ($om_code !== '' && $om_number !== '') ? $om_code . $om_number : null;
+
     $floors_count_posted = isset($_POST["floors_count"]) && trim($_POST["floors_count"]) !== '' ? trim($_POST["floors_count"]) : null;
     $sales_manager_name_posted = isset($_POST['sales_manager_name']) ? trim($_POST['sales_manager_name']) : null;
     
@@ -363,6 +426,13 @@ if ($att_stmt) {
     $latitude_posted = isset($_POST['latitude']) && trim($_POST['latitude']) !== '' ? filter_input(INPUT_POST, 'latitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $longitude_posted = isset($_POST['longitude']) && trim($_POST['longitude']) !== '' ? filter_input(INPUT_POST, 'longitude', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     
+    // Offers & Brochure
+    $offer_title_posted = isset($_POST['offer_title']) ? trim($_POST['offer_title']) : null;
+    $offer_description_posted = isset($_POST['offer_description']) ? trim($_POST['offer_description']) : null;
+    $offer_start_date_posted = !empty($_POST['offer_start_date']) ? trim($_POST['offer_start_date']) : null;
+    $offer_end_date_posted = !empty($_POST['offer_end_date']) ? trim($_POST['offer_end_date']) : null;
+    $brochure_url_posted = isset($_POST['brochure_url']) ? trim($_POST['brochure_url']) : null;
+
     // New Phase 2 fields
     $year_built_posted = isset($_POST['year_built']) ? trim($_POST['year_built']) : null;
     // Multi-seller parsing
@@ -404,11 +474,15 @@ if ($att_stmt) {
     $loading_percentage_posted = isset($_POST['loading_percentage']) && trim($_POST['loading_percentage']) !== '' ? filter_input(INPUT_POST, 'loading_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $price_cash_posted = isset($_POST['price_cash']) && trim($_POST['price_cash']) !== '' ? filter_input(INPUT_POST, 'price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $price_installments_posted = isset($_POST['price_installments']) && trim($_POST['price_installments']) !== '' ? filter_input(INPUT_POST, 'price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
+    $min_price_posted = isset($_POST['min_price']) && trim($_POST['min_price']) !== '' ? filter_input(INPUT_POST, 'min_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
+    $max_price_posted = isset($_POST['max_price']) && trim($_POST['max_price']) !== '' ? filter_input(INPUT_POST, 'max_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $monthly_rent_posted = isset($_POST['monthly_rent']) && trim($_POST['monthly_rent']) !== '' ? filter_input(INPUT_POST, 'monthly_rent', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $daily_rent_posted = isset($_POST['daily_rent']) && trim($_POST['daily_rent']) !== '' ? filter_input(INPUT_POST, 'daily_rent', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $yearly_rent_posted = isset($_POST['yearly_rent']) && trim($_POST['yearly_rent']) !== '' ? filter_input(INPUT_POST, 'yearly_rent', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $meter_price_cash_posted = isset($_POST['meter_price_cash']) && trim($_POST['meter_price_cash']) !== '' ? filter_input(INPUT_POST, 'meter_price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $meter_price_installments_posted = isset($_POST['meter_price_installments']) && trim($_POST['meter_price_installments']) !== '' ? filter_input(INPUT_POST, 'meter_price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
+    $min_meter_price_posted = isset($_POST['min_meter_price']) && trim($_POST['min_meter_price']) !== '' ? filter_input(INPUT_POST, 'min_meter_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
+    $max_meter_price_posted = isset($_POST['max_meter_price']) && trim($_POST['max_meter_price']) !== '' ? filter_input(INPUT_POST, 'max_meter_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE) : null;
     $seller_name_posted = $seller_entries_post[0]['seller_name'] ?? null;
     $seller_phone_posted = $seller_entries_post[0]['seller_phone'] ?? null;
     // Bedrooms/Rooms
@@ -523,20 +597,32 @@ if ($att_stmt) {
     if (!empty($salesperson_phone_posted) && !isValidPhoneFormat($salesperson_phone_posted)) {
         $errors['salesperson_phone'] = 'رقم هاتف مسؤول المبيعات غير صحيح.';
     }
+    if (!empty($company_phone_posted) && !isValidPhoneFormat($company_phone_posted)) {
+        $errors['company_phone'] = 'رقم هاتف الشركة المطورة غير صحيح.';
+    }
+    if (!empty($sales_director_phone_posted) && !isValidPhoneFormat($sales_director_phone_posted)) {
+        $errors['sales_director_phone'] = 'رقم هاتف رئيس قطاع المبيعات غير صحيح.';
+    }
+    if (!empty($operation_manager_phone_posted) && !isValidPhoneFormat($operation_manager_phone_posted)) {
+        $errors['operation_manager_phone'] = 'رقم هاتف مدير العمليات غير صحيح.';
+    }
 
     // If no errors, proceed with update
     if (empty($errors)) {
         $sql_update = "UPDATE Properties SET 
             PropertyTypeID = ?, Title = ?, Description = ?, Location = ?, Area = ?, Bedrooms = ?,
             Status = ?, unit_design = ?, finishing_type_id = ?, 
-            compound_area = ?, down_payment_percentage = ?, payment_years = ?, delivery_date = ?, 
-            ProjectName = ?, min_area = ?, max_area = ?, avg_area = ?, 
-            district = ?, governorate = ?, company_name = ?, FloorsCount = ?,
+            compound_area = ?, down_payment_percentage = ?, cash_discount_percentage = ?, maintenance_percentage = ?, payment_years = ?, delivery_date = ?, delivery_status = ?, construction_status = ?,
+            ProjectName = ?, phase_name = ?, min_area = ?, max_area = ?, avg_area = ?, 
+            district = ?, governorate = ?, company_name = ?, company_phone = ?, FloorsCount = ?,
+            sales_director_name = ?, sales_director_phone = ?, operation_manager_name = ?, operation_manager_phone = ?,
             sales_manager_name = ?, sales_manager_phone = ?, salesperson_name = ?, salesperson_phone = ?,
             year_built = ?, unit_floor = ?, net_area = ?, loading_percentage = ?, 
-            price_cash = ?, price_installments = ?, meter_price_cash = ?, meter_price_installments = ?, 
+            price_cash = ?, price_installments = ?, min_price = ?, max_price = ?,
+            meter_price_cash = ?, meter_price_installments = ?, min_meter_price = ?, max_meter_price = ?,
             monthly_rent = ?, daily_rent = ?, yearly_rent = ?,
             seller_type = ?, seller_name = ?, seller_phone = ?,
+            offer_title = ?, offer_description = ?, offer_start_date = ?, offer_end_date = ?, brochure_url = ?,
             latitude = ?, longitude = ?, Bathrooms = ?, balconies = ?, elevators = ?, currency = ?
             WHERE PropertyID = ?";
 
@@ -549,6 +635,8 @@ if ($att_stmt) {
             $elevators_val = empty($elevators_posted) ? null : $elevators_posted; // Added
             $compound_area_val = empty($compound_area_posted) ? null : $compound_area_posted;
             $down_payment_val = empty($down_payment_percentage_posted) ? null : $down_payment_percentage_posted;
+            $cash_discount_val = empty($cash_discount_percentage_posted) ? null : $cash_discount_percentage_posted;
+            $maintenance_val = empty($maintenance_percentage_posted) ? null : $maintenance_percentage_posted;
             $payment_years_val = empty($payment_years_posted) ? null : $payment_years_posted;
             $min_area_val = empty($min_area_posted) ? null : $min_area_posted;
             $max_area_val = empty($max_area_posted) ? null : $max_area_posted;
@@ -558,11 +646,15 @@ if ($att_stmt) {
             $loading_percentage_val = empty($loading_percentage_posted) ? null : $loading_percentage_posted;
             $price_cash_val = empty($price_cash_posted) ? null : $price_cash_posted;
             $price_installments_val = empty($price_installments_posted) ? null : $price_installments_posted;
+            $min_price_val = empty($min_price_posted) ? null : $min_price_posted;
+            $max_price_val = empty($max_price_posted) ? null : $max_price_posted;
             $monthly_rent_val = empty($monthly_rent_posted) ? null : $monthly_rent_posted;
             $daily_rent_val = empty($daily_rent_posted) ? null : $daily_rent_posted;
             $yearly_rent_val = empty($yearly_rent_posted) ? null : $yearly_rent_posted;
             $meter_price_cash_val = empty($meter_price_cash_posted) ? null : $meter_price_cash_posted;
             $meter_price_installments_val = empty($meter_price_installments_posted) ? null : $meter_price_installments_posted;
+            $min_meter_price_val = empty($min_meter_price_posted) ? null : $min_meter_price_posted;
+            $max_meter_price_val = empty($max_meter_price_posted) ? null : $max_meter_price_posted;
             $latitude_val = empty($latitude_posted) ? null : $latitude_posted;
             $longitude_val = empty($longitude_posted) ? null : $longitude_posted;
             // Ensure finishing type is an integer when provided (helps with bind types)
@@ -571,8 +663,8 @@ if ($att_stmt) {
             // temporary debug logging removed
 
             // Build types string programmatically
-            // 45 's' for parameters (incl currency) and final 'i' for PropertyID (total 46)
-            $types = str_repeat('s', 45) . 'i';
+            // Total 64 parameters + 1 PropertyID = 65
+            $types = str_repeat('s', 64) . 'i';
             $stmt_update->bind_param(
                 $types,
                 $property_type_id_posted,
@@ -586,16 +678,26 @@ if ($att_stmt) {
                 $finishing_type_id_val,
                 $compound_area_val,
                 $down_payment_val,
+                $cash_discount_val,
+                $maintenance_val,
                 $payment_years_val,
                 $delivery_date_posted,
+                $delivery_status_posted,
+                $construction_status_posted,
                 $project_name_posted,
+                $phase_name_posted,
                 $min_area_val,
                 $max_area_val,
                 $avg_area_val,
                 $district_posted,
                 $governorate_posted,
                 $company_name_posted,
+                $company_phone_posted,
                 $floors_count_val,
+                $sales_director_name_posted,
+                $sales_director_phone_posted,
+                $operation_manager_name_posted,
+                $operation_manager_phone_posted,
                 $sales_manager_name_posted,
                 $sales_manager_phone_posted,
                 $salesperson_name_posted,
@@ -606,14 +708,23 @@ if ($att_stmt) {
                 $loading_percentage_val,
                 $price_cash_val,
                 $price_installments_val,
+                $min_price_val,
+                $max_price_val,
                 $meter_price_cash_val,
                 $meter_price_installments_val,
+                $min_meter_price_val,
+                $max_meter_price_val,
                 $monthly_rent_val,
                 $daily_rent_val,
                 $yearly_rent_val,
                 $seller_type_posted,
                 $seller_name_posted,
                 $seller_phone_posted,
+                $offer_title_posted,
+                $offer_description_posted,
+                $offer_start_date_posted,
+                $offer_end_date_posted,
+                $brochure_url_posted,
                 $latitude_val,
                 $longitude_val,
                 $bathrooms_val, // Added
@@ -691,16 +802,26 @@ if ($att_stmt) {
                     'unit_design' => $unit_design_posted,
                     'compound_area' => $compound_area_val,
                     'down_payment_percentage' => $down_payment_val,
+                    'cash_discount_percentage' => $cash_discount_val,
+                    'maintenance_percentage' => $maintenance_val,
                     'payment_years' => $payment_years_val,
                     'delivery_date' => $delivery_date_posted,
+                    'delivery_status' => $delivery_status_posted,
+                    'construction_status' => $construction_status_posted,
                     'ProjectName' => $project_name_posted,
+                    'phase_name' => $phase_name_posted,
                     'min_area' => $min_area_val,
                     'max_area' => $max_area_val,
                     'avg_area' => $avg_area_val,
                     'district' => $district_posted,
                     'governorate' => $governorate_posted,
                     'company_name' => $company_name_posted,
+                    'company_phone' => $company_phone_posted,
                     'FloorsCount' => $floors_count_val,
+                    'sales_director_name' => $sales_director_name_posted,
+                    'sales_director_phone' => $sales_director_phone_posted,
+                    'operation_manager_name' => $operation_manager_name_posted,
+                    'operation_manager_phone' => $operation_manager_phone_posted,
                     'sales_manager_name' => $sales_manager_name_posted,
                     'sales_manager_phone' => $sales_manager_phone_posted,
                     'salesperson_name' => $salesperson_name_posted,
@@ -711,11 +832,20 @@ if ($att_stmt) {
                     'loading_percentage' => $loading_percentage_val,
                     'price_cash' => $price_cash_val,
                     'price_installments' => $price_installments_val,
+                    'min_price' => $min_price_val,
+                    'max_price' => $max_price_val,
                     'meter_price_cash' => $meter_price_cash_val,
                     'meter_price_installments' => $meter_price_installments_val,
+                    'min_meter_price' => $min_meter_price_val,
+                    'max_meter_price' => $max_meter_price_val,
                     'seller_type' => $seller_type_posted,
                     'seller_name' => $seller_name_posted,
                     'seller_phone' => $seller_phone_posted,
+                    'offer_title' => $offer_title_posted,
+                    'offer_description' => $offer_description_posted,
+                    'offer_start_date' => $offer_start_date_posted,
+                    'offer_end_date' => $offer_end_date_posted,
+                    'brochure_url' => $brochure_url_posted,
                     'daily_rent' => $daily_rent_val
                 ];
 
@@ -1137,6 +1267,30 @@ if ($att_stmt) {
         ?>
 
         <?php
+            if (!function_exists('parsePhoneForInput')) {
+                function parsePhoneForInput($fullPhone) {
+                    $codes = ['+20', '+966', '+971', '+965', '+974', '+973', '+968', '+1', '+44'];
+                    $fullPhone = trim($fullPhone ?? '');
+                    if ($fullPhone === '') return ['code' => '+20', 'number' => ''];
+                    
+                    foreach ($codes as $c) {
+                        if (strpos($fullPhone, $c) === 0) {
+                            return ['code' => $c, 'number' => substr($fullPhone, strlen($c))];
+                        }
+                    }
+                    if (strpos($fullPhone, '01') === 0 && strlen($fullPhone) === 11) {
+                        return ['code' => '+20', 'number' => substr($fullPhone, 1)];
+                    }
+                    return ['code' => '+20', 'number' => $fullPhone]; 
+                }
+            }
+
+            $parsedCP = parsePhoneForInput($company_phone);
+            $parsedSD = parsePhoneForInput($sales_director_phone);
+            $parsedOM = parsePhoneForInput($operation_manager_phone);
+            $parsedSM = parsePhoneForInput($sales_manager_phone);
+            $parsedSP = parsePhoneForInput($salesperson_phone);
+
             // Prepare seller rows for rendering in the form
             $seller_entries_for_render = $seller_entries_post ?? $property_sellers;
             if (empty($seller_entries_for_render)) {
@@ -1157,16 +1311,329 @@ if ($att_stmt) {
             <input type="hidden" name="property_id" value="<?php echo $property_id; ?>">
             <?php echo csrf_input(); ?>
 
+            <?php if ($listing_type === 'Primary'): ?>
+            <!-- ===================== PRIMARY PROJECT EDIT FORM ===================== -->
+            
+            <!-- 1. Basic Project Info -->
+            <div class="form-section">
+                <h3><i class="fas fa-building" style="margin-left: 8px; color: #3b82f6;"></i><?php echo t('project_info') ?: 'معلومات المشروع والمطور'; ?></h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label><?php echo t('listing_type'); ?>:</label>
+                        <span class="form-display" style="font-weight: bold; color: #2563eb;"><?php echo t('primary_properties'); ?></span>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label><?php echo t('property_type'); ?>: *</label>
+                        <div id="property_type_checkboxes" class="checkbox-group" style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 10px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">
+                            <?php foreach ($property_types_list as $type): ?>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: #fff; padding: 8px 15px; border-radius: 6px; border: 1px solid #dee2e6; transition: all 0.2s;">
+                                    <input type="checkbox" name="property_type_ids[]" value="<?php echo $type['PropertyTypeID']; ?>" <?php echo (in_array($type['PropertyTypeID'], $linked_property_types)) ? 'checked' : ''; ?>>
+                                    <?php 
+                                    if (get_lang_code() === 'ar' && !empty($type['TypeName_ar'])) {
+                                        echo htmlspecialchars($type['TypeName_ar']);
+                                    } else {
+                                        echo htmlspecialchars($type['TypeName']);
+                                    }
+                                    ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                        <input type="hidden" name="property_type_id" id="property_type_id" value="<?php echo $property_type_id; ?>">
+                        <?php if (isset($errors['property_type_id'])) {
+                            echo "<span class='error-message'>" . $errors['property_type_id'] . "</span>";
+                        } ?>
+                    </div>
+                    <div class="form-group">
+                        <label for="project_name"><?php echo t('project_name'); ?>: *</label>
+                        <input type="text" id="project_name" name="project_name" class="form-input" value="<?php echo htmlspecialchars($project_name); ?>" required>
+                        <?php if (isset($errors['project_name'])) {
+                            echo "<span class='error-message'>" . $errors['project_name'] . "</span>";
+                        } ?>
+                    </div>
+                    <div class="form-group">
+                        <label for="phase_name"><?php echo t('phase_name'); ?>:</label>
+                        <input type="text" id="phase_name" name="phase_name" class="form-input" value="<?php echo htmlspecialchars($phase_name); ?>" placeholder="مثال: المرحلة الأولى / Cluster A">
+                    </div>
+                    <div class="form-group">
+                        <label for="company_name"><?php echo t('developer_company'); ?>: *</label>
+                        <input type="text" id="company_name" name="company_name" class="form-input" value="<?php echo htmlspecialchars($company_name); ?>" required>
+                        <?php if (isset($errors['company_name'])) {
+                            echo "<span class='error-message'>" . $errors['company_name'] . "</span>";
+                        } ?>
+                    </div>
+                    <div class="form-group">
+                        <label for="status"><?php echo t('status'); ?>:</label>
+                        <select id="status" name="status" class="form-input">
+                            <option value="available" <?php echo ($status == 'available') ? 'selected' : ''; ?>><?php echo t('available'); ?></option>
+                            <option value="sold" <?php echo ($status == 'sold') ? 'selected' : ''; ?>><?php echo t('sold'); ?></option>
+                            <option value="unavailable" <?php echo ($status == 'unavailable') ? 'selected' : ''; ?>><?php echo t('unavailable'); ?></option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Developer & Management Contacts -->
+            <div class="form-section" style="border-right: 4px solid #10b981;">
+                <h3><i class="fas fa-address-book" style="margin-left: 8px; color: #10b981;"></i><?php echo t('developer_contacts'); ?></h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="company_phone"><?php echo t('company_phone'); ?>:</label>
+                        <div class="phone-input-group" style="display:flex; gap:10px;">
+                            <select name="company_phone_code" id="company_phone_code" class="form-input" style="width:120px;"></select>
+                            <input type="text" name="company_phone_number" id="company_phone_number" class="form-input" value="<?php echo htmlspecialchars($parsedCP['number']); ?>" data-initial-code="<?php echo htmlspecialchars($parsedCP['code']); ?>" placeholder="10xxxxxxxx">
+                        </div>
+                        <?php if (isset($errors['company_phone'])) { echo "<span class='error-message'>" . $errors['company_phone'] . "</span>"; } ?>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sales_director_name"><?php echo t('sales_director_name'); ?>:</label>
+                        <input type="text" id="sales_director_name" name="sales_director_name" class="form-input" value="<?php echo htmlspecialchars($sales_director_name); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="sales_director_phone"><?php echo t('sales_director_phone'); ?>:</label>
+                        <div class="phone-input-group" style="display:flex; gap:10px;">
+                            <select name="sales_director_phone_code" id="sales_director_phone_code" class="form-input" style="width:120px;"></select>
+                            <input type="text" name="sales_director_phone_number" id="sales_director_phone_number" class="form-input" value="<?php echo htmlspecialchars($parsedSD['number']); ?>" data-initial-code="<?php echo htmlspecialchars($parsedSD['code']); ?>" placeholder="10xxxxxxxx">
+                        </div>
+                        <?php if (isset($errors['sales_director_phone'])) { echo "<span class='error-message'>" . $errors['sales_director_phone'] . "</span>"; } ?>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="operation_manager_name"><?php echo t('operation_manager_name'); ?>:</label>
+                        <input type="text" id="operation_manager_name" name="operation_manager_name" class="form-input" value="<?php echo htmlspecialchars($operation_manager_name); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="operation_manager_phone"><?php echo t('operation_manager_phone'); ?>:</label>
+                        <div class="phone-input-group" style="display:flex; gap:10px;">
+                            <select name="operation_manager_phone_code" id="operation_manager_phone_code" class="form-input" style="width:120px;"></select>
+                            <input type="text" name="operation_manager_phone_number" id="operation_manager_phone_number" class="form-input" value="<?php echo htmlspecialchars($parsedOM['number']); ?>" data-initial-code="<?php echo htmlspecialchars($parsedOM['code']); ?>" placeholder="10xxxxxxxx">
+                        </div>
+                        <?php if (isset($errors['operation_manager_phone'])) { echo "<span class='error-message'>" . $errors['operation_manager_phone'] . "</span>"; } ?>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sales_manager_name"><?php echo t("sales_manager_name_label"); ?>:</label>
+                        <input type="text" id="sales_manager_name" name="sales_manager_name" class="form-input" value="<?php echo htmlspecialchars($sales_manager_name); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="sales_manager_phone"><?php echo t("sales_manager_phone"); ?>:</label>
+                        <div class="phone-input-group" style="display:flex; gap:10px;">
+                            <select name="sales_manager_phone_code" id="sales_manager_phone_code" class="form-input" style="width:120px;"></select>
+                            <input type="text" name="sales_manager_phone_number" id="sales_manager_phone_number" class="form-input" value="<?php echo htmlspecialchars($parsedSM['number']); ?>" data-initial-code="<?php echo htmlspecialchars($parsedSM['code']); ?>" placeholder="10xxxxxxxx">
+                        </div>
+                        <?php if (isset($errors['sales_manager_phone'])) { echo "<span class='error-message'>" . $errors['sales_manager_phone'] . "</span>"; } ?>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="salesperson_name"><?php echo t("salesperson_name"); ?>:</label>
+                        <input type="text" name="salesperson_name" id="salesperson_name" class="form-input" value="<?php echo htmlspecialchars($salesperson_name); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="salesperson_phone"><?php echo t("salesperson_phone"); ?>:</label>
+                        <div class="phone-input-group" style="display:flex; gap:10px;">
+                            <select name="salesperson_phone_code" id="salesperson_phone_code" class="form-input" style="width:120px;"></select>
+                            <input type="text" name="salesperson_phone_number" id="salesperson_phone_number" class="form-input" value="<?php echo htmlspecialchars($parsedSP['number']); ?>" data-initial-code="<?php echo htmlspecialchars($parsedSP['code']); ?>" placeholder="10xxxxxxxx">
+                        </div>
+                        <?php if (isset($errors['salesperson_phone'])) { echo "<span class='error-message'>" . $errors['salesperson_phone'] . "</span>"; } ?>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Location Info -->
+            <div class="form-section">
+                <h3><i class="fas fa-map-marker-alt" style="margin-left: 8px; color: #ef4444;"></i><?php echo t('location_info'); ?></h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="governorate"><?php echo t('governorate'); ?>: *</label>
+                        <input type="text" id="governorate" name="governorate" class="form-input" value="<?php echo htmlspecialchars($governorate); ?>" required>
+                        <?php if (isset($errors['governorate'])) {
+                            echo "<span class='error-message'>" . $errors['governorate'] . "</span>";
+                        } ?>
+                    </div>
+                    <div class="form-group">
+                        <label for="district"><?php echo t('district'); ?>: *</label>
+                        <input type="text" id="district" name="district" class="form-input" value="<?php echo htmlspecialchars($district); ?>" required>
+                        <?php if (isset($errors['district'])) {
+                            echo "<span class='error-message'>" . $errors['district'] . "</span>";
+                        } ?>
+                    </div>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="location"><?php echo t('detailed_address'); ?>:</label>
+                    <input type="text" id="location" name="location" class="form-input" value="<?php echo htmlspecialchars($location); ?>" placeholder="مثال: التجمع الخامس - بجوار الجامعة الأمريكية">
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1; margin-top: 15px;">
+                    <label><?php echo t('select_location_on_map'); ?>:</label>
+                    <div style="margin:8px 0; display:flex; gap:8px; align-items:center;">
+                        <input type="text" id="google_map_link" class="form-input" style="flex:1;" placeholder="https://www.google.com/maps/..." value="<?php echo htmlspecialchars($google_map_link ?? ''); ?>">
+                        <button type="button" id="parse_google_link" class="btn">تحديد من الرابط</button>
+                    </div>
+                    <small>لصق رابط خرائط جوجل ثم اضغط "تحديد من الرابط"</small>
+                    <div id="map" style="height: 350px; width: 100%; border: 1px solid #ddd; border-radius: 6px; margin-top: 8px;"></div>
+                    <input type="hidden" id="latitude" name="latitude" value="<?php echo htmlspecialchars($latitude ?? ''); ?>">
+                    <input type="hidden" id="longitude" name="longitude" value="<?php echo htmlspecialchars($longitude ?? ''); ?>">
+                </div>
+            </div>
+
+            <!-- 4. Project Specs & Area Ranges -->
+            <div class="form-section">
+                <h3><i class="fas fa-ruler-combined" style="margin-left: 8px; color: #8b5cf6;"></i><?php echo t('project_specs_and_areas') ?: 'مواصفات ومساحات المشروع'; ?></h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="compound_area"><?php echo t('compound_area'); ?> (<?php echo t('faddan'); ?>):</label>
+                        <input type="number" step="0.01" id="compound_area" name="compound_area" class="form-input" value="<?php echo htmlspecialchars($compound_area); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="delivery_date"><?php echo t('delivery_date'); ?>:</label>
+                        <input type="date" id="delivery_date" name="delivery_date" class="form-input" value="<?php echo htmlspecialchars($delivery_date); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="delivery_status"><?php echo t('delivery_status'); ?>:</label>
+                        <select id="delivery_status" name="delivery_status" class="form-input">
+                            <option value=""><?php echo t('select'); ?></option>
+                            <option value="فوري" <?php echo ($delivery_status === 'فوري') ? 'selected' : ''; ?>><?php echo t('delivery_status_ready'); ?></option>
+                            <option value="خلال سنة" <?php echo ($delivery_status === 'خلال سنة') ? 'selected' : ''; ?>><?php echo t('delivery_status_1year'); ?></option>
+                            <option value="خلال سنتين" <?php echo ($delivery_status === 'خلال سنتين') ? 'selected' : ''; ?>><?php echo t('delivery_status_2years'); ?></option>
+                            <option value="خلال 3 سنوات" <?php echo ($delivery_status === 'خلال 3 سنوات') ? 'selected' : ''; ?>><?php echo t('delivery_status_3years'); ?></option>
+                            <option value="خلال 4 سنوات" <?php echo ($delivery_status === 'خلال 4 سنوات') ? 'selected' : ''; ?>><?php echo t('delivery_status_4years'); ?></option>
+                            <option value="تحت الإنشاء" <?php echo ($delivery_status === 'تحت الإنشاء') ? 'selected' : ''; ?>><?php echo t('delivery_status_under_construction'); ?></option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="construction_status"><?php echo t('construction_status'); ?>:</label>
+                        <input type="text" id="construction_status" name="construction_status" class="form-input" value="<?php echo htmlspecialchars($construction_status); ?>" placeholder="مثال: تم إنجاز 70% من الأعمال الإنشائية">
+                    </div>
+                    <div class="form-group">
+                        <label for="min_area"><?php echo t('min_area_sqm'); ?>:</label>
+                        <input type="number" step="0.01" id="min_area" name="min_area" class="form-input" value="<?php echo htmlspecialchars($min_area); ?>" placeholder="مثال: 120">
+                    </div>
+                    <div class="form-group">
+                        <label for="max_area"><?php echo t('max_area_sqm'); ?>:</label>
+                        <input type="number" step="0.01" id="max_area" name="max_area" class="form-input" value="<?php echo htmlspecialchars($max_area); ?>" placeholder="مثال: 350">
+                    </div>
+                    <div class="form-group">
+                        <label for="avg_area"><?php echo t('avg_area_sqm'); ?>:</label>
+                        <input type="number" step="0.01" id="avg_area" name="avg_area" class="form-input" value="<?php echo htmlspecialchars($avg_area); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="loading_percentage"><?php echo t('loading_percentage'); ?> (%):</label>
+                        <input type="number" step="0.01" id="loading_percentage" name="loading_percentage" class="form-input" min="0" max="100" value="<?php echo htmlspecialchars($loading_percentage); ?>" placeholder="مثال: 15">
+                    </div>
+                    <div class="form-group">
+                        <label for="finishing_type_id"><?php echo t('finishing_type'); ?>:</label>
+                        <select id="finishing_type_id" name="finishing_type_id" class="form-input">
+                            <option value=""><?php echo t('select_finishing_type'); ?></option>
+                            <?php foreach ($finishing_types_list as $finish): ?>
+                                <option value="<?php echo $finish['FinishingID']; ?>" <?php echo ($finishing_type_id == $finish['FinishingID']) ? 'selected' : ''; ?>>
+                                    <?php echo (get_lang_code() === 'ar' && !empty($finish['FinishingName_ar'])) ? htmlspecialchars($finish['FinishingName_ar']) : htmlspecialchars($finish['FinishingName']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Pricing Ranges & Payment Plans -->
+            <div class="form-section" style="border-right: 4px solid #f59e0b;">
+                <h3><i class="fas fa-coins" style="margin-left: 8px; color: #f59e0b;"></i><?php echo t('pricing_and_payment'); ?></h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="currency"><?php echo t('currency'); ?>:</label>
+                        <select id="currency" name="currency" class="form-input">
+                            <option value="EGP" <?php echo ($currency == 'EGP') ? 'selected' : ''; ?>><?php echo t('EGP'); ?></option>
+                            <option value="USD" <?php echo ($currency == 'USD') ? 'selected' : ''; ?>><?php echo t('USD'); ?></option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="min_price"><?php echo t('min_price'); ?>:</label>
+                        <input type="number" step="0.01" id="min_price" name="min_price" class="form-input" value="<?php echo htmlspecialchars($min_price); ?>" placeholder="مثال: 3000000">
+                    </div>
+                    <div class="form-group">
+                        <label for="max_price"><?php echo t('max_price'); ?>:</label>
+                        <input type="number" step="0.01" id="max_price" name="max_price" class="form-input" value="<?php echo htmlspecialchars($max_price); ?>" placeholder="مثال: 12000000">
+                    </div>
+                    <div class="form-group">
+                        <label for="min_meter_price"><?php echo t('min_meter_price'); ?>:</label>
+                        <input type="number" step="0.01" id="min_meter_price" name="min_meter_price" class="form-input" value="<?php echo htmlspecialchars($min_meter_price); ?>" placeholder="مثال: 25000">
+                    </div>
+                    <div class="form-group">
+                        <label for="max_meter_price"><?php echo t('max_meter_price'); ?>:</label>
+                        <input type="number" step="0.01" id="max_meter_price" name="max_meter_price" class="form-input" value="<?php echo htmlspecialchars($max_meter_price); ?>" placeholder="مثال: 45000">
+                    </div>
+                    <div class="form-group">
+                        <label for="price_cash"><?php echo t('price_cash'); ?> (اختياري):</label>
+                        <input type="number" step="0.01" id="price_cash" name="price_cash" class="form-input" value="<?php echo htmlspecialchars($price_cash); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="cash_discount_percentage"><?php echo t('cash_discount_percentage'); ?> (%):</label>
+                        <input type="number" step="0.01" id="cash_discount_percentage" name="cash_discount_percentage" class="form-input" min="0" max="100" value="<?php echo htmlspecialchars($cash_discount_percentage); ?>" placeholder="مثال: 25">
+                    </div>
+                    <div class="form-group">
+                        <label for="maintenance_percentage"><?php echo t('maintenance_percentage'); ?> (%):</label>
+                        <input type="number" step="0.01" id="maintenance_percentage" name="maintenance_percentage" class="form-input" min="0" max="100" value="<?php echo htmlspecialchars($maintenance_percentage); ?>" placeholder="مثال: 8">
+                    </div>
+                    <div class="form-group">
+                        <label for="down_payment_percentage"><?php echo t('down_payment_percentage'); ?> (%):</label>
+                        <input type="number" step="0.01" id="down_payment_percentage" name="down_payment_percentage" class="form-input" min="0" max="100" value="<?php echo htmlspecialchars($down_payment_percentage); ?>" placeholder="مثال: 10">
+                    </div>
+                    <div class="form-group">
+                        <label for="payment_years"><?php echo t('payment_years'); ?>:</label>
+                        <input type="number" id="payment_years" name="payment_years" class="form-input" step="0.5" min="0.5" value="<?php echo ($payment_years !== null && $payment_years !== '') ? number_format((float)$payment_years, 1, '.', '') : ''; ?>" placeholder="مثال: 7 أو 8.5">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Active Offers & Promotions -->
+            <div class="form-section" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 20px;">
+                <h3 style="color: #b45309;"><i class="fas fa-gift" style="margin-left: 8px; color: #f59e0b;"></i><?php echo t('offers_and_promotions'); ?></h3>
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="offer_title"><?php echo t('offer_title'); ?>:</label>
+                        <input type="text" id="offer_title" name="offer_title" class="form-input" value="<?php echo htmlspecialchars($offer_title); ?>" placeholder="مثال: خصم خاص 10% بمناسبة إطلاق المرحلة الجديدة + مقدم 5% فقط">
+                    </div>
+                    <div class="form-group">
+                        <label for="offer_start_date"><?php echo t('offer_start_date'); ?>:</label>
+                        <input type="date" id="offer_start_date" name="offer_start_date" class="form-input" value="<?php echo htmlspecialchars($offer_start_date); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="offer_end_date"><?php echo t('offer_end_date'); ?>:</label>
+                        <input type="date" id="offer_end_date" name="offer_end_date" class="form-input" value="<?php echo htmlspecialchars($offer_end_date); ?>">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="offer_description"><?php echo t('offer_description'); ?>:</label>
+                        <textarea id="offer_description" name="offer_description" class="form-input" rows="3" placeholder="تفاصيل العرض، الشروط، طرق السداد الخاصة بالعرض..."><?php echo htmlspecialchars($offer_description); ?></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. Brochure & Project Description -->
+            <div class="form-section">
+                <h3><i class="fas fa-file-pdf" style="margin-left: 8px; color: #dc2626;"></i><?php echo t('project_brochure_and_details') ?: 'البروشور والتفاصيل الإضافية'; ?></h3>
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="brochure_url"><?php echo t('brochure_url'); ?>:</label>
+                        <input type="url" id="brochure_url" name="brochure_url" class="form-input" value="<?php echo htmlspecialchars($brochure_url); ?>" placeholder="https://drive.google.com/... أو رابط ملف PDF">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="description"><?php echo t('description'); ?>:</label>
+                        <textarea id="description" name="description" class="form-input" rows="5" placeholder="وصف كامل للمشروع، الخدمات، وسائل الراحة، الماستر بلان..."><?php echo htmlspecialchars($description); ?></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <?php else: ?>
+            <!-- ===================== RESALE / RENTAL EDIT FORM ===================== -->
+
             <div class="form-section">
                 <h3><?php echo t('basic_info'); ?></h3>
                 <div class="form-grid">
                     <div class="form-group">
                         <label><?php echo t('listing_type'); ?>:</label>
-                        <span class="form-display"><?php echo t($listing_type === 'Primary' ? 'primary_properties' : 'resale_properties'); ?></span>
+                        <span class="form-display"><?php echo t($listing_type === 'Rental' ? 'rental_properties' : 'resale_properties'); ?></span>
                     </div>
                     <div class="form-group" style="grid-column: 1 / -1;">
                         <label><?php echo t('property_type'); ?>: *</label>
-                        <!-- All 6 property types as checkboxes -->
                         <div id="property_type_checkboxes" class="checkbox-group" style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">
                             <?php foreach ($property_types_list as $type): ?>
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: #fff; padding: 8px 15px; border-radius: 6px; border: 1px solid #dee2e6; transition: all 0.2s;">
@@ -1181,7 +1648,6 @@ if ($att_stmt) {
                                 </label>
                             <?php endforeach; ?>
                         </div>
-                        <!-- Hidden field to store first selected type for legacy PropertyTypeID column -->
                         <input type="hidden" name="property_type_id" id="property_type_id" value="<?php echo $property_type_id; ?>">
                         <?php if (isset($errors['property_type_id'])) {
                             echo "<span class='error-message'>" . $errors['property_type_id'] . "</span>";
@@ -1250,18 +1716,13 @@ if ($att_stmt) {
                 <!-- Interactive Map Section -->
                 <div class="form-group" style="grid-column: 1 / -1;">
                     <label><?php echo t('select_location_on_map'); ?>:</label>
-
-                    <!-- Google Maps link input -->
                     <div style="margin:8px 0; display:flex; gap:8px; align-items:center;">
                         <input type="text" id="google_map_link" class="form-input" style="flex:1;" placeholder="https://www.google.com/maps/..." value="<?php echo htmlspecialchars($google_map_link ?? ''); ?>">
                         <button type="button" id="parse_google_link" class="btn">تحديد من الرابط</button>
                     </div>
                     <small>لصق رابط خرائط جوجل ثم اضغط "تحديد من الرابط"</small>
-
                     <div id="map" style="height: 400px; width: 100%; border: 1px solid #ddd; border-radius: 4px;"></div>
                     <small><?php echo t('click_map_to_set_location'); ?></small>
-
-                    <!-- Hidden inputs for coordinates -->
                     <input type="hidden" id="latitude" name="latitude" value="<?php echo htmlspecialchars($latitude ?? ''); ?>">
                     <input type="hidden" id="longitude" name="longitude" value="<?php echo htmlspecialchars($longitude ?? ''); ?>">
                 </div>
@@ -1328,8 +1789,7 @@ if ($att_stmt) {
                             <select id="finishing_type_id" name="finishing_type_id" class="form-input">
                                 <option value=""><?php echo t('select_finishing_type'); ?></option>
                                 <?php foreach ($finishing_types_list as $finish): ?>
-                                    <option value="<?php echo $finish['FinishingID']; ?>"
-                                        <?php echo ($finishing_type_id == $finish['FinishingID']) ? 'selected' : ''; ?>>
+                                    <option value="<?php echo $finish['FinishingID']; ?>" <?php echo ($finishing_type_id == $finish['FinishingID']) ? 'selected' : ''; ?>>
                                         <?php 
                                         if (get_lang_code() === 'ar' && !empty($finish['FinishingName_ar'])) {
                                             echo htmlspecialchars($finish['FinishingName_ar']);
@@ -1358,7 +1818,6 @@ if ($att_stmt) {
                             <input type="text" id="unit_floor" name="unit_floor" class="form-input" value="<?php echo htmlspecialchars($unit_floor); ?>">
                         </div>
                     </div>
-                    <!-- Bathrooms field removed from schema -->
                 </div>
             </div>
 
@@ -1374,8 +1833,6 @@ if ($att_stmt) {
                                 echo "<span class='error-message'>" . $errors['floors_count'] . "</span>";
                             } ?>
                         </div>
-                        <!-- إضافة خانة نموذج الوحدة -->
-                        <!-- إضافة خانة نموذج الوحدة -->
                         <div class="form-group">
                             <label for="unit_design_commercial"><?php echo t('unit_design'); ?>:</label>
                             <input type="text" id="unit_design_commercial" name="unit_design_commercial" class="form-input" value="<?php echo htmlspecialchars($unit_design); ?>">
@@ -1383,7 +1840,6 @@ if ($att_stmt) {
                                 echo "<span class='error-message'>" . $errors['unit_design'] . "</span>";
                             } ?>
                         </div>
-                        <!-- New Fields for Commercial/Other -->
                         <div class="form-group">
                             <label for="rooms_commercial"><?php echo t('rooms'); ?>:</label>
                             <input type="number" id="rooms_commercial" name="rooms_commercial" class="form-input" value="<?php echo htmlspecialchars($rooms); ?>">
@@ -1445,23 +1901,14 @@ if ($att_stmt) {
                     <div class="form-group">
                         <label for="min_area"><?php echo t('min_area_sqm'); ?>:</label>
                         <input type="number" step="0.01" id="min_area" name="min_area" class="form-input" value="<?php echo htmlspecialchars($min_area); ?>">
-                        <?php if (isset($errors['min_area'])) {
-                            echo "<span class='error-message'>" . $errors['min_area'] . "</span>";
-                        } ?>
                     </div>
                     <div class="form-group">
                         <label for="max_area"><?php echo t('max_area_sqm'); ?>:</label>
                         <input type="number" step="0.01" id="max_area" name="max_area" class="form-input" value="<?php echo htmlspecialchars($max_area); ?>">
-                        <?php if (isset($errors['max_area'])) {
-                            echo "<span class='error-message'>" . $errors['max_area'] . "</span>";
-                        } ?>
                     </div>
                     <div class="form-group">
                         <label for="avg_area"><?php echo t('avg_area_sqm'); ?>:</label>
                         <input type="number" step="0.01" id="avg_area" name="avg_area" class="form-input" value="<?php echo htmlspecialchars($avg_area); ?>">
-                        <?php if (isset($errors['avg_area'])) {
-                            echo "<span class='error-message'>" . $errors['avg_area'] . "</span>";
-                        } ?>
                     </div>
                     <div class="form-group">
                         <label for="net_area"><?php echo t('net_area'); ?>:</label>
@@ -1479,7 +1926,7 @@ if ($att_stmt) {
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="currency"><?php echo t('currency'); ?>:</label>
-                        <select id="currency" name="currency">
+                        <select id="currency" name="currency" class="form-input">
                             <option value="EGP" <?php echo ($currency == 'EGP') ? 'selected' : ''; ?>><?php echo t('EGP'); ?></option>
                             <option value="USD" <?php echo ($currency == 'USD') ? 'selected' : ''; ?>><?php echo t('USD'); ?></option>
                         </select>
@@ -1515,23 +1962,14 @@ if ($att_stmt) {
                     <div class="form-group">
                         <label for="down_payment_percentage"><?php echo t('down_payment_percentage'); ?> (%):</label>
                         <input type="number" step="0.01" id="down_payment_percentage" name="down_payment_percentage" class="form-input" value="<?php echo htmlspecialchars($down_payment_percentage); ?>">
-                        <?php if (isset($errors['down_payment_percentage'])) {
-                            echo "<span class='error-message'>" . $errors['down_payment_percentage'] . "</span>";
-                        } ?>
                     </div>
                     <div class="form-group">
                         <label for="payment_years"><?php echo t('payment_years'); ?>:</label>
                         <input type="number" id="payment_years" name="payment_years" class="form-input" step="0.5" min="0.5" value="<?php echo ($payment_years !== null && $payment_years !== '') ? number_format((float)$payment_years, 1, '.', '') : ''; ?>" placeholder="مثال: 1.5 للسنة والنصف">
-                        <?php if (isset($errors['payment_years'])) {
-                            echo "<span class='error-message'>" . $errors['payment_years'] . "</span>";
-                        } ?>
                     </div>
                     <div class="form-group">
                         <label for="delivery_date"><?php echo t('delivery_date'); ?>:</label>
                         <input type="date" id="delivery_date" name="delivery_date" class="form-input" value="<?php echo htmlspecialchars($delivery_date); ?>">
-                        <?php if (isset($errors['delivery_date'])) {
-                            echo "<span class='error-message'>" . $errors['delivery_date'] . "</span>";
-                        } ?>
                     </div>
                 </div>
             </div>
@@ -1554,58 +1992,24 @@ if ($att_stmt) {
                         <label for="sales_manager_name"><?php echo t("sales_manager_name_label"); ?></label>
                         <input type="text" id="sales_manager_name" name="sales_manager_name" class="form-input" value="<?php echo htmlspecialchars($sales_manager_name); ?>">
                     </div>
-                    <!-- Split Phone Fields for Sales Manager -->
-                 <?php
-                     // Helper to ensure phone logic is consistent
-                     // We need to parse $sales_manager_phone into code and number
-                     // We can use a simple inline JS or PHP helper? 
-                     // Actually better to handle via JS on load, but we need initial values for inputs.
-                     // PHP Parsing:
-                     function parsePhoneForInput($fullPhone) {
-                         $codes = ['+20', '+966', '+971', '+965', '+974', '+973', '+968', '+1', '+44'];
-                         $fullPhone = trim($fullPhone ?? '');
-                         if ($fullPhone === '') return ['code' => '+20', 'number' => ''];
-                         
-                         foreach ($codes as $c) {
-                             if (strpos($fullPhone, $c) === 0) {
-                                 return ['code' => $c, 'number' => substr($fullPhone, strlen($c))];
-                             }
-                         }
-                         // Egyptian local fallback: 01xxxx -> +20, 1xxxx
-                         if (strpos($fullPhone, '01') === 0 && strlen($fullPhone) === 11) {
-                             return ['code' => '+20', 'number' => substr($fullPhone, 1)];
-                         }
-                         // Default fallback
-                         return ['code' => 'other', 'number' => $fullPhone]; 
-                     }
-
-                     $parsedSM = parsePhoneForInput($sales_manager_phone);
-                     $parsedSP = parsePhoneForInput($salesperson_phone);
-                 ?>
-                
-                <div class="form-group">
-                    <label for="sales_manager_phone"><?php echo t("sales_manager_phone"); ?></label>
-                    <div class="phone-input-group" style="display:flex; gap:10px;">
-                        <select name="sales_manager_phone_code" id="sales_manager_phone_code" class="form-input" style="width:120px;">
-                            <!-- Options populated by JS or hardcoded? JS is source of truth. -->
-                             <!-- We will let JS populate options, but we need to set selected value via dataset or JS init -->
-                        </select>
-                        <input type="text" name="sales_manager_phone_number" id="sales_manager_phone_number" class="form-input" value="<?php echo htmlspecialchars($parsedSM['number']); ?>" data-initial-code="<?php echo htmlspecialchars($parsedSM['code']); ?>">
+                    <div class="form-group">
+                        <label for="sales_manager_phone"><?php echo t("sales_manager_phone"); ?></label>
+                        <div class="phone-input-group" style="display:flex; gap:10px;">
+                            <select name="sales_manager_phone_code" id="sales_manager_phone_code" class="form-input" style="width:120px;"></select>
+                            <input type="text" name="sales_manager_phone_number" id="sales_manager_phone_number" class="form-input" value="<?php echo htmlspecialchars($parsedSM['number']); ?>" data-initial-code="<?php echo htmlspecialchars($parsedSM['code']); ?>">
+                        </div>
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="salesperson_name"><?php echo t("salesperson_name"); ?></label>
-                     <input type="text" name="salesperson_name" id="salesperson_name" class="form-input" value="<?php echo htmlspecialchars($salesperson_name); ?>">
-                </div>
-
-                <div class="form-group">
-                    <label for="salesperson_phone"><?php echo t("salesperson_phone"); ?></label>
-                    <div class="phone-input-group" style="display:flex; gap:10px;">
-                         <select name="salesperson_phone_code" id="salesperson_phone_code" class="form-input" style="width:120px;"></select>
-                         <input type="text" name="salesperson_phone_number" id="salesperson_phone_number" class="form-input" value="<?php echo htmlspecialchars($parsedSP['number']); ?>" data-initial-code="<?php echo htmlspecialchars($parsedSP['code']); ?>">
+                    <div class="form-group">
+                        <label for="salesperson_name"><?php echo t("salesperson_name"); ?></label>
+                        <input type="text" name="salesperson_name" id="salesperson_name" class="form-input" value="<?php echo htmlspecialchars($salesperson_name); ?>">
                     </div>
-                </div>
+                    <div class="form-group">
+                        <label for="salesperson_phone"><?php echo t("salesperson_phone"); ?></label>
+                        <div class="phone-input-group" style="display:flex; gap:10px;">
+                             <select name="salesperson_phone_code" id="salesperson_phone_code" class="form-input" style="width:120px;"></select>
+                             <input type="text" name="salesperson_phone_number" id="salesperson_phone_number" class="form-input" value="<?php echo htmlspecialchars($parsedSP['number']); ?>" data-initial-code="<?php echo htmlspecialchars($parsedSP['code']); ?>">
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1637,7 +2041,6 @@ if ($att_stmt) {
                                 <label><?php echo t("seller_phone"); ?></label>
                                 <?php 
                                     $parsedSeller = parsePhoneForInput($seller_row["seller_phone"]); 
-                                    // Generate unique IDs for current row
                                     $sCodeId = "seller_phone_code_" . $idx;
                                     $sNumId = "seller_phone_number_" . $idx;
                                 ?>
@@ -1686,10 +2089,11 @@ if ($att_stmt) {
                     </div>
                 </template>
             </div>
+            <?php endif; ?>
 
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary"><?php echo t('update_property_button'); ?></button>
-                <a href="index_properties.php" class="btn btn-secondary"><?php echo t('cancel'); ?></a>
+            <div class="form-actions" style="margin-top: 25px;">
+                <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-size: 16px;"><?php echo t('update_property_button'); ?></button>
+                <a href="view_property.php?id=<?php echo $property_id; ?>" class="btn btn-secondary" style="padding: 10px 24px; font-size: 16px;"><?php echo t('cancel'); ?></a>
             </div>
         </form>
     </div>
@@ -2122,6 +2526,30 @@ if ($att_stmt) {
     <script src="js/phone_validation.js?v=<?php echo time(); ?>"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Init Company Phone
+        const cpCode = document.getElementById('company_phone_code');
+        const cpNum = document.getElementById('company_phone_number');
+        if (cpCode && cpNum) {
+            cpCode.innerHTML = getCountryOptionsHtml(cpNum.dataset.initialCode || '+20');
+            setupPhoneValidation('company_phone_code', 'company_phone_number');
+        }
+
+        // Init Sales Director Phone
+        const sdCode = document.getElementById('sales_director_phone_code');
+        const sdNum = document.getElementById('sales_director_phone_number');
+        if (sdCode && sdNum) {
+            sdCode.innerHTML = getCountryOptionsHtml(sdNum.dataset.initialCode || '+20');
+            setupPhoneValidation('sales_director_phone_code', 'sales_director_phone_number');
+        }
+
+        // Init Operation Manager Phone
+        const omCode = document.getElementById('operation_manager_phone_code');
+        const omNum = document.getElementById('operation_manager_phone_number');
+        if (omCode && omNum) {
+            omCode.innerHTML = getCountryOptionsHtml(omNum.dataset.initialCode || '+20');
+            setupPhoneValidation('operation_manager_phone_code', 'operation_manager_phone_number');
+        }
+
         // Init Sales Manager Phone
         const smCode = document.getElementById('sales_manager_phone_code');
         const smNum = document.getElementById('sales_manager_phone_number');
@@ -2143,8 +2571,6 @@ if ($att_stmt) {
             const codeSelect = row.querySelector('.seller-phone-code');
             const numInput = row.querySelector('.seller-phone-number');
             if (codeSelect && numInput) {
-                // Ensure they have IDs for validation setup (if not using template ID logic)
-                // Existing PHP loop gave them IDs, but let's be robust
                 if (!codeSelect.id) codeSelect.id = `seller_phone_code_row_${index}`;
                 if (!numInput.id) numInput.id = `seller_phone_number_row_${index}`;
                 
@@ -2155,59 +2581,43 @@ if ($att_stmt) {
 
         // Handle Dynamic Seller Addition
         const addSellerBtn = document.getElementById('add-seller-row');
-        addSellerBtn.addEventListener('click', function() {
-             const template = document.getElementById('seller-row-template');
-             const container = document.getElementById('seller-entries');
-             const clone = template.content.cloneNode(true);
-             container.appendChild(clone);
-             
-             // The existing click handler adds the row. We need to init the new row.
-             // We can assume the new row is the last one in #seller-entries
-             setTimeout(() => {
-                 const rows = document.querySelectorAll('#seller-entries .seller-row');
-                 const lastRow = rows[rows.length - 1];
-                 const codeSelect = lastRow.querySelector('.seller-phone-code');
-                 const numInput = lastRow.querySelector('.seller-phone-number');
+        if (addSellerBtn) {
+            addSellerBtn.addEventListener('click', function() {
+                 const template = document.getElementById('seller-row-template');
+                 const container = document.getElementById('seller-entries');
+                 if (!template || !container) return;
+                 const clone = template.content.cloneNode(true);
+                 container.appendChild(clone);
                  
-                 if (codeSelect && numInput) {
-                     const uniqueId = Date.now();
-                     codeSelect.id = `seller_phone_code_new_${uniqueId}`;
-                     numInput.id = `seller_phone_number_new_${uniqueId}`;
+                 setTimeout(() => {
+                     const rows = document.querySelectorAll('#seller-entries .seller-row');
+                     const lastRow = rows[rows.length - 1];
+                     const codeSelect = lastRow.querySelector('.seller-phone-code');
+                     const numInput = lastRow.querySelector('.seller-phone-number');
                      
-                     // Default to Egypt +20
-                     codeSelect.innerHTML = getCountryOptionsHtml('+20');
-                     setupPhoneValidation(codeSelect.id, numInput.id);
-                 }
-             }, 50); // Small delay to allow template injection
-        });
+                     if (codeSelect && numInput) {
+                         const uniqueId = Date.now();
+                         codeSelect.id = `seller_phone_code_new_${uniqueId}`;
+                         numInput.id = `seller_phone_number_new_${uniqueId}`;
+                         
+                         codeSelect.innerHTML = getCountryOptionsHtml('+20');
+                         setupPhoneValidation(codeSelect.id, numInput.id);
+                     }
+                 }, 50);
+            });
+        }
 
-        // Event delegation for remove button
-        document.getElementById('seller-entries').addEventListener('click', function(e) {
-            if (e.target.classList.contains('remove-seller')) {
-                const row = e.target.closest('.seller-row');
-                // Check if it's the only row, if so clearing values might be better than removing, 
-                // but the requirements say "remove" and we have a "+ Add" button. 
-                // However, usually we want at least one row. 
-                // The PHP code handles empty array by creating one blank entry, so removing all from DOM is fine 
-                // as long as user adds one back or the backend handles it.
-                // But let's check count to be safe/UX friendly.
-                const rows = document.querySelectorAll('#seller-entries .seller-row');
-                if (rows.length > 1) {
-                    row.remove();
-                } else {
-                    // Start of cleaning the row instead of removing it if it's the last one
-                    // actually, the design has a remove button, let's just allow remove but maybe warn?
-                    // Or just remove and if they submit invalid, backend validation catches it.
-                    // Let's just remove it. 
-                    // Actually, looking at the PHP `if (empty($seller_entries_post))` it creates a blank one.
-                    // But for better UX, if 1 row left, maybe clear it or just don't allow remove?
-                    // The HTML for the FIRST row has `style="display:none;"` on the remove button (line 1620).
-                    // So we only need to handle dynamically added ones or subsequent ones.
-                    // Wait, the cloned template DOES have the remove button visible.
-                    row.remove();
+        const sellerEntries = document.getElementById('seller-entries');
+        if (sellerEntries) {
+            sellerEntries.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-seller')) {
+                    const row = e.target.closest('.seller-row');
+                    if (row) {
+                        row.remove();
+                    }
                 }
-            }
-        });
+            });
+        }
     });
     </script>
 </body>

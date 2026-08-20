@@ -331,6 +331,10 @@ function build_property_details_message($property, $types_display, $use_emojis =
         $add_line('اسم المشروع', $property['ProjectName'], '🧩');
     }
 
+    if (!empty($property['phase_name']) && $listing_type === 'Primary') {
+        $add_line('المرحلة', $property['phase_name'], '🚩');
+    }
+
     if (!empty($property['UnitDesignName'])) {
         $add_line('نموذج الوحدة', $property['UnitDesignName'], '🧱');
     }
@@ -344,6 +348,21 @@ function build_property_details_message($property, $types_display, $use_emojis =
         $lines[] = $loc_prefix . '*الموقع*: ' . implode('، ', $loc_parts);
     }
 
+    // Active Offers
+    if (!empty($property['offer_title']) || !empty($property['offer_description'])) {
+        $lines[] = '──────────';
+        $lines[] = ($use_emojis ? '🎁 ' : '') . '*عروض خاصة*:';
+        if (!empty($property['offer_title'])) {
+            $lines[] = ($use_emojis ? '⭐ ' : '') . '*' . wa_clean_text($property['offer_title']) . '*';
+        }
+        if (!empty($property['offer_description'])) {
+            $lines[] = wa_clean_text($property['offer_description']);
+        }
+        if (!empty($property['offer_end_date'])) {
+            $lines[] = ($use_emojis ? '⏰ ' : '') . '*ساري حتى*: ' . date("Y-m-d", strtotime($property['offer_end_date']));
+        }
+    }
+
     $has_price_area_section =
         !empty($property['price_cash']) ||
         !empty($property['price_installments']) ||
@@ -355,10 +374,15 @@ function build_property_details_message($property, $types_display, $use_emojis =
         !empty($property['yearly_rent']) ||
         !empty($property['meter_price_cash']) ||
         !empty($property['meter_price_installments']) ||
+        !empty($property['min_meter_price']) ||
+        !empty($property['max_meter_price']) ||
+        !empty($property['cash_discount_percentage']) ||
+        !empty($property['maintenance_percentage']) ||
         !empty($property['Area']) ||
         !empty($property['min_area']) ||
         !empty($property['max_area']) ||
         !empty($property['avg_area']) ||
+        !empty($property['compound_area']) ||
         !empty($property['net_area']) ||
         !empty($property['loading_percentage']);
 
@@ -370,6 +394,9 @@ function build_property_details_message($property, $types_display, $use_emojis =
 
         if (!empty($property['price_cash'])) {
             $lines[] = ($use_emojis ? '💵 ' : '') . '*سعر كاش*: ' . number_format($property['price_cash'], 0, '.', ',') . ' ' . $currency_label;
+        }
+        if (!empty($property['cash_discount_percentage'])) {
+            $lines[] = ($use_emojis ? '🏷️ ' : '') . '*خصم الكاش*: ' . formatSmartNumber($property['cash_discount_percentage'], 2) . '%';
         }
         if (!empty($property['price_installments'])) {
             $lines[] = ($use_emojis ? '💳 ' : '') . '*سعر بالتقسيط*: ' . number_format($property['price_installments'], 0, '.', ',') . ' ' . $currency_label;
@@ -394,24 +421,33 @@ function build_property_details_message($property, $types_display, $use_emojis =
             $lines[] = ($use_emojis ? '📆 ' : '') . '*الإيجار السنوي*: ' . number_format($property['yearly_rent'], 0, '.', ',') . ' ' . $currency_label . ' / ' . t('per_year');
         }
 
-        if (!empty($property['meter_price_cash'])) {
+        if (!empty($property['min_meter_price']) && !empty($property['max_meter_price'])) {
+            $lines[] = ($use_emojis ? '📏 ' : '') . '*سعر المتر*: ' . number_format($property['min_meter_price'], 0, '.', ',') . ' - ' . number_format($property['max_meter_price'], 0, '.', ',') . ' ' . $currency_label;
+        } elseif (!empty($property['meter_price_cash'])) {
             $lines[] = ($use_emojis ? '📐 ' : '') . '*سعر المتر كاش*: ' . number_format($property['meter_price_cash'], 0, '.', ',') . ' ' . $currency_label;
-        }
-        if (!empty($property['meter_price_installments'])) {
+        } elseif (!empty($property['meter_price_installments'])) {
             $lines[] = ($use_emojis ? '📏 ' : '') . '*سعر المتر تقسيط*: ' . number_format($property['meter_price_installments'], 0, '.', ',') . ' ' . $currency_label;
+        }
+
+        if (!empty($property['maintenance_percentage'])) {
+            $lines[] = ($use_emojis ? '🛡️ ' : '') . '*وديعة الصيانة*: ' . formatSmartNumber($property['maintenance_percentage'], 2) . '%';
         }
 
         if (!empty($property['Area'])) {
             $lines[] = ($use_emojis ? '📐 ' : '') . '*المساحة*: ' . formatSmartNumber($property['Area'], 2) . ' ' . t('sqm');
         }
-        if (!empty($property['min_area'])) {
+        if (!empty($property['min_area']) && !empty($property['max_area'])) {
+            $lines[] = ($use_emojis ? '📏 ' : '') . '*نطاق المساحة*: ' . formatSmartNumber($property['min_area'], 2) . ' - ' . formatSmartNumber($property['max_area'], 2) . ' ' . t('sqm');
+        } elseif (!empty($property['min_area'])) {
             $lines[] = ($use_emojis ? '📏 ' : '') . '*أقل مساحة*: ' . formatSmartNumber($property['min_area'], 2) . ' ' . t('sqm');
-        }
-        if (!empty($property['max_area'])) {
+        } elseif (!empty($property['max_area'])) {
             $lines[] = ($use_emojis ? '📏 ' : '') . '*أكبر مساحة*: ' . formatSmartNumber($property['max_area'], 2) . ' ' . t('sqm');
         }
         if (!empty($property['avg_area'])) {
             $lines[] = ($use_emojis ? '📊 ' : '') . '*متوسط المساحة*: ' . formatSmartNumber($property['avg_area'], 2) . ' ' . t('sqm');
+        }
+        if (!empty($property['compound_area'])) {
+            $lines[] = ($use_emojis ? '🏞️ ' : '') . '*مساحة المشروع*: ' . formatSmartNumber($property['compound_area'], 2) . ' ' . t('faddan');
         }
         if (!empty($property['net_area'])) {
             $lines[] = ($use_emojis ? '🧮 ' : '') . '*المساحة الصافية*: ' . formatSmartNumber($property['net_area'], 2) . ' ' . t('sqm');
@@ -431,7 +467,7 @@ function build_property_details_message($property, $types_display, $use_emojis =
         !empty($property['unit_floor']) ||
         (($property['year_built'] ?? null) !== null && trim((string)($property['year_built'] ?? '')) !== '');
 
-    if ($has_unit_section) {
+    if ($has_unit_section && $listing_type !== 'Primary') {
         $lines[] = '──────────';
         $lines[] = ($use_emojis ? '🏠 ' : '') . 'تفاصيل الوحدة';
 
@@ -454,6 +490,8 @@ function build_property_details_message($property, $types_display, $use_emojis =
     $payment_terms = formatPaymentTerms($property);
     $has_payment_section =
         !empty($property['delivery_date']) ||
+        !empty($property['delivery_status']) ||
+        !empty($property['construction_status']) ||
         !empty($property['down_payment_percentage']) ||
         !empty($property['payment_years']) ||
         (!empty($payment_terms) && $payment_terms !== t('undefined'));
@@ -462,8 +500,14 @@ function build_property_details_message($property, $types_display, $use_emojis =
         $lines[] = '──────────';
         $lines[] = ($use_emojis ? '📅 ' : '') . 'السداد والتسليم';
 
+        if (!empty($property['delivery_status'])) {
+            $lines[] = ($use_emojis ? '🚚 ' : '') . '*حالة الاستلام*: ' . wa_clean_text($property['delivery_status']);
+        }
         if (!empty($property['delivery_date'])) {
             $lines[] = ($use_emojis ? '📦 ' : '') . '*تاريخ التسليم*: ' . date("Y-m-d", strtotime($property['delivery_date']));
+        }
+        if (!empty($property['construction_status'])) {
+            $lines[] = ($use_emojis ? '🏗️ ' : '') . '*حالة الإنشاءات*: ' . wa_clean_text($property['construction_status']);
         }
         if (!empty($property['down_payment_percentage'])) {
             $lines[] = ($use_emojis ? '💰 ' : '') . '*المقدم*: ' . formatSmartNumber($property['down_payment_percentage'], 2) . '%';
@@ -478,7 +522,11 @@ function build_property_details_message($property, $types_display, $use_emojis =
     }
 
     if (!empty($property['company_name']) && $listing_type === 'Primary') {
-        $lines[] = ($use_emojis ? '🏢 ' : '') . '*الشركة*: ' . wa_clean_text($property['company_name']);
+        $lines[] = ($use_emojis ? '🏢 ' : '') . '*الشركة المطورة*: ' . wa_clean_text($property['company_name']);
+    }
+
+    if (!empty($property['brochure_url'])) {
+        $lines[] = ($use_emojis ? '📄 ' : '') . '*رابط البروشور*: ' . wa_clean_text($property['brochure_url']);
     }
 
     return implode("\n", $lines);
@@ -1867,59 +1915,159 @@ if ($map_link !== '') {
                         </div>
                         <?php endif; ?>
 
-                        <!-- Owner Information (Sidebar) -->
-                        <?php
-                        // Prepare seller list for sidebar
-                        $sb_render_sellers = $property_sellers ?? [];
-                        // Check logic matches legacy seller check
-                        $sb_legacy_seller_present = (!empty($property['seller_type']) || !empty($property['seller_name']) || !empty($property['seller_phone']) || !empty($property['owner_name']) || !empty($property['owner_phone']));
-                        
-                        if (empty($sb_render_sellers) && $sb_legacy_seller_present) {
-                            $sb_render_sellers[] = [
-                                'seller_type' => $property['seller_type'] ?? null,
-                                'seller_name' => $property['seller_name'] ?? ($property['owner_name'] ?? null),
-                                'seller_phone' => $property['seller_phone'] ?? ($property['owner_phone'] ?? null),
-                            ];
-                        }
-                        
-                        if (!empty($sb_render_sellers)):
-                            foreach ($sb_render_sellers as $sb_seller):
-                                // Determine display name
-                                $sb_name = !empty($sb_seller['seller_name']) ? $sb_seller['seller_name'] : (!empty($sb_seller['seller_type']) ? translate_seller_type($sb_seller['seller_type']) : t('owner'));
-                                $sb_phone = $sb_seller['seller_phone'] ?? '';
-                                $sb_type_label = !empty($sb_seller['seller_type']) ? translate_seller_type($sb_seller['seller_type']) : '';
-                        ?>
-                        <div class="sidebar-stat">
-                            <div class="sidebar-stat-icon"><i class="fas fa-user-tie"></i></div>
-                            <div class="sidebar-stat-content">
-                                <div class="sidebar-stat-label"><?php echo t('owner_information'); ?></div>
-                                <div class="sidebar-stat-value">
-                                    <?php if ($sb_type_label && $sb_type_label !== $sb_name): ?>
-                                        <div style="font-size: 0.8rem; color: #b08a0e; margin-bottom: 2px;"><?php echo htmlspecialchars($sb_type_label); ?></div>
-                                    <?php endif; ?>
-                                    <div style="font-weight:600; font-size: 0.95rem;"><?php echo htmlspecialchars($sb_name); ?></div>
-                                    <?php if (!empty($sb_phone)): 
-                                        $sb_tel = normalize_phone_for_tel($sb_phone);
+                        <!-- Developer & Contact Information (Sidebar for Primary vs Seller for Resale/Rental) -->
+                        <?php if (($property['listing_type'] ?? '') === 'Primary'): ?>
+                            <!-- Developer Company -->
+                            <?php if (!empty($property['company_name'])): ?>
+                            <div class="sidebar-stat">
+                                <div class="sidebar-stat-icon"><i class="fas fa-city" style="color: #2563eb;"></i></div>
+                                <div class="sidebar-stat-content">
+                                    <div class="sidebar-stat-label"><?php echo t('developer_company'); ?></div>
+                                    <div class="sidebar-stat-value" style="font-weight:700; font-size: 0.95rem;"><?php echo htmlspecialchars($property['company_name']); ?></div>
+                                    <?php if (!empty($property['company_phone'])): 
+                                        $cp_tel = normalize_phone_for_tel($property['company_phone']);
                                     ?>
-                                    <a href="tel:<?php echo $sb_tel; ?>" style="color: var(--primary-color); direction: ltr; display: inline-block; font-size: 0.9rem;">
-                                        <?php echo htmlspecialchars($sb_phone); ?>
+                                    <a href="tel:<?php echo $cp_tel; ?>" style="color: var(--primary-color); direction: ltr; display: inline-block; font-size: 0.9rem;">
+                                        <i class="fas fa-phone-alt" style="font-size:0.8rem; margin-left:4px;"></i><?php echo htmlspecialchars($property['company_phone']); ?>
                                     </a>
                                     <?php endif; ?>
                                 </div>
                             </div>
-                        </div>
-                        <?php 
-                            endforeach;
-                        endif; 
-                        ?>
+                            <?php endif; ?>
+
+                            <!-- Sales Director -->
+                            <?php if (!empty($property['sales_director_name']) || !empty($property['sales_director_phone'])): ?>
+                            <div class="sidebar-stat">
+                                <div class="sidebar-stat-icon"><i class="fas fa-user-tie" style="color: #10b981;"></i></div>
+                                <div class="sidebar-stat-content">
+                                    <div class="sidebar-stat-label"><?php echo t('sales_director_name'); ?></div>
+                                    <?php if (!empty($property['sales_director_name'])): ?>
+                                    <div style="font-weight:600; font-size: 0.95rem;"><?php echo htmlspecialchars($property['sales_director_name']); ?></div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($property['sales_director_phone'])): 
+                                        $sd_tel = normalize_phone_for_tel($property['sales_director_phone']);
+                                    ?>
+                                    <a href="tel:<?php echo $sd_tel; ?>" style="color: var(--primary-color); direction: ltr; display: inline-block; font-size: 0.9rem;">
+                                        <i class="fas fa-phone-alt" style="font-size:0.8rem; margin-left:4px;"></i><?php echo htmlspecialchars($property['sales_director_phone']); ?>
+                                    </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <!-- Operation Manager -->
+                            <?php if (!empty($property['operation_manager_name']) || !empty($property['operation_manager_phone'])): ?>
+                            <div class="sidebar-stat">
+                                <div class="sidebar-stat-icon"><i class="fas fa-user-cog" style="color: #f59e0b;"></i></div>
+                                <div class="sidebar-stat-content">
+                                    <div class="sidebar-stat-label"><?php echo t('operation_manager_name'); ?></div>
+                                    <?php if (!empty($property['operation_manager_name'])): ?>
+                                    <div style="font-weight:600; font-size: 0.95rem;"><?php echo htmlspecialchars($property['operation_manager_name']); ?></div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($property['operation_manager_phone'])): 
+                                        $om_tel = normalize_phone_for_tel($property['operation_manager_phone']);
+                                    ?>
+                                    <a href="tel:<?php echo $om_tel; ?>" style="color: var(--primary-color); direction: ltr; display: inline-block; font-size: 0.9rem;">
+                                        <i class="fas fa-phone-alt" style="font-size:0.8rem; margin-left:4px;"></i><?php echo htmlspecialchars($property['operation_manager_phone']); ?>
+                                    </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <!-- Project Brochure Button in Sidebar -->
+                            <?php if (!empty($property['brochure_url'])): ?>
+                            <div class="sidebar-stat" style="margin-top: 10px;">
+                                <a href="<?php echo htmlspecialchars($property['brochure_url']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width:100%; text-align:center; display:flex; align-items:center; justify-content:center; gap:8px; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); border:none; padding:10px; font-weight:600;">
+                                    <i class="fas fa-file-pdf"></i> <?php echo t('view_brochure') ?: 'عرض بروشور المشروع'; ?>
+                                </a>
+                            </div>
+                            <?php endif; ?>
+
+                        <?php else: ?>
+                            <!-- Owner Information (Sidebar for Resale/Rental) -->
+                            <?php
+                            $sb_render_sellers = $property_sellers ?? [];
+                            $sb_legacy_seller_present = (!empty($property['seller_type']) || !empty($property['seller_name']) || !empty($property['seller_phone']) || !empty($property['owner_name']) || !empty($property['owner_phone']));
+                            
+                            if (empty($sb_render_sellers) && $sb_legacy_seller_present) {
+                                $sb_render_sellers[] = [
+                                    'seller_type' => $property['seller_type'] ?? null,
+                                    'seller_name' => $property['seller_name'] ?? ($property['owner_name'] ?? null),
+                                    'seller_phone' => $property['seller_phone'] ?? ($property['owner_phone'] ?? null),
+                                ];
+                            }
+                            
+                            if (!empty($sb_render_sellers)):
+                                foreach ($sb_render_sellers as $sb_seller):
+                                    $sb_name = !empty($sb_seller['seller_name']) ? $sb_seller['seller_name'] : (!empty($sb_seller['seller_type']) ? translate_seller_type($sb_seller['seller_type']) : t('owner'));
+                                    $sb_phone = $sb_seller['seller_phone'] ?? '';
+                                    $sb_type_label = !empty($sb_seller['seller_type']) ? translate_seller_type($sb_seller['seller_type']) : '';
+                            ?>
+                            <div class="sidebar-stat">
+                                <div class="sidebar-stat-icon"><i class="fas fa-user-tie"></i></div>
+                                <div class="sidebar-stat-content">
+                                    <div class="sidebar-stat-label"><?php echo t('owner_information'); ?></div>
+                                    <div class="sidebar-stat-value">
+                                        <?php if ($sb_type_label && $sb_type_label !== $sb_name): ?>
+                                            <div style="font-size: 0.8rem; color: #b08a0e; margin-bottom: 2px;"><?php echo htmlspecialchars($sb_type_label); ?></div>
+                                        <?php endif; ?>
+                                        <div style="font-weight:600; font-size: 0.95rem;"><?php echo htmlspecialchars($sb_name); ?></div>
+                                        <?php if (!empty($sb_phone)): 
+                                            $sb_tel = normalize_phone_for_tel($sb_phone);
+                                        ?>
+                                        <a href="tel:<?php echo $sb_tel; ?>" style="color: var(--primary-color); direction: ltr; display: inline-block; font-size: 0.9rem;">
+                                            <?php echo htmlspecialchars($sb_phone); ?>
+                                        </a>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php 
+                                endforeach;
+                            endif; 
+                            ?>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
         </div>
 
-
-
-
+        <!-- ACTIVE OFFERS / PROMOTIONS BANNER -->
+        <?php if (!empty($property['offer_title']) || !empty($property['offer_description'])): ?>
+        <div class="property-section" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 2px solid #f59e0b; border-radius: 12px; padding: 24px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15);">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="background: #f59e0b; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                        <i class="fas fa-gift"></i>
+                    </div>
+                    <h2 style="margin: 0; color: #92400e; font-size: 1.3rem; border: none; padding: 0;"><?php echo t('offers_and_promotions'); ?></h2>
+                </div>
+                <?php if (!empty($property['offer_start_date']) || !empty($property['offer_end_date'])): ?>
+                <div style="background: #fff; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; color: #b45309; font-weight: 600; border: 1px solid #fde68a;">
+                    <i class="fas fa-clock" style="margin-left: 5px;"></i>
+                    <?php 
+                    if (!empty($property['offer_start_date']) && !empty($property['offer_end_date'])) {
+                        echo t('from') . ' ' . date("Y-m-d", strtotime($property['offer_start_date'])) . ' ' . t('to') . ' ' . date("Y-m-d", strtotime($property['offer_end_date']));
+                    } elseif (!empty($property['offer_end_date'])) {
+                        echo t('valid_until') . ' ' . date("Y-m-d", strtotime($property['offer_end_date']));
+                    }
+                    ?>
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php if (!empty($property['offer_title'])): ?>
+            <h3 style="color: #78350f; font-size: 1.15rem; margin: 0 0 10px 0; font-weight: 700;">
+                <i class="fas fa-star" style="color: #f59e0b; margin-left: 6px;"></i><?php echo htmlspecialchars($property['offer_title']); ?>
+            </h3>
+            <?php endif; ?>
+            <?php if (!empty($property['offer_description'])): ?>
+            <div style="color: #92400e; font-size: 0.98rem; line-height: 1.6; background: rgba(255,255,255,0.7); padding: 14px; border-radius: 8px;">
+                <?php echo nl2br(htmlspecialchars($property['offer_description'])); ?>
+            </div>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
 
         <!-- Property Documents Section (user-facing PDFs) -->
         <?php if (!empty($property_documents)): ?>
@@ -1948,6 +2096,7 @@ if ($map_link !== '') {
         <?php endif; ?>
 
         <div class="property-details">
+            <!-- Basic Information -->
             <div class="property-section">
                 <h2><?php echo t('basic_information'); ?></h2>
                 <div class="detail-grid">
@@ -1964,7 +2113,13 @@ if ($map_link !== '') {
                     <?php if (!empty($property['ProjectName'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('project_name'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['ProjectName']); ?></span>
+                        <span class="detail-value" style="font-weight:700; color: #2563eb;"><?php echo htmlspecialchars($property['ProjectName']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['phase_name'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('phase_name'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['phase_name']); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($linked_types)): ?>
@@ -1979,9 +2134,22 @@ if ($map_link !== '') {
                         <span class="detail-value"><?php echo t($property['Status']); ?></span>
                     </div>
                     <?php endif; ?>
+                    <?php if (!empty($property['delivery_status'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('delivery_status'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['delivery_status']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['construction_status'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('construction_status'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['construction_status']); ?></span>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
+            <!-- Location Information -->
             <div class="property-section">
                 <h2><?php echo t('location_information'); ?></h2>
                 <div class="detail-grid">
@@ -2014,6 +2182,7 @@ if ($map_link !== '') {
                 </div>
             </div>
 
+            <!-- Pricing and Specifications -->
             <div class="property-section">
                 <h2><?php echo t('pricing_and_area'); ?></h2>
                 <div class="detail-grid">
@@ -2021,10 +2190,35 @@ if ($map_link !== '') {
                     $currency_code = $property['currency'] ?? 'EGP';
                     $currency_label = t($currency_code);
                     ?>
+                    
+                    <!-- Total Prices -->
+                    <?php if (!empty($property['min_price']) && !empty($property['max_price'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('price_range') ?: 'نطاق السعر الإجمالي'; ?>:</span>
+                        <span class="detail-value" style="font-weight:700; color:#2563eb;"><?php echo number_format($property['min_price'], 0, '.', ','); ?> - <?php echo number_format($property['max_price'], 0, '.', ','); ?> <?php echo $currency_label; ?></span>
+                    </div>
+                    <?php elseif (!empty($property['min_price'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('min_price'); ?>:</span>
+                        <span class="detail-value"><?php echo t('starts_from') . ' ' . number_format($property['min_price'], 0, '.', ',') . ' ' . $currency_label; ?></span>
+                    </div>
+                    <?php elseif (!empty($property['max_price'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('max_price'); ?>:</span>
+                        <span class="detail-value"><?php echo t('up_to') . ' ' . number_format($property['max_price'], 0, '.', ',') . ' ' . $currency_label; ?></span>
+                    </div>
+                    <?php endif; ?>
+
                     <?php if (!empty($property['price_cash'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('price_cash'); ?>:</span>
                         <span class="detail-value"><?php echo number_format($property['price_cash'], 0, '.', ','); ?> <?php echo $currency_label; ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['cash_discount_percentage'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('cash_discount_percentage'); ?>:</span>
+                        <span class="detail-value" style="font-weight:700; color:#10b981;"><?php echo formatSmartNumber($property['cash_discount_percentage'], 2); ?>%</span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['price_installments'])): ?>
@@ -2033,24 +2227,25 @@ if ($map_link !== '') {
                         <span class="detail-value"><?php echo number_format($property['price_installments'], 0, '.', ','); ?> <?php echo $currency_label; ?></span>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($property['monthly_rent'])): ?>
+
+                    <!-- Meter Prices -->
+                    <?php if (!empty($property['min_meter_price']) && !empty($property['max_meter_price'])): ?>
                     <div class="detail-item">
-                        <span class="detail-label"><?php echo t('monthly_rent'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['monthly_rent'], 0, '.', ','); ?> <?php echo $currency_label; ?> / <?php echo t('per_month'); ?></span>
+                        <span class="detail-label"><?php echo t('meter_price_range') ?: 'نطاق سعر المتر'; ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['min_meter_price'], 0, '.', ','); ?> - <?php echo number_format($property['max_meter_price'], 0, '.', ','); ?> <?php echo $currency_label; ?></span>
+                    </div>
+                    <?php elseif (!empty($property['min_meter_price'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('min_meter_price'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['min_meter_price'], 0, '.', ','); ?> <?php echo $currency_label; ?></span>
+                    </div>
+                    <?php elseif (!empty($property['max_meter_price'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('max_meter_price'); ?>:</span>
+                        <span class="detail-value"><?php echo number_format($property['max_meter_price'], 0, '.', ','); ?> <?php echo $currency_label; ?></span>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($property['daily_rent'])): ?>
-                    <div class="detail-item">
-                        <span class="detail-label"><?php echo t('daily_rent'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['daily_rent'], 0, '.', ','); ?> <?php echo $currency_label; ?> / <?php echo t('per_day'); ?></span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if (!empty($property['yearly_rent'])): ?>
-                    <div class="detail-item">
-                        <span class="detail-label"><?php echo t('yearly_rent'); ?>:</span>
-                        <span class="detail-value"><?php echo number_format($property['yearly_rent'], 0, '.', ','); ?> <?php echo $currency_label; ?> / <?php echo t('per_year'); ?></span>
-                    </div>
-                    <?php endif; ?>
+
                     <?php if (!empty($property['meter_price_cash'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('meter_price_cash'); ?>:</span>
@@ -2064,19 +2259,31 @@ if ($map_link !== '') {
                     </div>
                     <?php endif; ?>
 
+                    <?php if (!empty($property['maintenance_percentage'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('maintenance_percentage'); ?>:</span>
+                        <span class="detail-value"><?php echo formatSmartNumber($property['maintenance_percentage'], 2); ?>%</span>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Areas -->
                     <?php if (!empty($property['Area'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('unit_area_sqm'); ?>:</span>
                         <span class="detail-value"><?php echo formatSmartNumber($property['Area'], 2); ?> <?php echo t('sqm'); ?></span>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($property['min_area'])): ?>
+                    <?php if (!empty($property['min_area']) && !empty($property['max_area'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('area_range') ?: 'نطاق المساحات'; ?>:</span>
+                        <span class="detail-value"><?php echo formatSmartNumber($property['min_area'], 2); ?> - <?php echo formatSmartNumber($property['max_area'], 2); ?> <?php echo t('sqm'); ?></span>
+                    </div>
+                    <?php elseif (!empty($property['min_area'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('min_area'); ?>:</span>
                         <span class="detail-value"><?php echo formatSmartNumber($property['min_area'], 2); ?> <?php echo t('sqm'); ?></span>
                     </div>
-                    <?php endif; ?>
-                    <?php if (!empty($property['max_area'])): ?>
+                    <?php elseif (!empty($property['max_area'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('max_area'); ?>:</span>
                         <span class="detail-value"><?php echo formatSmartNumber($property['max_area'], 2); ?> <?php echo t('sqm'); ?></span>
@@ -2110,6 +2317,8 @@ if ($map_link !== '') {
                 </div>
             </div>
 
+            <!-- Unit Details (for non-primary or when unit specs are available) -->
+            <?php if (($property['listing_type'] ?? '') !== 'Primary'): ?>
             <div class="property-section">
                 <h2><?php echo t('unit_details'); ?></h2>
                 <div class="detail-grid">
@@ -2164,7 +2373,6 @@ if ($map_link !== '') {
                     </div>
                     <?php endif; ?>
                     <?php
-                    // Show raw year_built value whenever it is non-empty (allow numbers or text)
                     $year_raw = $property['year_built'] ?? null;
                     if ($year_raw !== null && trim((string)$year_raw) !== ''):
                     ?>
@@ -2181,7 +2389,9 @@ if ($map_link !== '') {
                     <?php endif; ?>
                 </div>
             </div>
+            <?php endif; ?>
 
+            <!-- Payment & Delivery -->
             <div class="property-section">
                 <h2><?php echo t('payment_and_delivery'); ?></h2>
                 <div class="detail-grid">
@@ -2213,21 +2423,60 @@ if ($map_link !== '') {
                 </div>
             </div>
 
+            <!-- Developer / Company & Management Contacts Section -->
             <div class="property-section">
-                <h2><?php echo t('company_information'); ?></h2>
+                <h2><?php echo (($property['listing_type'] ?? '') === 'Primary') ? t('developer_contacts') : t('company_information'); ?></h2>
                 <div class="detail-grid">
                     <?php if (!empty($property['company_name'])): ?>
                     <div class="detail-item">
-                        <span class="detail-label"><?php echo t('company'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['company_name']); ?></span>
+                        <span class="detail-label"><?php echo t('developer_company'); ?>:</span>
+                        <span class="detail-value" style="font-weight:700;"><?php echo htmlspecialchars($property['company_name']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($property['company_phone'])): 
+                        $cp_tel = normalize_phone_for_tel($property['company_phone']);
+                    ?>
+                    <div class="detail-item detail-phone">
+                        <span class="detail-label"><?php echo t('company_phone'); ?>:</span>
+                        <span class="detail-value"><a href="tel:<?php echo $cp_tel; ?>"><?php echo htmlspecialchars($property['company_phone']); ?></a></span>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($property['sales_director_name'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('sales_director_name'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['sales_director_name']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['sales_director_phone'])): 
+                        $sd_tel = normalize_phone_for_tel($property['sales_director_phone']);
+                    ?>
+                    <div class="detail-item detail-phone">
+                        <span class="detail-label"><?php echo t('sales_director_phone'); ?>:</span>
+                        <span class="detail-value"><a href="tel:<?php echo $sd_tel; ?>"><?php echo htmlspecialchars($property['sales_director_phone']); ?></a></span>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($property['operation_manager_name'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('operation_manager_name'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['operation_manager_name']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['operation_manager_phone'])): 
+                        $om_tel = normalize_phone_for_tel($property['operation_manager_phone']);
+                    ?>
+                    <div class="detail-item detail-phone">
+                        <span class="detail-label"><?php echo t('operation_manager_phone'); ?>:</span>
+                        <span class="detail-value"><a href="tel:<?php echo $om_tel; ?>"><?php echo htmlspecialchars($property['operation_manager_phone']); ?></a></span>
                     </div>
                     <?php endif; ?>
                 </div>
             </div>
 
+            <!-- Salesperson / Internal Sales Information -->
             <?php 
-            // normalize_phone_for_tel moved to top of file
-            // Check if there is any sales information to display before showing the section
             if (
                 !empty($property['sales_manager_name']) || 
                 !empty($property['sales_manager_phone']) || 
@@ -2239,17 +2488,12 @@ if ($map_link !== '') {
                 <h2><?php echo t('sales_information'); ?></h2>
                 <div class="detail-grid">
                     <?php
-                    // Prepare clickable phones for sales manager and salesperson (preserve RTL handling like seller phone)
                     $sales_manager_phone_html = null;
                     if (!empty($property['sales_manager_phone'])) {
                         $sm_raw = trim($property['sales_manager_phone']);
                         $sm_display = htmlspecialchars($sm_raw);
                         $sm_tel = normalize_phone_for_tel($sm_raw);
-                        if (function_exists('get_direction') && get_direction() === 'rtl') {
-                            $sales_manager_phone_html = '<a href="tel:' . $sm_tel . '" style="display:inline-block;width:100%;text-align:right;direction:rtl;">' . $sm_display . '</a>';
-                        } else {
-                            $sales_manager_phone_html = '<a href="tel:' . $sm_tel . '">' . $sm_display . '</a>';
-                        }
+                        $sales_manager_phone_html = '<a href="tel:' . $sm_tel . '">' . $sm_display . '</a>';
                     }
 
                     $salesperson_phone_html = null;
@@ -2257,11 +2501,7 @@ if ($map_link !== '') {
                         $sp_raw = trim($property['salesperson_phone']);
                         $sp_display = htmlspecialchars($sp_raw);
                         $sp_tel = normalize_phone_for_tel($sp_raw);
-                        if (function_exists('get_direction') && get_direction() === 'rtl') {
-                            $salesperson_phone_html = '<a href="tel:' . $sp_tel . '" style="display:inline-block;width:100%;text-align:right;direction:rtl;">' . $sp_display . '</a>';
-                        } else {
-                            $salesperson_phone_html = '<a href="tel:' . $sp_tel . '">' . $sp_display . '</a>';
-                        }
+                        $salesperson_phone_html = '<a href="tel:' . $sp_tel . '">' . $sp_display . '</a>';
                     }
                     ?>
 
@@ -2294,19 +2534,18 @@ if ($map_link !== '') {
                     <?php endif; ?>
                 </div>
             </div>
-            <?php endif; // End of the main check for sales information ?>
+            <?php endif; ?>
 
+            <!-- Owner / Seller Information (for Resale/Rental) -->
             <?php
                 $has_multi_sellers = !empty($property_sellers);
                 $legacy_seller_present = (!empty($property['seller_type']) || !empty($property['seller_name']) || !empty($property['seller_phone']) || !empty($property['owner_name']) || !empty($property['owner_phone']));
-                if ($has_multi_sellers || $legacy_seller_present):
+                if (($property['listing_type'] ?? '') !== 'Primary' && ($has_multi_sellers || $legacy_seller_present)):
             ?>
             <div class="property-section">
                 <h2><?php echo t('owner_information'); ?></h2>
                 <div class="seller-list">
                 <?php
-                // translate_seller_type, render_or_fallback moved to top of file
-
                 $render_sellers = $property_sellers;
                 if (empty($render_sellers) && $legacy_seller_present) {
                     $render_sellers[] = [
@@ -2322,11 +2561,7 @@ if ($map_link !== '') {
                     if (!empty($seller_phone_raw)) {
                         $phone_display = htmlspecialchars(trim($seller_phone_raw));
                         $tel = normalize_phone_for_tel($seller_phone_raw);
-                        if (function_exists('get_direction') && get_direction() === 'rtl') {
-                            $seller_phone_html = '<a href="tel:' . $tel . '" style="display:inline-block;width:100%;text-align:right;direction:rtl;">' . $phone_display . '</a>';
-                        } else {
-                            $seller_phone_html = '<a href="tel:' . $tel . '">' . $phone_display . '</a>';
-                        }
+                        $seller_phone_html = '<a href="tel:' . $tel . '">' . $phone_display . '</a>';
                     }
                 ?>
                     <div class="seller-card">

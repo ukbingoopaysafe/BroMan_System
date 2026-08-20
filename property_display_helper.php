@@ -22,11 +22,19 @@ if (!function_exists('formatDisplayPrice')) {
                 return number_format(floatval($row['yearly_rent']), 0, '.', ',') . ' ' . $curr . ' / ' . t('per_year');
             }
         }
-        // Prefer cash price, then installments price. If neither exist, try meter_price * Area as estimate.
+        // Prefer cash price, then installments price
         if (!empty($row['price_cash']) && is_numeric($row['price_cash'])) {
             return number_format(floatval($row['price_cash']), 0, '.', ',') . ' ' . $curr;
         } elseif (!empty($row['price_installments']) && is_numeric($row['price_installments'])) {
             return number_format(floatval($row['price_installments']), 0, '.', ',') . ' ' . $curr;
+        } elseif (!empty($row['min_price']) && is_numeric($row['min_price']) && !empty($row['max_price']) && is_numeric($row['max_price'])) {
+            return number_format(floatval($row['min_price']), 0, '.', ',') . ' - ' . number_format(floatval($row['max_price']), 0, '.', ',') . ' ' . $curr;
+        } elseif (!empty($row['min_price']) && is_numeric($row['min_price'])) {
+            return t('starts_from') . ' ' . number_format(floatval($row['min_price']), 0, '.', ',') . ' ' . $curr;
+        } elseif (!empty($row['max_price']) && is_numeric($row['max_price'])) {
+            return t('up_to') . ' ' . number_format(floatval($row['max_price']), 0, '.', ',') . ' ' . $curr;
+        } elseif (!empty($row['min_meter_price']) && is_numeric($row['min_meter_price']) && !empty($row['max_meter_price']) && is_numeric($row['max_meter_price'])) {
+            return number_format(floatval($row['min_meter_price']), 0, '.', ',') . ' - ' . number_format(floatval($row['max_meter_price']), 0, '.', ',') . ' ' . $curr . ' / ' . t('sqm');
         } elseif (!empty($row['meter_price_cash']) && is_numeric($row['meter_price_cash']) && !empty($row['Area']) && is_numeric($row['Area'])) {
             $est = floatval($row['meter_price_cash']) * floatval($row['Area']);
             return t('estimated') . ': ' . number_format($est, 0, '.', ',') . ' ' . $curr;

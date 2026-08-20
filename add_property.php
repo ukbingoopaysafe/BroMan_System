@@ -86,11 +86,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Idempotency guard (120s)
     $fp_fields = [
         $_SESSION['listing_context'] ?? '',
+        $_POST['project_name'] ?? '',
         $_POST['title'] ?? '',
         $_POST['location'] ?? '',
         $_POST['seller_phone'] ?? '',
         $_POST['sales_manager_phone'] ?? '',
-        $_POST['salesperson_phone'] ?? ''
+        $_POST['salesperson_phone'] ?? '',
+        $_POST['company_phone_number'] ?? '',
+        $_POST['sales_director_phone_number'] ?? '',
+        $_POST['operation_manager_phone_number'] ?? ''
     ];
     $submission_fp = hash('sha256', json_encode($fp_fields));
     $now_ts = time();
@@ -107,12 +111,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $property_type_id = !empty($property_type_ids) ? $property_type_ids[0] : null;
     $listing_type = $_SESSION['listing_context'] ?? 'Primary';
     $project_name = trim($_POST['project_name'] ?? '');
+    $phase_name = trim($_POST['phase_name'] ?? null);
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? null);
     $governorate = trim($_POST['governorate'] ?? '');
     $district = trim($_POST['district'] ?? '');
     $location = trim($_POST['location'] ?? null);
     $company_name = trim($_POST['company_name'] ?? null);
+    
+    // Concatenate Company Phone
+    $cp_code = $_POST['company_phone_code'] ?? '';
+    $cp_number = $_POST['company_phone_number'] ?? '';
+    $company_phone = ($cp_code !== '' && $cp_number !== '') ? $cp_code . $cp_number : null;
+
+    $sales_director_name = trim($_POST['sales_director_name'] ?? null);
+    $sd_code = $_POST['sales_director_phone_code'] ?? '';
+    $sd_number = $_POST['sales_director_phone_number'] ?? '';
+    $sales_director_phone = ($sd_code !== '' && $sd_number !== '') ? $sd_code . $sd_number : null;
+
+    $operation_manager_name = trim($_POST['operation_manager_name'] ?? null);
+    $om_code = $_POST['operation_manager_phone_code'] ?? '';
+    $om_number = $_POST['operation_manager_phone_number'] ?? '';
+    $operation_manager_phone = ($om_code !== '' && $om_number !== '') ? $om_code . $om_number : null;
+
     $floors_count = filter_input(INPUT_POST, 'floors_count', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
     $min_area = filter_input(INPUT_POST, 'min_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $max_area = filter_input(INPUT_POST, 'max_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
@@ -128,14 +149,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // compound_area is applicable for residential and coastal types (IDs 1 and 2)
     $compound_area = filter_input(INPUT_POST, 'compound_area', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $finishing_type_id = filter_input(INPUT_POST, 'finishing_type_id', FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
-    // Price columns removed from schema
     $down_payment_percentage = filter_input(INPUT_POST, 'down_payment_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $cash_discount_percentage = filter_input(INPUT_POST, 'cash_discount_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $maintenance_percentage = filter_input(INPUT_POST, 'maintenance_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    
     // Allow fractional years (e.g. 1.5). Use float validation and keep NULL when not provided
     $payment_years = null;
     if (isset($_POST['payment_years']) && trim($_POST['payment_years']) !== '') {
         $payment_years = filter_var($_POST['payment_years'], FILTER_VALIDATE_FLOAT);
     }
     $delivery_date_str = trim($_POST['delivery_date'] ?? '');
+    $delivery_status = trim($_POST['delivery_status'] ?? null);
+    $construction_status = trim($_POST['construction_status'] ?? null);
     $status = trim($_POST['status'] ?? 'available');
     $employee_id = $_SESSION['employee_id'] ?? null;
     $sales_manager_name = trim($_POST['sales_manager_name'] ?? null);
@@ -153,6 +178,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $salesperson_phone = ($sp_code !== '' && $sp_number !== '') ? $sp_code . $sp_number : null;
     $delivery_date = !empty($delivery_date_str) ? $delivery_date_str : null;
     
+    // Offers & Brochure
+    $offer_title = trim($_POST['offer_title'] ?? null);
+    $offer_description = trim($_POST['offer_description'] ?? null);
+    $offer_start_date = !empty($_POST['offer_start_date']) ? trim($_POST['offer_start_date']) : null;
+    $offer_end_date = !empty($_POST['offer_end_date']) ? trim($_POST['offer_end_date']) : null;
+    $brochure_url = trim($_POST['brochure_url'] ?? null);
+
     // New Phase 2 fields
     $year_built = trim($_POST['year_built'] ?? null);
     $unit_floor = trim($_POST['unit_floor'] ?? null);
@@ -160,12 +192,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $loading_percentage = filter_input(INPUT_POST, 'loading_percentage', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $price_cash = filter_input(INPUT_POST, 'price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $price_installments = filter_input(INPUT_POST, 'price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $min_price = filter_input(INPUT_POST, 'min_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $max_price = filter_input(INPUT_POST, 'max_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $monthly_rent = filter_input(INPUT_POST, 'monthly_rent', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $daily_rent = filter_input(INPUT_POST, 'daily_rent', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $yearly_rent = filter_input(INPUT_POST, 'yearly_rent', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $meter_price_cash = filter_input(INPUT_POST, 'meter_price_cash', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
     $meter_price_installments = filter_input(INPUT_POST, 'meter_price_installments', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $min_meter_price = filter_input(INPUT_POST, 'min_meter_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    $max_meter_price = filter_input(INPUT_POST, 'max_meter_price', FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+    
     // Multi-seller parsing
+    $seller_entries = [];
     $posted_seller_types = $_POST['seller_type'] ?? [];
     $posted_seller_names = $_POST['seller_name'] ?? [];
     $posted_seller_phones = $_POST['seller_phone'] ?? [];
@@ -232,6 +270,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!empty($salesperson_phone) && !isValidPhoneFormat($salesperson_phone)) {
         $errors[] = 'رقم هاتف مسؤول المبيعات غير صحيح.';
     }
+    if (!empty($company_phone) && !isValidPhoneFormat($company_phone)) {
+        $errors[] = 'رقم هاتف الشركة المطورة غير صحيح.';
+    }
+    if (!empty($sales_director_phone) && !isValidPhoneFormat($sales_director_phone)) {
+        $errors[] = 'رقم هاتف رئيس قطاع المبيعات غير صحيح.';
+    }
+    if (!empty($operation_manager_phone) && !isValidPhoneFormat($operation_manager_phone)) {
+        $errors[] = 'رقم هاتف مدير العمليات غير صحيح.';
+    }
 
     // Calculate friendly_id
     $friendly_id = 1;
@@ -248,23 +295,50 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $currency = $_POST['currency'] ?? 'EGP';
 
-    $sql = "INSERT INTO Properties (PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design, finishing_type_id, compound_area, down_payment_percentage, payment_years, delivery_date, ProjectName, min_area, max_area, avg_area, district, governorate, company_name, FloorsCount, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, year_built, unit_floor, net_area, loading_percentage, price_cash, price_installments, monthly_rent, daily_rent, yearly_rent, meter_price_cash, meter_price_installments, seller_type, seller_name, seller_phone, latitude, longitude, Bathrooms, balconies, elevators, DateAdded, friendly_id, currency) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO Properties (
+        PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design,
+        finishing_type_id, compound_area, down_payment_percentage, cash_discount_percentage, maintenance_percentage, payment_years, delivery_date, delivery_status, construction_status, ProjectName,
+        phase_name, min_area, max_area, avg_area, district, governorate, company_name, company_phone, FloorsCount, sales_director_name,
+        sales_director_phone, operation_manager_name, operation_manager_phone, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, year_built, unit_floor, net_area,
+        loading_percentage, price_cash, price_installments, min_price, max_price, monthly_rent, daily_rent, yearly_rent, meter_price_cash, meter_price_installments,
+        min_meter_price, max_meter_price, seller_type, seller_name, seller_phone, offer_title, offer_description, offer_start_date, offer_end_date, brochure_url,
+        latitude, longitude, Bathrooms, balconies, elevators, DateAdded, friendly_id, currency
+    ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?
+    )";
 
     $t_prepare_start = microtime(true);
     if ($stmt = $conn->prepare($sql)) {
         // Build bind-vars in same order as INSERT and force phone-like fields to be strings
         $bind_vars = [
-            $property_type_id, $title, $description, $location, $area, $rooms, $status, $listing_type, $employee_id, $unit_design, $finishing_type_id, $compound_area, $down_payment_percentage, $payment_years, $delivery_date, $project_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $floors_count, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $year_built, $unit_floor, $net_area, $loading_percentage, $price_cash, $price_installments, $monthly_rent, $daily_rent, $yearly_rent, $meter_price_cash, $meter_price_installments, $seller_type, $seller_name, $seller_phone, $latitude, $longitude, $bathrooms, $balconies, $elevators, date('Y-m-d H:i:s'), $friendly_id, $currency
+            $property_type_id, $title, $description, $location, $area, $rooms, $status, $listing_type, $employee_id, $unit_design,
+            $finishing_type_id, $compound_area, $down_payment_percentage, $cash_discount_percentage, $maintenance_percentage, $payment_years, $delivery_date, $delivery_status, $construction_status, $project_name,
+            $phase_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $company_phone, $floors_count, $sales_director_name,
+            $sales_director_phone, $operation_manager_name, $operation_manager_phone, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $year_built, $unit_floor, $net_area,
+            $loading_percentage, $price_cash, $price_installments, $min_price, $max_price, $monthly_rent, $daily_rent, $yearly_rent, $meter_price_cash, $meter_price_installments,
+            $min_meter_price, $max_meter_price, $seller_type, $seller_name, $seller_phone, $offer_title, $offer_description, $offer_start_date, $offer_end_date, $brochure_url,
+            $latitude, $longitude, $bathrooms, $balconies, $elevators, date('Y-m-d H:i:s'), $friendly_id, $currency
         ];
 
         // Parallel keys for forced typing
         $bind_keys = [
-            'property_type_id', 'title', 'description', 'location', 'area', 'rooms', 'status', 'listing_type', 'employee_id', 'unit_design', 'finishing_type_id', 'compound_area', 'down_payment_percentage', 'payment_years', 'delivery_date', 'project_name', 'min_area', 'max_area', 'avg_area', 'district', 'governorate', 'company_name', 'floors_count', 'sales_manager_name', 'sales_manager_phone', 'salesperson_name', 'salesperson_phone', 'year_built', 'unit_floor', 'net_area', 'loading_percentage', 'price_cash', 'price_installments', 'monthly_rent', 'daily_rent', 'yearly_rent', 'meter_price_cash', 'meter_price_installments', 'seller_type', 'seller_name', 'seller_phone', 'latitude', 'longitude', 'bathrooms', 'balconies', 'elevators', 'date_added', 'friendly_id', 'currency'
+            'property_type_id', 'title', 'description', 'location', 'area', 'rooms', 'status', 'listing_type', 'employee_id', 'unit_design',
+            'finishing_type_id', 'compound_area', 'down_payment_percentage', 'cash_discount_percentage', 'maintenance_percentage', 'payment_years', 'delivery_date', 'delivery_status', 'construction_status', 'project_name',
+            'phase_name', 'min_area', 'max_area', 'avg_area', 'district', 'governorate', 'company_name', 'company_phone', 'floors_count', 'sales_director_name',
+            'sales_director_phone', 'operation_manager_name', 'operation_manager_phone', 'sales_manager_name', 'sales_manager_phone', 'salesperson_name', 'salesperson_phone', 'year_built', 'unit_floor', 'net_area',
+            'loading_percentage', 'price_cash', 'price_installments', 'min_price', 'max_price', 'monthly_rent', 'daily_rent', 'yearly_rent', 'meter_price_cash', 'meter_price_installments',
+            'min_meter_price', 'max_meter_price', 'seller_type', 'seller_name', 'seller_phone', 'offer_title', 'offer_description', 'offer_start_date', 'offer_end_date', 'brochure_url',
+            'latitude', 'longitude', 'bathrooms', 'balconies', 'elevators', 'date_added', 'friendly_id', 'currency'
         ];
 
         $force_string_fields = [
-            'sales_manager_phone', 'salesperson_phone', 'seller_phone'
+            'sales_manager_phone', 'salesperson_phone', 'seller_phone', 'company_phone', 'sales_director_phone', 'operation_manager_phone'
         ];
 
         $types = '';
@@ -289,10 +363,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $params = array_merge([$stmt, $types], $bind_vars);
         call_user_func_array('safe_bind_param', $params);
 
-    // Debug: log key fields before execute to help diagnose missing storage
-    error_log("DEBUG add_other_property: year_built=" . var_export($year_built, true) . " seller_type=" . var_export($seller_type, true));
-    $t_before_execute = microtime(true);
-    if ($stmt->execute()) {
+        $t_before_execute = microtime(true);
+        if ($stmt->execute()) {
             $new_property_id = $conn->insert_id;
             ensurePropertySellersTable($conn);
             if ($seller_entries) {
@@ -689,10 +761,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" class="form-container" enctype="multipart/form-data" data-prevent-multi-submit="1" data-property-id="0" data-csrf-token="<?php echo $csrf_token; ?>">
         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-
-        <!-- Listing Type (Hidden - determined by session mode) -->
-        <input type="hidden" name="listing_type" value="<?php echo htmlspecialchars($current_mode); ?>">
-
         <div class="form-section">
             <h3><?php echo t('basic_info'); ?></h3>
             <div class="form-grid">
@@ -710,7 +778,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         ?>
                     </div>
                 </div>
-                 <div class="form-group" style="grid-column: 1 / -1;">
+                <div class="form-group" style="grid-column: 1 / -1;">
                     <label><?php echo t('property_type'); ?>: *</label>
                     <div class="checkbox-group" style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">
                         <?php foreach ($property_types as $type): ?>
@@ -727,18 +795,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <?php endforeach; ?>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="project_name"><?php echo t('project_name'); ?>:</label>
-                    <input type="text" id="project_name" name="project_name" class="form-input" value="<?php echo htmlspecialchars($_POST['project_name'] ?? ''); ?>">
-                </div>
-                <div class="form-group">
-                    <label for="title"><?php echo t('unit_title_optional'); ?>:</label>
-                    <input type="text" id="title" name="title" class="form-input" value="<?php echo htmlspecialchars($_POST['title'] ?? ''); ?>">
-                </div>
-                 <div class="form-group">
-                    <label for="company_name"><?php echo t('company'); ?>:</label>
-                    <input type="text" id="company_name" name="company_name" class="form-input" value="<?php echo htmlspecialchars($_POST['company_name'] ?? ''); ?>">
-                </div>
+                <?php if ($current_mode === 'Primary'): ?>
+                    <div class="form-group">
+                        <label for="project_name"><?php echo t('project_name'); ?>: *</label>
+                        <input type="text" id="project_name" name="project_name" class="form-input" required value="<?php echo htmlspecialchars($_POST['project_name'] ?? ''); ?>" placeholder="اسم المشروع / الكومباوند">
+                    </div>
+                    <div class="form-group">
+                        <label for="phase_name"><?php echo t('phase_name'); ?>:</label>
+                        <input type="text" id="phase_name" name="phase_name" class="form-input" value="<?php echo htmlspecialchars($_POST['phase_name'] ?? ''); ?>" placeholder="مثال: المرحلة الأولى، Phase 2...">
+                    </div>
+                    <div class="form-group">
+                        <label for="company_name"><?php echo t('company'); ?> (المطور العقاري): *</label>
+                        <input type="text" id="company_name" name="company_name" class="form-input" required value="<?php echo htmlspecialchars($_POST['company_name'] ?? ''); ?>" placeholder="اسم الشركة المطورة">
+                    </div>
+                    <div class="form-group">
+                        <label for="title"><?php echo t('unit_title_optional'); ?>:</label>
+                        <input type="text" id="title" name="title" class="form-input" value="<?php echo htmlspecialchars($_POST['title'] ?? ''); ?>" placeholder="عنوان فرعي اختياري للمشروع أو النموذج">
+                    </div>
+                <?php else: ?>
+                    <div class="form-group">
+                        <label for="project_name"><?php echo t('project_name'); ?>:</label>
+                        <input type="text" id="project_name" name="project_name" class="form-input" value="<?php echo htmlspecialchars($_POST['project_name'] ?? ''); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="title"><?php echo t('unit_title_optional'); ?>:</label>
+                        <input type="text" id="title" name="title" class="form-input" value="<?php echo htmlspecialchars($_POST['title'] ?? ''); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="company_name"><?php echo t('company'); ?>:</label>
+                        <input type="text" id="company_name" name="company_name" class="form-input" value="<?php echo htmlspecialchars($_POST['company_name'] ?? ''); ?>">
+                    </div>
+                <?php endif; ?>
                 <div class="form-group">
                     <label for="status"><?php echo t('status'); ?>:</label>
                     <select id="status" name="status" class="form-input">
@@ -787,10 +874,215 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         </div>
 
+        <?php if ($current_mode === 'Primary'): ?>
+        <!-- Developer & Management Contacts Section for Primary Mode -->
         <div class="form-section">
-            <h3><?php echo t('area_and_specs'); // Changed title?></h3>
+            <h3><?php echo t('developer_and_management_contacts'); ?></h3>
             <div class="form-grid">
-                 <div class="form-group">
+                <div class="form-group">
+                    <label for="company_phone"><?php echo t('company_phone'); ?></label>
+                    <div class="phone-input-group" style="display:flex; gap:10px;">
+                        <select name="company_phone_code" id="company_phone_code" class="form-input" style="width:120px;"></select>
+                        <input type="text" name="company_phone_number" id="company_phone_number" class="form-input" data-initial-code="+20" value="<?php echo htmlspecialchars($_POST['company_phone_number'] ?? ''); ?>" placeholder="رقم هاتف الشركة / الكول سنتر">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="sales_director_name"><?php echo t('sales_director_name'); ?></label>
+                    <input type="text" id="sales_director_name" name="sales_director_name" class="form-input" value="<?php echo htmlspecialchars($_POST['sales_director_name'] ?? ''); ?>" placeholder="اسم رئيس قطاع المبيعات">
+                </div>
+                <div class="form-group">
+                    <label for="sales_director_phone"><?php echo t('sales_director_phone'); ?></label>
+                    <div class="phone-input-group" style="display:flex; gap:10px;">
+                        <select name="sales_director_phone_code" id="sales_director_phone_code" class="form-input" style="width:120px;"></select>
+                        <input type="text" name="sales_director_phone_number" id="sales_director_phone_number" class="form-input" data-initial-code="+20" value="<?php echo htmlspecialchars($_POST['sales_director_phone_number'] ?? ''); ?>" placeholder="رقم هاتف Sales Director">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="operation_manager_name"><?php echo t('operation_manager_name'); ?></label>
+                    <input type="text" id="operation_manager_name" name="operation_manager_name" class="form-input" value="<?php echo htmlspecialchars($_POST['operation_manager_name'] ?? ''); ?>" placeholder="اسم مدير التشغيل / العمليات">
+                </div>
+                <div class="form-group">
+                    <label for="operation_manager_phone"><?php echo t('operation_manager_phone'); ?></label>
+                    <div class="phone-input-group" style="display:flex; gap:10px;">
+                        <select name="operation_manager_phone_code" id="operation_manager_phone_code" class="form-input" style="width:120px;"></select>
+                        <input type="text" name="operation_manager_phone_number" id="operation_manager_phone_number" class="form-input" data-initial-code="+20" value="<?php echo htmlspecialchars($_POST['operation_manager_phone_number'] ?? ''); ?>" placeholder="رقم هاتف Operation Manager">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="sales_manager_name"><?php echo t('sales_manager_name_label'); ?></label>
+                    <input type="text" id="sales_manager_name" name="sales_manager_name" class="form-input" value="<?php echo htmlspecialchars($_POST['sales_manager_name'] ?? ''); ?>" placeholder="اسم مدير المبيعات">
+                </div>
+                <div class="form-group">
+                    <label for="sales_manager_phone"><?php echo t('sales_manager_phone_label'); ?></label>
+                    <div class="phone-input-group" style="display:flex; gap:10px;">
+                        <select name="sales_manager_phone_code" id="sales_manager_phone_code" class="form-input" style="width:120px;"></select>
+                        <input type="text" name="sales_manager_phone_number" id="sales_manager_phone_number" class="form-input" data-initial-code="+20" value="<?php echo htmlspecialchars($_POST['sales_manager_phone_number'] ?? ''); ?>">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="salesperson_name"><?php echo t('salesperson_name_label'); ?></label>
+                    <input type="text" id="salesperson_name" name="salesperson_name" class="form-input" value="<?php echo htmlspecialchars($_POST['salesperson_name'] ?? ''); ?>" placeholder="اسم مسؤول المبيعات">
+                </div>
+                <div class="form-group">
+                    <label for="salesperson_phone"><?php echo t('salesperson_phone_label'); ?></label>
+                    <div class="phone-input-group" style="display:flex; gap:10px;">
+                        <select name="salesperson_phone_code" id="salesperson_phone_code" class="form-input" style="width:120px;"></select>
+                        <input type="text" name="salesperson_phone_number" id="salesperson_phone_number" class="form-input" data-initial-code="+20" value="<?php echo htmlspecialchars($_POST['salesperson_phone_number'] ?? ''); ?>">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Specs and Area Ranges for Primary -->
+        <div class="form-section">
+            <h3><?php echo t('project_specifications'); ?></h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="compound_area"><?php echo t('compound_area'); ?>:</label>
+                    <input type="number" step="0.01" id="compound_area" name="compound_area" class="form-input" value="<?php echo htmlspecialchars($_POST['compound_area'] ?? ''); ?>" placeholder="إجمالي مساحة المشروع بالفدان أو م²">
+                </div>
+                <div class="form-group">
+                    <label for="min_area"><?php echo t('min_area_sqm'); ?>:</label>
+                    <input type="number" step="0.01" id="min_area" name="min_area" class="form-input" value="<?php echo htmlspecialchars($_POST['min_area'] ?? ''); ?>" placeholder="المساحات تبدأ من">
+                </div>
+                <div class="form-group">
+                    <label for="max_area"><?php echo t('max_area_sqm'); ?>:</label>
+                    <input type="number" step="0.01" id="max_area" name="max_area" class="form-input" value="<?php echo htmlspecialchars($_POST['max_area'] ?? ''); ?>" placeholder="المساحات تصل إلى">
+                </div>
+                <div class="form-group">
+                    <label for="avg_area"><?php echo t('avg_area_sqm'); ?>:</label>
+                    <input type="number" step="0.01" id="avg_area" name="avg_area" class="form-input" value="<?php echo htmlspecialchars($_POST['avg_area'] ?? ''); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="unit_design"><?php echo t('unit_design'); ?> (نماذج الوحدات):</label>
+                    <input type="text" id="unit_design" name="unit_design" class="form-input" value="<?php echo htmlspecialchars($_POST['unit_design'] ?? ''); ?>" placeholder="مثال: شقق سكنية، دوبلكس، تاون هاوس، مكاتب...">
+                </div>
+                <div class="form-group">
+                    <label for="finishing_type_id"><?php echo t('finishing_type'); ?>:</label> 
+                    <select id="finishing_type_id" name="finishing_type_id" class="form-input"> 
+                        <option value=""><?php echo t('select_finishing_type'); ?></option>
+                        <?php foreach ($finishing_types as $finishing): ?>
+                            <option value="<?php echo $finishing['FinishingID']; ?>" <?php echo (($_POST['finishing_type_id'] ?? '') == $finishing['FinishingID']) ? 'selected' : ''; ?>>
+                                <?php 
+                                if (get_lang_code() === 'ar' && !empty($finishing['FinishingName_ar'])) {
+                                    echo htmlspecialchars($finishing['FinishingName_ar']);
+                                } else {
+                                    echo htmlspecialchars($finishing['FinishingName']);
+                                }
+                                ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="floors_count"><?php echo t('floors_count'); ?>:</label>
+                    <input type="number" id="floors_count" name="floors_count" class="form-input" value="<?php echo htmlspecialchars($_POST['floors_count'] ?? ''); ?>" placeholder="عدد الأدوار في المباني">
+                </div>
+                <div class="form-group">
+                    <label for="construction_status"><?php echo t('construction_status'); ?>:</label>
+                    <input type="text" id="construction_status" name="construction_status" class="form-input" value="<?php echo htmlspecialchars($_POST['construction_status'] ?? ''); ?>" placeholder="مثال: إنشاءات 50% / حفر / خرسانات">
+                </div>
+                <div class="form-group">
+                    <label for="delivery_status"><?php echo t('delivery_status'); ?>:</label>
+                    <input type="text" id="delivery_status" name="delivery_status" class="form-input" value="<?php echo htmlspecialchars($_POST['delivery_status'] ?? ''); ?>" placeholder="مثال: استلام فوري / بعد سنتين / 2027">
+                </div>
+                <div class="form-group">
+                    <label for="delivery_date"><?php echo t('delivery_date'); ?>:</label>
+                    <input type="date" id="delivery_date" name="delivery_date" class="form-input" value="<?php echo htmlspecialchars($_POST['delivery_date'] ?? ''); ?>">
+                </div>
+            </div>
+        </div>
+
+        <!-- Pricing Ranges & Payment Plans for Primary -->
+        <div class="form-section">
+            <h3><?php echo t('project_pricing_and_payment'); ?></h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="currency"><?php echo t('currency'); ?>:</label>
+                    <select id="currency" name="currency" class="form-input">
+                        <option value="EGP" <?php echo (($_POST['currency'] ?? 'EGP') === 'EGP') ? 'selected' : ''; ?>><?php echo t('EGP'); ?></option>
+                        <option value="USD" <?php echo (($_POST['currency'] ?? '') === 'USD') ? 'selected' : ''; ?>><?php echo t('USD'); ?></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="min_price"><?php echo t('min_price'); ?> (السعر الإجمالي يبدأ من):</label>
+                    <input type="number" step="0.01" id="min_price" name="min_price" class="form-input" value="<?php echo htmlspecialchars($_POST['min_price'] ?? ''); ?>" placeholder="أقل سعر إجمالي في المشروع">
+                </div>
+                <div class="form-group">
+                    <label for="max_price"><?php echo t('max_price'); ?> (السعر الإجمالي يصل إلى):</label>
+                    <input type="number" step="0.01" id="max_price" name="max_price" class="form-input" value="<?php echo htmlspecialchars($_POST['max_price'] ?? ''); ?>" placeholder="أعلى سعر إجمالي في المشروع">
+                </div>
+                <div class="form-group">
+                    <label for="min_meter_price"><?php echo t('min_meter_price'); ?>:</label>
+                    <input type="number" step="0.01" id="min_meter_price" name="min_meter_price" class="form-input" value="<?php echo htmlspecialchars($_POST['min_meter_price'] ?? ''); ?>" placeholder="سعر المتر يبدأ من">
+                </div>
+                <div class="form-group">
+                    <label for="max_meter_price"><?php echo t('max_meter_price'); ?>:</label>
+                    <input type="number" step="0.01" id="max_meter_price" name="max_meter_price" class="form-input" value="<?php echo htmlspecialchars($_POST['max_meter_price'] ?? ''); ?>" placeholder="سعر المتر يصل إلى">
+                </div>
+                <div class="form-group">
+                    <label for="down_payment_percentage"><?php echo t('down_payment_percentage'); ?> (%):</label>
+                    <input type="number" step="0.01" id="down_payment_percentage" name="down_payment_percentage" class="form-input" value="<?php echo htmlspecialchars($_POST['down_payment_percentage'] ?? ''); ?>" placeholder="نسبة المقدم تبدأ من %">
+                </div>
+                <div class="form-group">
+                    <label for="payment_years"><?php echo t('payment_years'); ?>:</label>
+                    <input type="number" step="0.5" min="0.5" id="payment_years" name="payment_years" class="form-input" value="<?php echo isset($_POST['payment_years']) ? htmlspecialchars($_POST['payment_years']) : ''; ?>" placeholder="فترة السداد تصل إلى (سنوات)">
+                </div>
+                <div class="form-group">
+                    <label for="cash_discount_percentage"><?php echo t('cash_discount_percentage'); ?>:</label>
+                    <input type="number" step="0.01" id="cash_discount_percentage" name="cash_discount_percentage" class="form-input" value="<?php echo htmlspecialchars($_POST['cash_discount_percentage'] ?? ''); ?>" placeholder="مثال: 25% خصم للكاش">
+                </div>
+                <div class="form-group">
+                    <label for="maintenance_percentage"><?php echo t('maintenance_percentage'); ?>:</label>
+                    <input type="number" step="0.01" id="maintenance_percentage" name="maintenance_percentage" class="form-input" value="<?php echo htmlspecialchars($_POST['maintenance_percentage'] ?? ''); ?>" placeholder="مثال: 8% أو 10%">
+                </div>
+            </div>
+        </div>
+
+        <!-- Offers & Promotions Section for Primary -->
+        <div class="form-section" style="border: 1px solid #f6c23e; background: #fffdf5; border-radius: 8px; padding: 20px;">
+            <h3 style="color: #d39e00; display: flex; align-items: center; gap: 8px;">🎁 <?php echo t('offers_and_promotions'); ?></h3>
+            <div class="form-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="offer_title"><?php echo t('offer_title'); ?>:</label>
+                    <input type="text" id="offer_title" name="offer_title" class="form-input" value="<?php echo htmlspecialchars($_POST['offer_title'] ?? ''); ?>" placeholder="مثال: خصم خاص 10% بمناسبة الافتتاح / 0% مقدم وتقسيط حتى 10 سنوات">
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="offer_description"><?php echo t('offer_description'); ?>:</label>
+                    <textarea id="offer_description" name="offer_description" class="form-input" rows="3" placeholder="تفاصيل وشروط العرض والاستثناءات"><?php echo htmlspecialchars($_POST['offer_description'] ?? ''); ?></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="offer_start_date"><?php echo t('offer_start_date'); ?>:</label>
+                    <input type="date" id="offer_start_date" name="offer_start_date" class="form-input" value="<?php echo htmlspecialchars($_POST['offer_start_date'] ?? ''); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="offer_end_date"><?php echo t('offer_end_date'); ?>:</label>
+                    <input type="date" id="offer_end_date" name="offer_end_date" class="form-input" value="<?php echo htmlspecialchars($_POST['offer_end_date'] ?? ''); ?>">
+                </div>
+            </div>
+        </div>
+
+        <!-- Brochure & Masterplan Link -->
+        <div class="form-section">
+            <h3>📑 <?php echo t('brochure_url'); ?> &amp; <?php echo t('additional_info'); ?></h3>
+            <div class="form-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="brochure_url"><?php echo t('brochure_url'); ?>:</label>
+                    <input type="url" id="brochure_url" name="brochure_url" class="form-input" value="<?php echo htmlspecialchars($_POST['brochure_url'] ?? ''); ?>" placeholder="https://drive.google.com/... أو رابط تحميل الـ PDF">
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="description"><?php echo t('description'); ?>:</label>
+                    <textarea id="description" name="description" class="form-input" rows="4" placeholder="وصف كامل ومفصل عن المشروع والمرافق والخدمات"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
+                </div>
+            </div>
+        </div>
+
+        <?php else: ?>
+        <!-- Resale & Rental Form Sections -->
+        <div class="form-section">
+            <h3><?php echo t('area_and_specs'); ?></h3>
+            <div class="form-grid">
+                <div class="form-group">
                     <label for="floors_count"><?php echo t('floors_count'); ?>:</label>
                     <input type="number" id="floors_count" name="floors_count" class="form-input" value="<?php echo htmlspecialchars($_POST['floors_count'] ?? ''); ?>">
                 </div>
@@ -800,9 +1092,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
                 <div class="form-group" id="compound_area_group">
                     <label for="compound_area"><?php echo t('compound_area'); ?>:</label>
-                    <input type="number" step="0.01" id="compound_area" name="compound_area" class="form-input" value="<?php echo htmlspecialchars($_POST['compound_area'] ?? ''); ?>" placeholder="<?php echo t(''); ?>">
+                    <input type="number" step="0.01" id="compound_area" name="compound_area" class="form-input" value="<?php echo htmlspecialchars($_POST['compound_area'] ?? ''); ?>">
                 </div>
-                <!-- New Fields -->
                 <div class="form-group">
                     <label for="rooms"><?php echo t('rooms'); ?>:</label>
                     <input type="number" id="rooms" name="rooms" class="form-input" value="<?php echo htmlspecialchars($_POST['rooms'] ?? ''); ?>">
@@ -883,7 +1174,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="form-grid">
                 <div class="form-group">
                     <label for="currency"><?php echo t('currency'); ?>:</label>
-                    <select id="currency" name="currency">
+                    <select id="currency" name="currency" class="form-input">
                         <option value="EGP" selected><?php echo t('EGP'); ?></option>
                         <option value="USD"><?php echo t('USD'); ?></option>
                     </select>
@@ -932,14 +1223,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
 
         <div class="form-section">
-    <h3><?php echo t('additional_info'); ?></h3>
-    <div class="form-grid">
-        <div class="form-group" style="grid-column: 1 / -1;">
-            <label for="description"><?php echo t('description'); ?>:</label>
-            <textarea id="description" name="description" class="form-input" rows="4"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
+            <h3><?php echo t('additional_info'); ?></h3>
+            <div class="form-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="description"><?php echo t('description'); ?>:</label>
+                    <textarea id="description" name="description" class="form-input" rows="4"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
+                </div>
+            </div>
         </div>
-    </div> <!-- Close form-grid -->
-</div> <!-- Close form-section -->
 
         <!-- Sales Information Section -->
         <div class="form-section">
@@ -1003,7 +1294,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="form-group">
                             <label><?php echo t("seller_phone"); ?></label>
                              <?php 
-                                // Generate unique IDs for first row
                                 $sCodeId = "seller_phone_code_0";
                                 $sNumId = "seller_phone_number_0";
                             ?>
@@ -1052,6 +1342,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
             </template>
         </div>
+        <?php endif; ?>
 
         <!-- Unified Media Upload Section -->
         <div class="form-section">
@@ -1245,6 +1536,30 @@ document.addEventListener('DOMContentLoaded', function () {
 <script src="js/phone_validation.js?v=<?php echo time(); ?>"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Init Company Phone
+    const cpCode = document.getElementById('company_phone_code');
+    const cpNum = document.getElementById('company_phone_number');
+    if (cpCode && cpNum) {
+        cpCode.innerHTML = getCountryOptionsHtml('+20');
+        setupPhoneValidation('company_phone_code', 'company_phone_number');
+    }
+
+    // Init Sales Director Phone
+    const sdCode = document.getElementById('sales_director_phone_code');
+    const sdNum = document.getElementById('sales_director_phone_number');
+    if (sdCode && sdNum) {
+        sdCode.innerHTML = getCountryOptionsHtml('+20');
+        setupPhoneValidation('sales_director_phone_code', 'sales_director_phone_number');
+    }
+
+    // Init Operation Manager Phone
+    const omCode = document.getElementById('operation_manager_phone_code');
+    const omNum = document.getElementById('operation_manager_phone_number');
+    if (omCode && omNum) {
+        omCode.innerHTML = getCountryOptionsHtml('+20');
+        setupPhoneValidation('operation_manager_phone_code', 'operation_manager_phone_number');
+    }
+
     // Init Sales Manager Phone
     const smCode = document.getElementById('sales_manager_phone_code');
     const smNum = document.getElementById('sales_manager_phone_number');
