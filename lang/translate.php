@@ -49,5 +49,50 @@ function get_direction()
 // Function to get current language code
 function get_lang_code()
 {
-    return $_SESSION['lang'];
+    return $_SESSION['lang'] ?? 'ar';
 }
+
+// Universal number formatting helper that removes trailing zeros only if decimals exist
+if (!function_exists('formatSmartNumber')) {
+    function formatSmartNumber($num, $max_decimals = 2) {
+        if ($num === null || $num === '' || !is_numeric($num)) {
+            return '';
+        }
+        $formatted = number_format(floatval($num), $max_decimals, '.', ',');
+        if (strpos($formatted, '.') !== false) {
+            $formatted = rtrim(rtrim($formatted, '0'), '.');
+        }
+        return $formatted;
+    }
+}
+
+// Universal Arabic years formatter with correct grammar/pluralization
+if (!function_exists('formatArabicYears')) {
+    function formatArabicYears($years_raw) {
+        if ($years_raw === null || $years_raw === '' || !is_numeric($years_raw)) {
+            return '';
+        }
+        $years = floatval($years_raw);
+        $has_fraction = (fmod($years, 1.0) !== 0.0);
+        $formatted_num = formatSmartNumber($years, $has_fraction ? 1 : 0);
+
+        if (get_lang_code() === 'ar') {
+            if ($has_fraction) {
+                return $formatted_num . ' سنة';
+            }
+            $int_val = intval($years);
+            if ($int_val === 1) {
+                return 'سنة واحدة';
+            } elseif ($int_val === 2) {
+                return 'سنتان';
+            } elseif ($int_val >= 3 && $int_val <= 10) {
+                return $formatted_num . ' سنوات';
+            } else {
+                return $formatted_num . ' سنة';
+            }
+        } else {
+            return $formatted_num . ' ' . (($years == 1) ? t('year') : t('years'));
+        }
+    }
+}
+

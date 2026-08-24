@@ -63,7 +63,7 @@ return [
     'login_error' => 'عفواً! حدث خطأ ما. يرجى المحاولة مرة أخرى لاحقاً.',
     'session_timeout_idle' => 'انتهت جلستك بسبب عدم النشاط. يرجى تسجيل الدخول مرة أخرى.',
     'session_warning' => 'ستنتهي جلستك قريباً. هل تريد الاستمرار؟',
-    
+
     // Activity Log Events
     'event' => 'الحدث',
     'details' => 'التفاصيل',
@@ -184,7 +184,7 @@ return [
     'currency' => 'العملة',
     'all_currencies' => 'جميع العملات',
     'years' => 'سنوات',
-    
+
     // Advanced Filters Specific
     'advanced_filters' => 'فلاتر متقدمة',
     'hide_advanced_filters' => 'إخفاء الفلاتر المتقدمة',
@@ -222,7 +222,7 @@ return [
     'unit_price' => 'سعر الوحدة',
     'unit_area' => 'مساحة الوحدة',
     'select_sort' => 'اختر الترتيب',
-    
+
     // Table Headers
     'table_header_id' => '#',
     'table_header_title' => 'العنوان/الاسم',
@@ -241,7 +241,7 @@ return [
     'table_header_status' => 'الحالة',
     'table_header_assigned_employee' => 'الموظف المسؤول',
     'table_header_actions' => 'الإجراءات',
-    
+
     // Add/Edit Form Specific Keys (Continued)
     'faddan' => 'فدان',
     'meter_sq' => 'م²',
@@ -423,7 +423,7 @@ return [
     'seller_type_marketing_company' => 'شركة تسويق',
     'all_seller_types' => 'جميع أنواع البائعين',
     'all_designs' => 'جميع التصاميم',
-    
+
     // Activity Log UI
     'manager_activity_title' => 'سجل نشاط المستخدمين',
     'manager_activity_description' => 'تابع تسجيلات الدخول، الإضافات والتعديلات لكل موظف.',
@@ -592,7 +592,7 @@ return [
     'role_admin' => 'مسؤول',
     'role_employee' => 'موظف',
     'role_manager' => 'مدير',
-    
+
     // Phase 3: Interactive Map and Video Features
     'select_location_on_map' => 'اختر الموقع على الخريطة',
     'click_map_to_set_location' => 'انقر على الخريطة لتحديد موقع العقار',
@@ -619,7 +619,7 @@ return [
     'error_deleting_attachment' => 'حدث خطأ أثناء حذف المرفق.',
     'attachment_upload_success' => 'تم رفع المرفق بنجاح!',
     'error_uploading_attachment' => 'حدث خطأ أثناء رفع المرفق.',
-    
+
     // Admin Duplicate Review
     'duplicate_properties_review_title' => 'مراجعة العقارات المكررة (حسب رقم الهاتف)',
     'duplicate_properties_review_subtitle' => 'لا يتم إيقاف الحفظ للمستخدمين. تظهر هنا فقط المجموعات التي تشترك في نفس الرقم للمراجعة اليدوية.',
@@ -679,7 +679,7 @@ return [
     'select_governorate_first' => 'اختر المحافظة أولاً',
     'loading' => 'جاري التحميل...',
     'no_regions_found' => 'لا توجد مناطق',
-    
+
     // Primary Project Fields
     'company_phone' => 'رقم هاتف الشركة / الخط الساخن',
     'company_phone_label' => 'هاتف الشركة:',
@@ -701,7 +701,13 @@ return [
     'cash_discount_percentage' => 'نسبة خصم الكاش (%)',
     'maintenance_percentage' => 'نسبة وديعة الصيانة (%)',
     'phase_name' => 'اسم / رقم المرحلة',
-    'delivery_status' => 'حالة الاستلام',
+    'delivery_status' => 'مرحلة الاستلام',
+    'delivery_status_ready' => 'استلام فوري',
+    'delivery_status_1year' => 'خلال سنة',
+    'delivery_status_2years' => 'خلال سنتين',
+    'delivery_status_3years' => 'خلال 3 سنوات',
+    'delivery_status_4years' => 'خلال 4 سنوات',
+    'delivery_status_under_construction' => 'تحت الإنشاء (قيد التنفيذ)',
     'construction_status' => 'نسبة / حالة الإنشاءات',
     'offers_and_promotions' => 'العروض والخصومات الترويجية',
     'offer_title' => 'عنوان / ملخص العرض',
@@ -712,7 +718,54 @@ return [
     'active_offer' => 'عرض خاص ساري',
     'brochure_url' => 'رابط الكتالوج / البروشور (PDF / Drive)',
     'developer_and_management_contacts' => 'بيانات الشركة المطورة والإدارة',
+    'developer_contacts' => 'بيانات الشركة المطورة والإدارة',
+    'developer_company' => 'الشركة المطورة',
+    'developer_company_label' => 'الشركة المطورة:',
+    'company_phone_2' => 'الخط الساخن / هاتف إضافي',
+    'company_phone_2_label' => 'الخط الساخن / هاتف إضافي:',
+    'company_hotline' => 'الخط الساخن',
+    'compound_area_unit' => 'الوحدة',
+    'unit_faddan' => 'فدان',
+    'unit_sqm' => 'م² (متر مربع)',
+    'total_price_range' => 'نطاق السعر الإجمالي',
+    'total_area_range' => 'نطاق المساحات',
+    'meter_price_range' => 'نطاق سعر المتر',
+    'project_info' => 'معلومات المشروع والمطور',
+    'project_specs_and_areas' => 'مواصفات ومساحات المشروع',
     'project_pricing_and_payment' => 'نطاق الأسعار وأنظمة السداد للمشروع',
     'project_specifications' => 'مواصفات ومساحات المشروع',
+    'project_brochure_and_details' => 'البروشور والتفاصيل الإضافية',
+    'payment_plans' => 'أنظمة السداد للمشروع',
+    'payment_plans_title' => 'أنظمة السداد المتاحة بالمشروع',
+    'add_payment_plan' => 'إضافة خطة سداد جديدة',
+    'plan_number' => 'نظام سداد',
+    'plan_title' => 'مسمى النظام (اختياري)',
+    'plan_title_placeholder' => 'مثال: الأقساط المتساوية، بدون مقدم، نظام عائد استثماري...',
+    'installment_type' => 'دورية الأقساط',
+    'installment_type_quarterly' => 'أقساط ربع سنوية (كل 3 شهور - الأكثر شيوعاً)',
+    'installment_type_monthly' => 'أقساط شهرية متساوية',
+    'installment_type_semi_annual' => 'أقساط نصف سنوية (كل 6 شهور)',
+    'installment_type_annual' => 'أقساط سنوية',
+    'installment_type_escalating' => 'أقساط تصاعدية',
+    'installment_type_bulk' => 'أقساط + دفعات سنوية مجمعة (Bulk)',
+    'delivery_payment_percentage' => 'دفعة الاستلام (%)',
+    'delivery_payment_placeholder' => 'مثال: 5 أو 10',
+    'roi_notes' => 'العائد الاستثماري / الإيجار الإلزامي',
+    'roi_notes_placeholder' => 'مثال: عائد سنوي 20% على المقدم / تفويض بالإيجار بعد الاستلام',
+    'plan_notes' => 'شروط وملاحظات الخطة',
+    'plan_notes_placeholder' => 'مثال: أول قسط بعد 3 شهور، خصم خاص 5% لفترة محدودة...',
+    'clubhouse_fee' => 'رسوم اشتراك النادي (Clubhouse)',
+    'clubhouse_fee_placeholder' => 'مثال: 150,000 ج.م تقسط على 3 سنوات',
+    'garage_fee' => 'رسوم الجراج / الباركينج',
+    'garage_fee_placeholder' => 'مثال: 200,000 ج.م إجباري عند الاستلام',
+    'transfer_fee_percentage' => 'رسوم التنازل لإعادة البيع (%)',
+    'transfer_fee_placeholder' => 'مثال: 5 أو 10',
+    'maintenance_payment_details' => 'موعد وطريقة سداد وديعة الصيانة',
+    'maintenance_payment_details_placeholder' => 'مثال: تدفع دفعة واحدة قبل موعد الاستلام بنحو 6 أشهر',
+    'project_financial_terms' => 'المصاريف والتكاليف العامة للمشروع',
+    'payment_plans_notes' => 'شروط وملاحظات السداد والتعاقد العامة',
+    'payment_plans_notes_placeholder' => 'مثال: خصم الكاش 35%، تطبق شروط التمويل العقاري، غرامات التأخير...',
+    'remove_plan' => 'حذف هذا النظام',
+    'view_brochure' => 'عرض بروشور المشروع',
 ];
 

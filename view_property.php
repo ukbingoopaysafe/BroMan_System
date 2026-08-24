@@ -133,6 +133,20 @@ if ($seller_stmt) {
     $seller_stmt->close();
 }
 
+// Fetch all payment plans for this property
+$property_payment_plans = [];
+$plan_stmt = $conn->prepare("SELECT * FROM PropertyPaymentPlans WHERE PropertyID = ? ORDER BY display_order ASC, plan_id ASC");
+if ($plan_stmt) {
+    $plan_stmt->bind_param('i', $property_id);
+    if ($plan_stmt->execute()) {
+        $plan_res = $plan_stmt->get_result();
+        while ($prow = $plan_res->fetch_assoc()) {
+            $property_payment_plans[] = $prow;
+        }
+    }
+    $plan_stmt->close();
+}
+
 // Fetch all linked property types for display pluralization
 $linked_types = [];
 $lt_sql = "SELECT pt.TypeName, pt.TypeName_ar 
@@ -204,7 +218,7 @@ function formatArea($property)
     return t('area_not_specified');
 }
 
-// Smart number formatter: trims unnecessary trailing zeros (e.g. 1.50 -> 1.5, 15.00 -> 15)
+// Smart number formatter: trims unnecessary trailing zeros (e.g. 1.50 -> 1.5, 10.00 -> 10)
 function formatSmartNumber($value, $maxDecimals = 2)
 {
     if ($value === null || $value === '') {
@@ -214,10 +228,43 @@ function formatSmartNumber($value, $maxDecimals = 2)
         return htmlspecialchars((string)$value);
     }
     $float = floatval($value);
-    // Format with fixed decimals then trim trailing zeros and dot
+    if (floor($float) == $float) {
+        return (string)(int)$float;
+    }
     $formatted = number_format($float, $maxDecimals, '.', '');
-    $formatted = rtrim(rtrim($formatted, '0'), '.');
+    if (strpos($formatted, '.') !== false) {
+        $formatted = rtrim(rtrim($formatted, '0'), '.');
+    }
     return $formatted;
+}
+
+// Format Arabic years with correct grammar/pluralization
+function formatArabicYears($years_raw)
+{
+    if ($years_raw === null || $years_raw === '' || !is_numeric($years_raw)) {
+        return '';
+    }
+    $years = floatval($years_raw);
+    $has_fraction = (fmod($years, 1.0) !== 0.0);
+    $formatted_num = formatSmartNumber($years, $has_fraction ? 1 : 0);
+
+    if (get_lang_code() === 'ar') {
+        if ($has_fraction) {
+            return $formatted_num . ' سنة';
+        }
+        $int_val = intval($years);
+        if ($int_val === 1) {
+            return 'سنة واحدة';
+        } elseif ($int_val === 2) {
+            return 'سنتان';
+        } elseif ($int_val >= 3 && $int_val <= 10) {
+            return $formatted_num . ' سنوات';
+        } else {
+            return $formatted_num . ' سنة';
+        }
+    } else {
+        return $formatted_num . ' ' . ($years == 1 ? 'Year' : 'Years');
+    }
 }
 
 // Format payment terms
@@ -230,19 +277,7 @@ function formatPaymentTerms($property)
     }
 
     if (!empty($property['payment_years']) && is_numeric($property['payment_years'])) {
-        // تحويل القيمة إلى عدد عشري
-        $years = floatval($property['payment_years']);
-
-        // تحديد عدد الخانات العشرية بناءً على وجود كسور
-        $decimal_places = fmod($years, 1) !== 0.0 ? 1 : 0;
-
-        // تنسيق الرقم مع إظهار الكسور إذا وجدت
-        $years_formatted = formatSmartNumber($years, $decimal_places);
-
-        // تحديد كلمة "سنة" أو "سنوات" بناءً على القيمة
-        $year_word = (abs($years - 1.0) < 0.00001) ? 'سنة' : 'سنوات';
-
-        $terms[] = $years_formatted . ' ' . $year_word;
+        $terms[] = formatArabicYears($property['payment_years']);
     }
     
     return !empty($terms) ? implode(' + ', $terms) : t('undefined');
@@ -447,7 +482,8 @@ function build_property_details_message($property, $types_display, $use_emojis =
             $lines[] = ($use_emojis ? '📊 ' : '') . '*متوسط المساحة*: ' . formatSmartNumber($property['avg_area'], 2) . ' ' . t('sqm');
         }
         if (!empty($property['compound_area'])) {
-            $lines[] = ($use_emojis ? '🏞️ ' : '') . '*مساحة المشروع*: ' . formatSmartNumber($property['compound_area'], 2) . ' ' . t('faddan');
+            $c_unit = (($property['compound_area_unit'] ?? 'faddan') === 'sqm') ? t('unit_sqm') : t('unit_faddan');
+            $lines[] = ($use_emojis ? '🏞️ ' : '') . '*مساحة المشروع*: ' . formatSmartNumber($property['compound_area'], 2) . ' ' . $c_unit;
         }
         if (!empty($property['net_area'])) {
             $lines[] = ($use_emojis ? '🧮 ' : '') . '*المساحة الصافية*: ' . formatSmartNumber($property['net_area'], 2) . ' ' . t('sqm');
@@ -487,6 +523,7 @@ function build_property_details_message($property, $types_display, $use_emojis =
         }
     }
 
+    global $property_payment_plans;
     $payment_terms = formatPaymentTerms($property);
     $has_payment_section =
         !empty($property['delivery_date']) ||
@@ -494,6 +531,7 @@ function build_property_details_message($property, $types_display, $use_emojis =
         !empty($property['construction_status']) ||
         !empty($property['down_payment_percentage']) ||
         !empty($property['payment_years']) ||
+        !empty($property_payment_plans) ||
         (!empty($payment_terms) && $payment_terms !== t('undefined'));
 
     if ($has_payment_section) {
@@ -509,20 +547,83 @@ function build_property_details_message($property, $types_display, $use_emojis =
         if (!empty($property['construction_status'])) {
             $lines[] = ($use_emojis ? '🏗️ ' : '') . '*حالة الإنشاءات*: ' . wa_clean_text($property['construction_status']);
         }
-        if (!empty($property['down_payment_percentage'])) {
-            $lines[] = ($use_emojis ? '💰 ' : '') . '*المقدم*: ' . formatSmartNumber($property['down_payment_percentage'], 2) . '%';
+
+        // List multiple payment plans if present
+        if (!empty($property_payment_plans)) {
+            $lines[] = ($use_emojis ? '💫 ' : '') . '*أنظمة السداد المتاحة*:';
+            foreach ($property_payment_plans as $p_idx => $pplan) {
+                $plan_parts = [];
+                if (!empty($pplan['plan_title'])) {
+                    $plan_parts[] = '*' . wa_clean_text($pplan['plan_title']) . '*';
+                }
+                if ($pplan['down_payment_percentage'] !== null && $pplan['down_payment_percentage'] !== '') {
+                    $plan_parts[] = 'مقدم ' . formatSmartNumber($pplan['down_payment_percentage'], 2) . '%';
+                }
+                if (!empty($pplan['installment_years'])) {
+                    $plan_parts[] = 'تقسيط على ' . formatArabicYears($pplan['installment_years']);
+                }
+                if (!empty($pplan['installment_type']) && $pplan['installment_type'] !== 'quarterly') {
+                    $type_map = [
+                        'monthly' => 'أقساط شهرية',
+                        'semi_annual' => 'أقساط نصف سنوية',
+                        'annual' => 'أقساط سنوية',
+                        'escalating' => 'أقساط تصاعدية',
+                        'bulk' => 'أقساط + دفعات سنوية Bulk',
+                    ];
+                    if (isset($type_map[$pplan['installment_type']])) {
+                        $plan_parts[] = '(' . $type_map[$pplan['installment_type']] . ')';
+                    }
+                }
+                if (!empty($pplan['delivery_payment_percentage'])) {
+                    $plan_parts[] = 'دفعة استلام ' . formatSmartNumber($pplan['delivery_payment_percentage'], 2) . '%';
+                }
+                
+                $plan_line = '🔹 ' . implode(' - ', $plan_parts);
+                if (!empty($pplan['roi_notes'])) {
+                    $plan_line .= ' | 🌟 ' . wa_clean_text($pplan['roi_notes']);
+                }
+                if (!empty($pplan['plan_notes'])) {
+                    $plan_line .= ' (' . wa_clean_text($pplan['plan_notes']) . ')';
+                }
+                $lines[] = $plan_line;
+            }
+        } else {
+            if ($property['down_payment_percentage'] !== null && $property['down_payment_percentage'] !== '') {
+                $lines[] = ($use_emojis ? '💰 ' : '') . '*المقدم*: ' . formatSmartNumber($property['down_payment_percentage'], 2) . '%';
+            }
+            if (!empty($property['payment_years'])) {
+                $lines[] = ($use_emojis ? '⏳ ' : '') . '*فترة السداد*: ' . formatArabicYears($property['payment_years']);
+            }
+            if (!empty($payment_terms) && $payment_terms !== t('undefined')) {
+                $lines[] = ($use_emojis ? '🧾 ' : '') . '*تفاصيل السداد*: ' . $payment_terms;
+            }
         }
-        if (!empty($property['payment_years'])) {
-            $years_display = formatSmartNumber($property['payment_years'], (fmod(floatval($property['payment_years']),1) !== 0.0) ? 1 : 0);
-            $lines[] = ($use_emojis ? '⏳ ' : '') . '*فترة السداد*: ' . $years_display . ' ' . t('year');
+
+        if (!empty($property['payment_plans_notes'])) {
+            $lines[] = ($use_emojis ? '📝 ' : '') . '*شروط السداد العامة*: ' . wa_clean_text($property['payment_plans_notes']);
         }
-        if (!empty($payment_terms) && $payment_terms !== t('undefined')) {
-            $lines[] = ($use_emojis ? '🧾 ' : '') . '*تفاصيل السداد*: ' . $payment_terms;
+        if (!empty($property['clubhouse_fee'])) {
+            $lines[] = ($use_emojis ? '🏊 ' : '') . '*اشتراك النادي*: ' . wa_clean_text($property['clubhouse_fee']);
+        }
+        if (!empty($property['garage_fee'])) {
+            $lines[] = ($use_emojis ? '🚗 ' : '') . '*رسوم الجراج*: ' . wa_clean_text($property['garage_fee']);
+        }
+        if (!empty($property['transfer_fee_percentage'])) {
+            $lines[] = ($use_emojis ? '🔄 ' : '') . '*رسوم التنازل*: ' . formatSmartNumber($property['transfer_fee_percentage'], 2) . '%';
+        }
+        if (!empty($property['maintenance_payment_details'])) {
+            $lines[] = ($use_emojis ? '🔧 ' : '') . '*سداد الصيانة*: ' . wa_clean_text($property['maintenance_payment_details']);
         }
     }
 
     if (!empty($property['company_name']) && $listing_type === 'Primary') {
         $lines[] = ($use_emojis ? '🏢 ' : '') . '*الشركة المطورة*: ' . wa_clean_text($property['company_name']);
+    }
+    if (!empty($property['company_phone']) && $listing_type === 'Primary') {
+        $lines[] = ($use_emojis ? '📞 ' : '') . '*هاتف الشركة*: ' . wa_clean_text($property['company_phone']);
+    }
+    if (!empty($property['company_phone_2']) && $listing_type === 'Primary') {
+        $lines[] = ($use_emojis ? '☎️ ' : '') . '*الخط الساخن*: ' . wa_clean_text($property['company_phone_2']);
     }
 
     if (!empty($property['brochure_url'])) {
@@ -1931,6 +2032,15 @@ if ($map_link !== '') {
                                         <i class="fas fa-phone-alt" style="font-size:0.8rem; margin-left:4px;"></i><?php echo htmlspecialchars($property['company_phone']); ?>
                                     </a>
                                     <?php endif; ?>
+                                    <?php if (!empty($property['company_phone_2'])): 
+                                        $cp2_tel = normalize_phone_for_tel($property['company_phone_2']);
+                                    ?>
+                                    <div style="margin-top:4px;">
+                                        <a href="tel:<?php echo $cp2_tel; ?>" style="color: #2563eb; direction: ltr; display: inline-block; font-size: 0.9rem; font-weight:600;">
+                                            <i class="fas fa-headset" style="font-size:0.8rem; margin-left:4px;"></i><?php echo htmlspecialchars($property['company_phone_2']); ?>
+                                        </a>
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <?php endif; ?>
@@ -2194,7 +2304,7 @@ if ($map_link !== '') {
                     <!-- Total Prices -->
                     <?php if (!empty($property['min_price']) && !empty($property['max_price'])): ?>
                     <div class="detail-item">
-                        <span class="detail-label"><?php echo t('price_range') ?: 'نطاق السعر الإجمالي'; ?>:</span>
+                        <span class="detail-label"><?php echo t('total_price_range') ?: 'نطاق السعر الإجمالي'; ?>:</span>
                         <span class="detail-value" style="font-weight:700; color:#2563eb;"><?php echo number_format($property['min_price'], 0, '.', ','); ?> - <?php echo number_format($property['max_price'], 0, '.', ','); ?> <?php echo $currency_label; ?></span>
                     </div>
                     <?php elseif (!empty($property['min_price'])): ?>
@@ -2275,7 +2385,7 @@ if ($map_link !== '') {
                     <?php endif; ?>
                     <?php if (!empty($property['min_area']) && !empty($property['max_area'])): ?>
                     <div class="detail-item">
-                        <span class="detail-label"><?php echo t('area_range') ?: 'نطاق المساحات'; ?>:</span>
+                        <span class="detail-label"><?php echo t('total_area_range') ?: 'نطاق المساحات'; ?>:</span>
                         <span class="detail-value"><?php echo formatSmartNumber($property['min_area'], 2); ?> - <?php echo formatSmartNumber($property['max_area'], 2); ?> <?php echo t('sqm'); ?></span>
                     </div>
                     <?php elseif (!empty($property['min_area'])): ?>
@@ -2298,8 +2408,13 @@ if ($map_link !== '') {
 
                     <?php if (!empty($property['compound_area'])): ?>
                     <div class="detail-item">
-                        <span class="detail-label"><?php echo t('compound_area_faddan'); ?>:</span>
-                        <span class="detail-value"><?php echo formatSmartNumber($property['compound_area'], 2); ?> <?php echo t('faddan'); ?></span>
+                        <span class="detail-label"><?php echo t('compound_area'); ?>:</span>
+                        <span class="detail-value">
+                            <?php 
+                            $c_unit_label = (($property['compound_area_unit'] ?? 'faddan') === 'sqm') ? t('unit_sqm') : t('unit_faddan');
+                            echo formatSmartNumber($property['compound_area'], 2) . ' ' . $c_unit_label; 
+                            ?>
+                        </span>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($property['net_area'])): ?>
@@ -2391,33 +2506,137 @@ if ($map_link !== '') {
             </div>
             <?php endif; ?>
 
+            <!-- Available Payment Plans Matrix (أنظمة السداد المتاحة) -->
+            <?php if (!empty($property_payment_plans)): ?>
+            <div class="property-section" style="border-right: 4px solid #2563eb;">
+                <h2 style="color:#1e40af; display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-credit-card" style="color:#2563eb;"></i> <?php echo t('payment_plans'); ?>
+                </h2>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-top:16px;">
+                    <?php foreach ($property_payment_plans as $pidx => $pplan): ?>
+                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:18px; position:relative; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:transform 0.2s ease;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+                            <span style="background:#dbeafe; color:#1e40af; font-weight:700; padding:4px 10px; border-radius:6px; font-size:0.85rem;">
+                                <?php echo !empty($pplan['plan_title']) ? htmlspecialchars($pplan['plan_title']) : (t('plan_number') . ' #' . ($pidx + 1)); ?>
+                            </span>
+                            <?php if (!empty($pplan['roi_notes'])): ?>
+                            <span style="background:#fef3c7; color:#92400e; font-weight:600; padding:4px 8px; border-radius:6px; font-size:0.8rem; display:flex; align-items:center; gap:4px;">
+                                <i class="fas fa-star" style="color:#f59e0b;"></i> <?php echo htmlspecialchars($pplan['roi_notes']); ?>
+                            </span>
+                            <?php endif; ?>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <?php if ($pplan['down_payment_percentage'] !== null && $pplan['down_payment_percentage'] !== ''): ?>
+                            <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #e2e8f0; padding-bottom:6px;">
+                                <span style="color:#64748b; font-size:0.9rem;"><?php echo t('down_payment_percentage'); ?>:</span>
+                                <span style="font-weight:700; color:#0f172a; font-size:1.05rem;"><?php echo formatSmartNumber($pplan['down_payment_percentage'], 2); ?>%</span>
+                            </div>
+                            <?php endif; ?>
+                            <?php if (!empty($pplan['installment_years'])): ?>
+                            <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #e2e8f0; padding-bottom:6px;">
+                                <span style="color:#64748b; font-size:0.9rem;"><?php echo t('payment_years'); ?>:</span>
+                                <span style="font-weight:700; color:#2563eb; font-size:1.05rem;"><?php echo formatArabicYears($pplan['installment_years']); ?></span>
+                            </div>
+                            <?php endif; ?>
+                            <?php if (!empty($pplan['installment_type'])): 
+                                $itype_key = 'installment_type_' . $pplan['installment_type'];
+                                $itype_text = t($itype_key);
+                                if ($itype_text === $itype_key) {
+                                    $itype_text = $pplan['installment_type'];
+                                }
+                            ?>
+                            <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #e2e8f0; padding-bottom:6px;">
+                                <span style="color:#64748b; font-size:0.9rem;"><?php echo t('installment_type'); ?>:</span>
+                                <span style="font-weight:600; color:#334155; font-size:0.95rem;"><?php echo htmlspecialchars($itype_text); ?></span>
+                            </div>
+                            <?php endif; ?>
+                            <?php if (!empty($pplan['delivery_payment_percentage'])): ?>
+                            <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #e2e8f0; padding-bottom:6px;">
+                                <span style="color:#64748b; font-size:0.9rem;"><?php echo t('delivery_payment_percentage'); ?>:</span>
+                                <span style="font-weight:700; color:#059669; font-size:1.05rem;"><?php echo formatSmartNumber($pplan['delivery_payment_percentage'], 2); ?>%</span>
+                            </div>
+                            <?php endif; ?>
+                            <?php if (!empty($pplan['plan_notes'])): ?>
+                            <div style="margin-top:4px; font-size:0.88rem; color:#475569; background:#fff; padding:8px 10px; border-radius:6px; border:1px solid #e2e8f0;">
+                                <i class="fas fa-info-circle" style="color:#3b82f6; margin-left:4px;"></i> <?php echo htmlspecialchars($pplan['plan_notes']); ?>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <?php if (!empty($property['payment_plans_notes'])): ?>
+                <div style="margin-top:16px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:14px; color:#1e40af; font-size:0.95rem; line-height:1.6;">
+                    <strong><i class="fas fa-bullhorn" style="margin-left:6px;"></i> <?php echo t('payment_plans_notes'); ?>:</strong>
+                    <div style="margin-top:6px;"><?php echo nl2br(htmlspecialchars($property['payment_plans_notes'])); ?></div>
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
             <!-- Payment & Delivery -->
             <div class="property-section">
                 <h2><?php echo t('payment_and_delivery'); ?></h2>
                 <div class="detail-grid">
+                    <?php if (!empty($property['delivery_status'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('delivery_status'); ?>:</span>
+                        <span class="detail-value" style="font-weight:700; color:#2563eb;"><?php echo htmlspecialchars($property['delivery_status']); ?></span>
+                    </div>
+                    <?php endif; ?>
                     <?php if (!empty($property['delivery_date'])): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('delivery_date'); ?>:</span>
                         <span class="detail-value"><?php echo date("Y-m-d", strtotime($property['delivery_date'])); ?></span>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($property['down_payment_percentage'])): ?>
+                    <?php if ($property['down_payment_percentage'] !== null && $property['down_payment_percentage'] !== '' && empty($property_payment_plans)): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('down_payment_percentage'); ?>:</span>
                         <span class="detail-value"><?php echo formatSmartNumber($property['down_payment_percentage'], 2); ?>%</span>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($property['payment_years'])): ?>
+                    <?php if (!empty($property['payment_years']) && empty($property_payment_plans)): ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('payment_years'); ?>:</span>
-                        <?php $years_display = formatSmartNumber($property['payment_years'], (fmod(floatval($property['payment_years']),1) !== 0.0) ? 1 : 0); ?>
-                        <span class="detail-value"><?php echo $years_display . ' ' . (get_lang_code() === 'ar' ? t('year') : t('year')); ?></span>
+                        <span class="detail-value"><?php echo formatArabicYears($property['payment_years']); ?></span>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($property['down_payment_percentage']) || !empty($property['payment_years'])): ?>
+                    <?php if (!empty($property['cash_discount_percentage'])): ?>
                     <div class="detail-item">
-                        <span class="detail-label"><?php echo t('payment_terms'); ?>:</span>
-                        <span class="detail-value"><?php echo formatPaymentTerms($property); ?></span>
+                        <span class="detail-label"><?php echo t('cash_discount_percentage'); ?>:</span>
+                        <span class="detail-value" style="font-weight:700; color:#10b981;"><?php echo formatSmartNumber($property['cash_discount_percentage'], 2); ?>%</span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['maintenance_percentage'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('maintenance_percentage'); ?>:</span>
+                        <span class="detail-value"><?php echo formatSmartNumber($property['maintenance_percentage'], 2); ?>%</span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['maintenance_payment_details'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('maintenance_payment_details'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['maintenance_payment_details']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['clubhouse_fee'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('clubhouse_fee'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['clubhouse_fee']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['garage_fee'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('garage_fee'); ?>:</span>
+                        <span class="detail-value"><?php echo htmlspecialchars($property['garage_fee']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($property['transfer_fee_percentage'])): ?>
+                    <div class="detail-item">
+                        <span class="detail-label"><?php echo t('transfer_fee_percentage'); ?>:</span>
+                        <span class="detail-value"><?php echo formatSmartNumber($property['transfer_fee_percentage'], 2); ?>%</span>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -2440,6 +2659,19 @@ if ($map_link !== '') {
                     <div class="detail-item detail-phone">
                         <span class="detail-label"><?php echo t('company_phone'); ?>:</span>
                         <span class="detail-value"><a href="tel:<?php echo $cp_tel; ?>"><?php echo htmlspecialchars($property['company_phone']); ?></a></span>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($property['company_phone_2'])): 
+                        $cp2_tel = normalize_phone_for_tel($property['company_phone_2']);
+                    ?>
+                    <div class="detail-item detail-phone">
+                        <span class="detail-label"><?php echo t('company_phone_2'); ?>:</span>
+                        <span class="detail-value">
+                            <a href="tel:<?php echo $cp2_tel; ?>" style="color:#2563eb; font-weight:700;">
+                                <i class="fas fa-headset" style="margin-left:4px;"></i><?php echo htmlspecialchars($property['company_phone_2']); ?>
+                            </a>
+                        </span>
                     </div>
                     <?php endif; ?>
 

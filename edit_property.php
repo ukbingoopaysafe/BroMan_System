@@ -61,12 +61,15 @@ $elevators = null; // Added
 $unit_design = "";
 $finishing_type_id = null;
 $compound_area = $down_payment_percentage = null;
+$compound_area_unit = 'faddan';
 $cash_discount_percentage = $maintenance_percentage = null;
 $payment_years = null;
+$payment_plans_notes = null;
+$property_payment_plans = [];
 $delivery_date = $delivery_status = $construction_status = "";
 $project_name = $phase_name = "";
 $min_area = $max_area = $avg_area = null;
-$district = $governorate = $company_name = $company_phone = "";
+$district = $governorate = $company_name = $company_phone = $company_phone_2 = "";
 $sales_director_name = $sales_director_phone = "";
 $operation_manager_name = $operation_manager_phone = "";
 $floors_count = null;
@@ -154,10 +157,16 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $unit_design = $row["unit_design"] ?? '';
                 $finishing_type_id = $row["finishing_type_id"];
                 $compound_area = $row["compound_area"];
+                $compound_area_unit = $row["compound_area_unit"] ?? 'faddan';
                 $down_payment_percentage = $row["down_payment_percentage"];
                 $cash_discount_percentage = $row["cash_discount_percentage"] ?? null;
                 $maintenance_percentage = $row["maintenance_percentage"] ?? null;
+                $clubhouse_fee = $row["clubhouse_fee"] ?? '';
+                $garage_fee = $row["garage_fee"] ?? '';
+                $transfer_fee_percentage = $row["transfer_fee_percentage"] ?? null;
+                $maintenance_payment_details = $row["maintenance_payment_details"] ?? '';
                 $payment_years = $row["payment_years"];
+                $payment_plans_notes = $row["payment_plans_notes"] ?? '';
                 $delivery_date = $row["delivery_date"] ?? '';
                 $delivery_status = $row["delivery_status"] ?? '';
                 $construction_status = $row["construction_status"] ?? '';
@@ -170,6 +179,7 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $governorate = $row["governorate"] ?? '';
                 $company_name = $row["company_name"] ?? '';
                 $company_phone = $row["company_phone"] ?? '';
+                $company_phone_2 = $row["company_phone_2"] ?? '';
                 $sales_director_name = $row["sales_director_name"] ?? '';
                 $sales_director_phone = $row["sales_director_phone"] ?? '';
                 $operation_manager_name = $row["operation_manager_name"] ?? '';
@@ -187,6 +197,20 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $offer_start_date = $row["offer_start_date"] ?? '';
                 $offer_end_date = $row["offer_end_date"] ?? '';
                 $brochure_url = $row["brochure_url"] ?? '';
+
+                // Fetch Existing Payment Plans
+                $property_payment_plans = [];
+                $plan_stmt = $conn->prepare("SELECT * FROM PropertyPaymentPlans WHERE PropertyID = ? ORDER BY display_order ASC, plan_id ASC");
+                if ($plan_stmt) {
+                    $plan_stmt->bind_param('i', $property_id);
+                    if ($plan_stmt->execute()) {
+                        $plan_res = $plan_stmt->get_result();
+                        while ($prow = $plan_res->fetch_assoc()) {
+                            $property_payment_plans[] = $prow;
+                        }
+                    }
+                    $plan_stmt->close();
+                }
 
                 if (!is_mode_allowed_for_role($listing_type)) {
                     $_SESSION["error_message"] = t('mode_not_allowed_for_role');
@@ -297,10 +321,12 @@ if ($att_stmt) {
         'Status' => $status,
         'unit_design' => $unit_design,
         'compound_area' => $compound_area,
+        'compound_area_unit' => $compound_area_unit,
         'down_payment_percentage' => $down_payment_percentage,
         'cash_discount_percentage' => $cash_discount_percentage,
         'maintenance_percentage' => $maintenance_percentage,
         'payment_years' => $payment_years,
+        'payment_plans_notes' => $payment_plans_notes,
         'delivery_date' => $delivery_date,
         'delivery_status' => $delivery_status,
         'construction_status' => $construction_status,
@@ -313,6 +339,7 @@ if ($att_stmt) {
         'governorate' => $governorate,
         'company_name' => $company_name,
         'company_phone' => $company_phone,
+        'company_phone_2' => $company_phone_2,
         'FloorsCount' => $floors_count,
         'sales_director_name' => $sales_director_name,
         'sales_director_phone' => $sales_director_phone,
@@ -366,7 +393,6 @@ if ($att_stmt) {
     $title_posted = isset($_POST['title']) ? trim($_POST['title']) : '';
     $description_posted = isset($_POST['description']) ? trim($_POST['description']) : null;
     $location_posted = isset($_POST['location']) ? trim($_POST['location']) : null;
-    // Price column removed from schema
     $area_posted = isset($_POST["area"]) && trim($_POST["area"]) !== "" ? trim($_POST["area"]) : null;
     $status_posted = isset($_POST["status"]) ? trim($_POST["status"]) : "available";
     // Determine property type category for field selection
@@ -377,16 +403,53 @@ if ($att_stmt) {
     $unit_design_posted = isset($_POST[$unit_design_source]) && trim($_POST[$unit_design_source]) !== '' ? trim($_POST[$unit_design_source]) : null;
     $finishing_type_id_posted = isset($_POST['finishing_type_id']) && trim($_POST['finishing_type_id']) !== '' ? trim($_POST['finishing_type_id']) : null;
     $compound_area_posted = isset($_POST['compound_area']) && trim($_POST['compound_area']) !== '' ? trim($_POST['compound_area']) : null;
+    $compound_area_unit_posted = in_array($_POST['compound_area_unit'] ?? '', ['faddan', 'sqm']) ? $_POST['compound_area_unit'] : 'faddan';
     $down_payment_percentage_posted = isset($_POST['down_payment_percentage']) && trim($_POST['down_payment_percentage']) !== '' ? trim($_POST['down_payment_percentage']) : null;
     $cash_discount_percentage_posted = isset($_POST['cash_discount_percentage']) && trim($_POST['cash_discount_percentage']) !== '' ? trim($_POST['cash_discount_percentage']) : null;
     $maintenance_percentage_posted = isset($_POST['maintenance_percentage']) && trim($_POST['maintenance_percentage']) !== '' ? trim($_POST['maintenance_percentage']) : null;
     $payment_years_posted = isset($_POST['payment_years']) && trim($_POST['payment_years']) !== '' ? trim($_POST['payment_years']) : null;
+    $payment_plans_notes_posted = isset($_POST['payment_plans_notes']) && trim($_POST['payment_plans_notes']) !== '' ? trim($_POST['payment_plans_notes']) : null;
+
+    // Multi-Payment Plans Parsing
+    // Primary Market Payment Plans and Financial Terms
+    $plan_titles = $_POST['plan_title'] ?? [];
+    $plan_down_payments = $_POST['plan_down_payment'] ?? [];
+    $plan_installment_years = $_POST['plan_installment_years'] ?? [];
+    $plan_installment_types = $_POST['plan_installment_type'] ?? [];
+    $plan_delivery_payments = $_POST['plan_delivery_payment'] ?? [];
+    $plan_roi_notes = $_POST['plan_roi_notes'] ?? [];
+    $plan_notes_arr = $_POST['plan_notes'] ?? [];
+    if (!is_array($plan_titles)) { $plan_titles = [$plan_titles]; }
+    if (!is_array($plan_down_payments)) { $plan_down_payments = [$plan_down_payments]; }
+    if (!is_array($plan_installment_years)) { $plan_installment_years = [$plan_installment_years]; }
+    if (!is_array($plan_installment_types)) { $plan_installment_types = [$plan_installment_types]; }
+    if (!is_array($plan_delivery_payments)) { $plan_delivery_payments = [$plan_delivery_payments]; }
+    if (!is_array($plan_roi_notes)) { $plan_roi_notes = [$plan_roi_notes]; }
+    if (!is_array($plan_notes_arr)) { $plan_notes_arr = [$plan_notes_arr]; }
+
+    $clubhouse_fee_posted = isset($_POST['clubhouse_fee']) && trim($_POST['clubhouse_fee']) !== '' ? trim($_POST['clubhouse_fee']) : null;
+    $garage_fee_posted = isset($_POST['garage_fee']) && trim($_POST['garage_fee']) !== '' ? trim($_POST['garage_fee']) : null;
+    $transfer_fee_percentage_posted = isset($_POST['transfer_fee_percentage']) && trim($_POST['transfer_fee_percentage']) !== '' && is_numeric($_POST['transfer_fee_percentage']) ? floatval($_POST['transfer_fee_percentage']) : null;
+    $maintenance_payment_details_posted = isset($_POST['maintenance_payment_details']) && trim($_POST['maintenance_payment_details']) !== '' ? trim($_POST['maintenance_payment_details']) : null;
+
+    if ($down_payment_percentage_posted === null && !empty($plan_down_payments)) {
+        $valid_dps = array_filter(array_map('floatval', $plan_down_payments), fn($v) => $v > 0);
+        if (!empty($valid_dps)) {
+            $down_payment_percentage_posted = min($valid_dps);
+        }
+    }
+    if ($payment_years_posted === null && !empty($plan_installment_years)) {
+        $valid_iys = array_filter(array_map('floatval', $plan_installment_years), fn($v) => $v > 0);
+        if (!empty($valid_iys)) {
+            $payment_years_posted = max($valid_iys);
+        }
+    }
+
     $delivery_date_posted = isset($_POST['delivery_date']) && trim($_POST['delivery_date']) !== '' ? trim($_POST['delivery_date']) : null;
     $delivery_status_posted = isset($_POST['delivery_status']) ? trim($_POST['delivery_status']) : null;
     $construction_status_posted = isset($_POST['construction_status']) ? trim($_POST['construction_status']) : null;
     $project_name_posted = isset($_POST['project_name']) ? trim($_POST['project_name']) : null;
     $phase_name_posted = isset($_POST['phase_name']) ? trim($_POST['phase_name']) : null;
-    // Price columns removed from schema
     $min_area_posted = isset($_POST['min_area']) && trim($_POST['min_area']) !== '' ? trim($_POST['min_area']) : null;
     $max_area_posted = isset($_POST['max_area']) && trim($_POST['max_area']) !== '' ? trim($_POST['max_area']) : null;
     $avg_area_posted = isset($_POST['avg_area']) && trim($_POST['avg_area']) !== '' ? trim($_POST['avg_area']) : null;
@@ -398,6 +461,8 @@ if ($att_stmt) {
     $cp_code = $_POST['company_phone_code'] ?? '';
     $cp_number = $_POST['company_phone_number'] ?? '';
     $company_phone_posted = ($cp_code !== '' && $cp_number !== '') ? $cp_code . $cp_number : null;
+
+    $company_phone_2_posted = isset($_POST['company_phone_2']) && trim($_POST['company_phone_2']) !== '' ? trim($_POST['company_phone_2']) : null;
 
     $sales_director_name_posted = isset($_POST['sales_director_name']) ? trim($_POST['sales_director_name']) : null;
     $sd_code = $_POST['sales_director_phone_code'] ?? '';
@@ -503,10 +568,6 @@ if ($att_stmt) {
     $currency = $_POST['currency'] ?? 'EGP';
    
     // --- Validation ---
-    // Context-aware validation based on property type
-    // $property_type_id is already fetched from the database above
-    
-    // Common required fields for all property types
     if (empty($governorate_posted)) {
         $errors['governorate'] = t('governorate_required');
     }
@@ -514,15 +575,6 @@ if ($att_stmt) {
         $errors['district'] = t('district_required');
     }
     
-    // Property type specific validation
-    if ($property_type_id_posted == 1 || $property_type_id_posted == 2) // If Residential or Coastal
-    {
-        // if (empty($unit_design_posted)) {
-        //     $errors['unit_design'] = t('unit_design_required');
-        // }
-    // Finishing Type is no longer required
-
-    }
     if ($area_posted !== null && (!is_numeric($area_posted) || $area_posted < 0)) {
         $errors["area"] = t("enter_valid_area");
     }
@@ -547,7 +599,6 @@ if ($att_stmt) {
     if ($payment_years_posted !== null && (!is_numeric($payment_years_posted) || $payment_years_posted < 0.5)) {
         $errors['payment_years'] = t('invalid_payment_years');
     }
-    // Price validation removed - columns no longer exist
     if ($min_area_posted !== null && (!is_numeric($min_area_posted) || $min_area_posted < 0)) {
         $errors['min_area'] = t('enter_valid_min_area');
     }
@@ -562,29 +613,25 @@ if ($att_stmt) {
     }
 
     // Phone validation: relaxed strict 11-digit check for international numbers
-    // But enforce it for Egyptian numbers (detected by starting with +20 or 20 or 01)
     function isValidPhoneFormat($phone) {
-        $clean = preg_replace('/[^0-9]/', '', $phone);
-        // If it starts with 20 (Egypt country code)
-        if (strpos($clean, '20') === 0 && strlen($clean) === 12) { // 20 + 10 digits
-             return true; 
-        }
-        // If it starts with 20 but wrong length
+        $clean = preg_replace('/[^0-9]/', '', (string)$phone);
         if (strpos($clean, '20') === 0) {
-             return strlen($clean) === 12; // Must be 12 digits total (2 for code + 10 for number)
+             return strlen($clean) === 12; // 20 + 10 digits
         }
-        // Otherwise checks for reasonable length (e.g., 8-15)
         return strlen($clean) >= 8 && strlen($clean) <= 15;
     }
 
-    // Helper to check specific Egyptian format if we want strictness on +20 prefix:
-    // User saves +2010xxxxxx. Clean is 2010xxxxxx (12 digits).
-    function isValidEqyptianMobile($phone) {
-        $clean = preg_replace('/[^0-9]/', '', $phone);
-        return strpos($clean, '201') === 0 && strlen($clean) === 12;
+    // Phone & Hotline validator (accepts 4-6 digits hotline or standard phone)
+    function isValidPhoneOrHotline($phone) {
+        $clean = preg_replace('/[^0-9]/', '', (string)$phone);
+        if (strlen($clean) >= 4 && strlen($clean) <= 6) {
+            return true; // Hotline like 19xxx, 16xxx
+        }
+        return isValidPhoneFormat($phone);
     }
-    foreach ($seller_entries_post as $idx => $row) {
-        $phone_val = $row['seller_phone'] ?? '';
+
+    foreach ($seller_entries_post as $idx => $seller_row) {
+        $phone_val = $seller_row['seller_phone'] ?? '';
         if ($phone_val !== null && trim($phone_val) !== '') {
             if (!isValidPhoneFormat($phone_val)) {
                 $errors['seller_phone_' . $idx] = 'رقم الهاتف غير صحيح (يجب أن يكون متوافقاً مع مفتاح الدولة).';
@@ -597,8 +644,11 @@ if ($att_stmt) {
     if (!empty($salesperson_phone_posted) && !isValidPhoneFormat($salesperson_phone_posted)) {
         $errors['salesperson_phone'] = 'رقم هاتف مسؤول المبيعات غير صحيح.';
     }
-    if (!empty($company_phone_posted) && !isValidPhoneFormat($company_phone_posted)) {
+    if (!empty($company_phone_posted) && !isValidPhoneOrHotline($company_phone_posted)) {
         $errors['company_phone'] = 'رقم هاتف الشركة المطورة غير صحيح.';
+    }
+    if (!empty($company_phone_2_posted) && !isValidPhoneOrHotline($company_phone_2_posted)) {
+        $errors['company_phone_2'] = 'الخط الساخن / الهاتف الإضافي للشركة غير صحيح.';
     }
     if (!empty($sales_director_phone_posted) && !isValidPhoneFormat($sales_director_phone_posted)) {
         $errors['sales_director_phone'] = 'رقم هاتف رئيس قطاع المبيعات غير صحيح.';
@@ -612,9 +662,9 @@ if ($att_stmt) {
         $sql_update = "UPDATE Properties SET 
             PropertyTypeID = ?, Title = ?, Description = ?, Location = ?, Area = ?, Bedrooms = ?,
             Status = ?, unit_design = ?, finishing_type_id = ?, 
-            compound_area = ?, down_payment_percentage = ?, cash_discount_percentage = ?, maintenance_percentage = ?, payment_years = ?, delivery_date = ?, delivery_status = ?, construction_status = ?,
+            compound_area = ?, compound_area_unit = ?, down_payment_percentage = ?, cash_discount_percentage = ?, maintenance_percentage = ?, clubhouse_fee = ?, garage_fee = ?, transfer_fee_percentage = ?, maintenance_payment_details = ?, payment_years = ?, payment_plans_notes = ?, delivery_date = ?, delivery_status = ?, construction_status = ?,
             ProjectName = ?, phase_name = ?, min_area = ?, max_area = ?, avg_area = ?, 
-            district = ?, governorate = ?, company_name = ?, company_phone = ?, FloorsCount = ?,
+            district = ?, governorate = ?, company_name = ?, company_phone = ?, company_phone_2 = ?, FloorsCount = ?,
             sales_director_name = ?, sales_director_phone = ?, operation_manager_name = ?, operation_manager_phone = ?,
             sales_manager_name = ?, sales_manager_phone = ?, salesperson_name = ?, salesperson_phone = ?,
             year_built = ?, unit_floor = ?, net_area = ?, loading_percentage = ?, 
@@ -629,10 +679,10 @@ if ($att_stmt) {
         if ($stmt_update = $conn->prepare($sql_update)) {
             // Convert empty strings to null for numeric fields
             $area_val = empty($area_posted) ? null : $area_posted;
-            $bedrooms_val = empty($bedrooms_posted) ? null : $bedrooms_posted; // Added
-            $bathrooms_val = empty($bathrooms_posted) ? null : $bathrooms_posted; // Added
-            $balconies_val = empty($balconies_posted) ? null : $balconies_posted; // Added
-            $elevators_val = empty($elevators_posted) ? null : $elevators_posted; // Added
+            $bedrooms_val = empty($bedrooms_posted) ? null : $bedrooms_posted;
+            $bathrooms_val = empty($bathrooms_posted) ? null : $bathrooms_posted;
+            $balconies_val = empty($balconies_posted) ? null : $balconies_posted;
+            $elevators_val = empty($elevators_posted) ? null : $elevators_posted;
             $compound_area_val = empty($compound_area_posted) ? null : $compound_area_posted;
             $down_payment_val = empty($down_payment_percentage_posted) ? null : $down_payment_percentage_posted;
             $cash_discount_val = empty($cash_discount_percentage_posted) ? null : $cash_discount_percentage_posted;
@@ -657,14 +707,10 @@ if ($att_stmt) {
             $max_meter_price_val = empty($max_meter_price_posted) ? null : $max_meter_price_posted;
             $latitude_val = empty($latitude_posted) ? null : $latitude_posted;
             $longitude_val = empty($longitude_posted) ? null : $longitude_posted;
-            // Ensure finishing type is an integer when provided (helps with bind types)
             $finishing_type_id_val = empty($finishing_type_id_posted) ? null : intval($finishing_type_id_posted);
 
-            // temporary debug logging removed
-
-            // Build types string programmatically
-            // Total 64 parameters + 1 PropertyID = 65
-            $types = str_repeat('s', 64) . 'i';
+            // Total 71 parameters + 1 PropertyID = 72
+            $types = str_repeat('s', 71) . 'i';
             $stmt_update->bind_param(
                 $types,
                 $property_type_id_posted,
@@ -672,15 +718,21 @@ if ($att_stmt) {
                 $description_posted,
                 $location_posted,
                 $area_val,
-                $bedrooms_val, // Added
+                $bedrooms_val,
                 $status_posted,
                 $unit_design_posted,
                 $finishing_type_id_val,
                 $compound_area_val,
+                $compound_area_unit_posted,
                 $down_payment_val,
                 $cash_discount_val,
                 $maintenance_val,
+                $clubhouse_fee_posted,
+                $garage_fee_posted,
+                $transfer_fee_percentage_posted,
+                $maintenance_payment_details_posted,
                 $payment_years_val,
+                $payment_plans_notes_posted,
                 $delivery_date_posted,
                 $delivery_status_posted,
                 $construction_status_posted,
@@ -693,6 +745,7 @@ if ($att_stmt) {
                 $governorate_posted,
                 $company_name_posted,
                 $company_phone_posted,
+                $company_phone_2_posted,
                 $floors_count_val,
                 $sales_director_name_posted,
                 $sales_director_phone_posted,
@@ -727,18 +780,41 @@ if ($att_stmt) {
                 $brochure_url_posted,
                 $latitude_val,
                 $longitude_val,
-                $bathrooms_val, // Added
-                $balconies_val, // Added
-                $elevators_val, // Added
+                $bathrooms_val,
+                $balconies_val,
+                $elevators_val,
                 $currency,
                 $property_id
             );
 
-            // Debug: log key fields before executing the UPDATE to diagnose persistence issues
-            error_log("DEBUG edit_property UPDATE: year_built_posted=" . var_export($year_built_posted, true) . " seller_type_posted=" . var_export($seller_type_posted, true));
-            // Log normalized seller_type right before executing the UPDATE so we can verify what is being written
-            error_log("DEBUG edit_property BEFORE EXECUTE: normalized_seller_type=" . var_export($seller_type_posted, true));
             if ($stmt_update->execute()) {
+                // Sync PropertyPaymentPlans table
+                $conn->query("DELETE FROM PropertyPaymentPlans WHERE PropertyID = " . intval($property_id));
+                if (!empty($plan_down_payments) && is_array($plan_down_payments)) {
+                    $stmt_plan = $conn->prepare("INSERT INTO PropertyPaymentPlans (PropertyID, plan_title, down_payment_percentage, installment_years, installment_type, delivery_payment_percentage, roi_notes, plan_notes, display_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    if ($stmt_plan) {
+                        $order = 1;
+                        foreach ($plan_down_payments as $idx => $dp_raw) {
+                            $p_title = trim((string)($plan_titles[$idx] ?? '')) !== '' ? trim((string)$plan_titles[$idx]) : null;
+                            $dp_val = (trim((string)$dp_raw) !== '' && is_numeric($dp_raw)) ? floatval($dp_raw) : null;
+                            $iy_raw = $plan_installment_years[$idx] ?? '';
+                            $iy_val = (trim((string)$iy_raw) !== '' && is_numeric($iy_raw)) ? floatval($iy_raw) : null;
+                            $i_type = trim((string)($plan_installment_types[$idx] ?? 'quarterly')) ?: 'quarterly';
+                            $del_raw = $plan_delivery_payments[$idx] ?? '';
+                            $del_val = (trim((string)$del_raw) !== '' && is_numeric($del_raw)) ? floatval($del_raw) : null;
+                            $roi_val = trim((string)($plan_roi_notes[$idx] ?? '')) !== '' ? trim((string)$plan_roi_notes[$idx]) : null;
+                            $notes_val = trim((string)($plan_notes_arr[$idx] ?? '')) !== '' ? trim((string)$plan_notes_arr[$idx]) : null;
+
+                            if ($dp_val !== null || $iy_val !== null || $roi_val !== null || $notes_val !== null || $del_val !== null || $p_title !== null) {
+                                $stmt_plan->bind_param("isdssdssi", $property_id, $p_title, $dp_val, $iy_val, $i_type, $del_val, $roi_val, $notes_val, $order);
+                                $stmt_plan->execute();
+                                $order++;
+                            }
+                        }
+                        $stmt_plan->close();
+                    }
+                }
+
                 // Sync property_type_links
                 $sql_del = "DELETE FROM property_type_links WHERE property_id = ?";
                 if ($stmt_del = $conn->prepare($sql_del)) {
@@ -1377,12 +1453,18 @@ if ($att_stmt) {
                 <h3><i class="fas fa-address-book" style="margin-left: 8px; color: #10b981;"></i><?php echo t('developer_contacts'); ?></h3>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="company_phone"><?php echo t('company_phone'); ?>:</label>
+                        <label for="company_phone"><?php echo t('company_phone'); ?> (موبايل / أرضي):</label>
                         <div class="phone-input-group" style="display:flex; gap:10px;">
                             <select name="company_phone_code" id="company_phone_code" class="form-input" style="width:120px;"></select>
                             <input type="text" name="company_phone_number" id="company_phone_number" class="form-input" value="<?php echo htmlspecialchars($parsedCP['number']); ?>" data-initial-code="<?php echo htmlspecialchars($parsedCP['code']); ?>" placeholder="10xxxxxxxx">
                         </div>
                         <?php if (isset($errors['company_phone'])) { echo "<span class='error-message'>" . $errors['company_phone'] . "</span>"; } ?>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="company_phone_2"><?php echo t('company_phone_2'); ?>:</label>
+                        <input type="text" id="company_phone_2" name="company_phone_2" class="form-input" value="<?php echo htmlspecialchars($company_phone_2); ?>" placeholder="مثال: الخط الساخن 19xxx أو هاتف إضافي">
+                        <?php if (isset($errors['company_phone_2'])) { echo "<span class='error-message'>" . $errors['company_phone_2'] . "</span>"; } ?>
                     </div>
 
                     <div class="form-group">
@@ -1478,11 +1560,17 @@ if ($att_stmt) {
 
             <!-- 4. Project Specs & Area Ranges -->
             <div class="form-section">
-                <h3><i class="fas fa-ruler-combined" style="margin-left: 8px; color: #8b5cf6;"></i><?php echo t('project_specs_and_areas') ?: 'مواصفات ومساحات المشروع'; ?></h3>
+                <h3><i class="fas fa-ruler-combined" style="margin-left: 8px; color: #8b5cf6;"></i><?php echo t('project_specs_and_areas'); ?></h3>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="compound_area"><?php echo t('compound_area'); ?> (<?php echo t('faddan'); ?>):</label>
-                        <input type="number" step="0.01" id="compound_area" name="compound_area" class="form-input" value="<?php echo htmlspecialchars($compound_area); ?>">
+                        <label for="compound_area"><?php echo t('compound_area'); ?>:</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="number" step="0.01" id="compound_area" name="compound_area" class="form-input" style="flex:1;" value="<?php echo htmlspecialchars($compound_area); ?>" placeholder="مساحة المشروع">
+                            <select name="compound_area_unit" id="compound_area_unit" class="form-input" style="width:130px;">
+                                <option value="faddan" <?php echo ($compound_area_unit === 'faddan') ? 'selected' : ''; ?>><?php echo t('unit_faddan'); ?></option>
+                                <option value="sqm" <?php echo ($compound_area_unit === 'sqm') ? 'selected' : ''; ?>><?php echo t('unit_sqm'); ?></option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="delivery_date"><?php echo t('delivery_date'); ?>:</label>
@@ -1517,10 +1605,6 @@ if ($att_stmt) {
                         <input type="number" step="0.01" id="avg_area" name="avg_area" class="form-input" value="<?php echo htmlspecialchars($avg_area); ?>">
                     </div>
                     <div class="form-group">
-                        <label for="loading_percentage"><?php echo t('loading_percentage'); ?> (%):</label>
-                        <input type="number" step="0.01" id="loading_percentage" name="loading_percentage" class="form-input" min="0" max="100" value="<?php echo htmlspecialchars($loading_percentage); ?>" placeholder="مثال: 15">
-                    </div>
-                    <div class="form-group">
                         <label for="finishing_type_id"><?php echo t('finishing_type'); ?>:</label>
                         <select id="finishing_type_id" name="finishing_type_id" class="form-input">
                             <option value=""><?php echo t('select_finishing_type'); ?></option>
@@ -1534,8 +1618,8 @@ if ($att_stmt) {
                 </div>
             </div>
 
-            <!-- 5. Pricing Ranges & Payment Plans -->
-            <div class="form-section" style="border-right: 4px solid #f59e0b;">
+            <!-- 5. Pricing Ranges & Multiple Payment Plans -->
+            <div class="form-section" style="border-right: 4px solid #2563eb;">
                 <h3><i class="fas fa-coins" style="margin-left: 8px; color: #f59e0b;"></i><?php echo t('pricing_and_payment'); ?></h3>
                 <div class="form-grid">
                     <div class="form-group">
@@ -1561,25 +1645,141 @@ if ($att_stmt) {
                         <label for="max_meter_price"><?php echo t('max_meter_price'); ?>:</label>
                         <input type="number" step="0.01" id="max_meter_price" name="max_meter_price" class="form-input" value="<?php echo htmlspecialchars($max_meter_price); ?>" placeholder="مثال: 45000">
                     </div>
-                    <div class="form-group">
-                        <label for="price_cash"><?php echo t('price_cash'); ?> (اختياري):</label>
-                        <input type="number" step="0.01" id="price_cash" name="price_cash" class="form-input" value="<?php echo htmlspecialchars($price_cash); ?>">
+                </div>
+
+                <!-- Project-Wide Financial Terms & Fees -->
+                <div style="margin-top: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+                    <h4 style="margin: 0 0 14px 0; font-size: 1rem; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-file-invoice-dollar" style="color: #10b981;"></i> <?php echo t('project_financial_terms'); ?>
+                    </h4>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="cash_discount_percentage"><?php echo t('cash_discount_percentage'); ?>:</label>
+                            <input type="number" step="0.01" id="cash_discount_percentage" name="cash_discount_percentage" class="form-input" min="0" max="100" value="<?php echo htmlspecialchars($cash_discount_percentage ?? ''); ?>" placeholder="مثال: 30">
+                        </div>
+                        <div class="form-group">
+                            <label for="maintenance_percentage"><?php echo t('maintenance_percentage'); ?>:</label>
+                            <input type="number" step="0.01" id="maintenance_percentage" name="maintenance_percentage" class="form-input" min="0" max="100" value="<?php echo htmlspecialchars($maintenance_percentage ?? ''); ?>" placeholder="مثال: 8 أو 10">
+                        </div>
+                        <div class="form-group">
+                            <label for="maintenance_payment_details"><?php echo t('maintenance_payment_details'); ?>:</label>
+                            <input type="text" id="maintenance_payment_details" name="maintenance_payment_details" class="form-input" value="<?php echo htmlspecialchars($maintenance_payment_details ?? ''); ?>" placeholder="<?php echo t('maintenance_payment_details_placeholder'); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label for="clubhouse_fee"><?php echo t('clubhouse_fee'); ?>:</label>
+                            <input type="text" id="clubhouse_fee" name="clubhouse_fee" class="form-input" value="<?php echo htmlspecialchars($clubhouse_fee ?? ''); ?>" placeholder="<?php echo t('clubhouse_fee_placeholder'); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label for="garage_fee"><?php echo t('garage_fee'); ?>:</label>
+                            <input type="text" id="garage_fee" name="garage_fee" class="form-input" value="<?php echo htmlspecialchars($garage_fee ?? ''); ?>" placeholder="<?php echo t('garage_fee_placeholder'); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label for="transfer_fee_percentage"><?php echo t('transfer_fee_percentage'); ?>:</label>
+                            <input type="number" step="0.01" id="transfer_fee_percentage" name="transfer_fee_percentage" class="form-input" value="<?php echo htmlspecialchars($transfer_fee_percentage ?? ''); ?>" placeholder="<?php echo t('transfer_fee_placeholder'); ?>">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="cash_discount_percentage"><?php echo t('cash_discount_percentage'); ?> (%):</label>
-                        <input type="number" step="0.01" id="cash_discount_percentage" name="cash_discount_percentage" class="form-input" min="0" max="100" value="<?php echo htmlspecialchars($cash_discount_percentage); ?>" placeholder="مثال: 25">
+                </div>
+
+                <!-- Dynamic Payment Plans Repeater -->
+                <div style="margin-top: 25px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <h4 style="margin:0; font-size:1.1rem; color:#1e293b; display:flex; align-items:center; gap:8px;">
+                            <i class="fas fa-credit-card" style="color:#2563eb;"></i> <?php echo t('payment_plans_title'); ?>
+                        </h4>
+                        <button type="button" id="add-payment-plan-btn" class="btn btn-primary" style="padding:6px 14px; font-size:0.9rem;">
+                            <i class="fas fa-plus"></i> <?php echo t('add_payment_plan'); ?>
+                        </button>
                     </div>
-                    <div class="form-group">
-                        <label for="maintenance_percentage"><?php echo t('maintenance_percentage'); ?> (%):</label>
-                        <input type="number" step="0.01" id="maintenance_percentage" name="maintenance_percentage" class="form-input" min="0" max="100" value="<?php echo htmlspecialchars($maintenance_percentage); ?>" placeholder="مثال: 8">
+
+                    <div id="payment-plans-container">
+                        <?php
+                        $plans_to_render = [];
+                        if (!empty($_POST['plan_down_payment']) && is_array($_POST['plan_down_payment'])) {
+                            foreach ($_POST['plan_down_payment'] as $p_i => $p_dp) {
+                                $plans_to_render[] = [
+                                    'plan_title' => $_POST['plan_title'][$p_i] ?? '',
+                                    'down_payment_percentage' => $p_dp,
+                                    'installment_years' => $_POST['plan_installment_years'][$p_i] ?? '',
+                                    'installment_type' => $_POST['plan_installment_type'][$p_i] ?? 'quarterly',
+                                    'delivery_payment_percentage' => $_POST['plan_delivery_payment'][$p_i] ?? '',
+                                    'roi_notes' => $_POST['plan_roi_notes'][$p_i] ?? '',
+                                    'plan_notes' => $_POST['plan_notes'][$p_i] ?? '',
+                                ];
+                            }
+                        } elseif (!empty($property_payment_plans)) {
+                            $plans_to_render = $property_payment_plans;
+                        } else {
+                            // Fallback single row from legacy property fields if present
+                            $plans_to_render = [[
+                                'plan_title' => '',
+                                'down_payment_percentage' => $down_payment_percentage ?? '',
+                                'installment_years' => $payment_years ?? '',
+                                'installment_type' => 'quarterly',
+                                'delivery_payment_percentage' => '',
+                                'roi_notes' => '',
+                                'plan_notes' => '',
+                            ]];
+                        }
+
+                        $plan_count = max(1, count($plans_to_render));
+
+                        for ($pi = 0; $pi < $plan_count; $pi++):
+                            $cur_plan = $plans_to_render[$pi] ?? [];
+                        ?>
+                        <div class="payment-plan-row" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:18px; margin-bottom:16px; position:relative;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; flex-wrap:wrap;">
+                                <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:250px;">
+                                    <span style="font-weight:700; color:#2563eb; font-size:0.95rem; white-space:nowrap;">
+                                        <i class="fas fa-layer-group"></i> <?php echo t('plan_number'); ?> #<span class="plan-idx"><?php echo $pi + 1; ?></span>
+                                    </span>
+                                    <input type="text" name="plan_title[]" class="form-input plan-title" style="flex:1; max-width:320px; font-size:0.9rem;" value="<?php echo htmlspecialchars($cur_plan['plan_title'] ?? ''); ?>" placeholder="<?php echo t('plan_title_placeholder'); ?>">
+                                </div>
+                                <button type="button" class="btn remove-plan-btn" style="background:#fee2e2; color:#ef4444; border:none; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:0.85rem; <?php echo ($pi === 0 && $plan_count === 1) ? 'display:none;' : ''; ?>">
+                                    <i class="fas fa-trash"></i> <?php echo t('remove_plan'); ?>
+                                </button>
+                            </div>
+                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:12px;">
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label><?php echo t('down_payment_percentage'); ?>:</label>
+                                    <input type="number" step="0.01" min="0" max="100" name="plan_down_payment[]" class="form-input plan-dp" value="<?php echo htmlspecialchars($cur_plan['down_payment_percentage'] ?? ''); ?>" placeholder="مثال: 0 أو 5 أو 10">
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label><?php echo t('payment_years'); ?>:</label>
+                                    <input type="number" step="0.5" min="0.5" max="30" name="plan_installment_years[]" class="form-input plan-years" value="<?php echo htmlspecialchars($cur_plan['installment_years'] ?? ''); ?>" placeholder="مثال: 7 أو 10">
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label><?php echo t('installment_type'); ?>:</label>
+                                    <select name="plan_installment_type[]" class="form-input plan-type">
+                                        <option value="quarterly" <?php echo (($cur_plan['installment_type'] ?? 'quarterly') === 'quarterly') ? 'selected' : ''; ?>><?php echo t('installment_type_quarterly'); ?></option>
+                                        <option value="monthly" <?php echo (($cur_plan['installment_type'] ?? '') === 'monthly') ? 'selected' : ''; ?>><?php echo t('installment_type_monthly'); ?></option>
+                                        <option value="semi_annual" <?php echo (($cur_plan['installment_type'] ?? '') === 'semi_annual') ? 'selected' : ''; ?>><?php echo t('installment_type_semi_annual'); ?></option>
+                                        <option value="annual" <?php echo (($cur_plan['installment_type'] ?? '') === 'annual') ? 'selected' : ''; ?>><?php echo t('installment_type_annual'); ?></option>
+                                        <option value="escalating" <?php echo (($cur_plan['installment_type'] ?? '') === 'escalating') ? 'selected' : ''; ?>><?php echo t('installment_type_escalating'); ?></option>
+                                        <option value="bulk" <?php echo (($cur_plan['installment_type'] ?? '') === 'bulk') ? 'selected' : ''; ?>><?php echo t('installment_type_bulk'); ?></option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label><?php echo t('delivery_payment_percentage'); ?>:</label>
+                                    <input type="number" step="0.01" min="0" max="50" name="plan_delivery_payment[]" class="form-input plan-del" value="<?php echo htmlspecialchars($cur_plan['delivery_payment_percentage'] ?? ''); ?>" placeholder="<?php echo t('delivery_payment_placeholder'); ?>">
+                                </div>
+                            </div>
+                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label><?php echo t('roi_notes'); ?>:</label>
+                                    <input type="text" name="plan_roi_notes[]" class="form-input" value="<?php echo htmlspecialchars($cur_plan['roi_notes'] ?? ''); ?>" placeholder="<?php echo t('roi_notes_placeholder'); ?>">
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label><?php echo t('plan_notes'); ?>:</label>
+                                    <input type="text" name="plan_notes[]" class="form-input" value="<?php echo htmlspecialchars($cur_plan['plan_notes'] ?? ''); ?>" placeholder="<?php echo t('plan_notes_placeholder'); ?>">
+                                </div>
+                            </div>
+                        </div>
+                        <?php endfor; ?>
                     </div>
-                    <div class="form-group">
-                        <label for="down_payment_percentage"><?php echo t('down_payment_percentage'); ?> (%):</label>
-                        <input type="number" step="0.01" id="down_payment_percentage" name="down_payment_percentage" class="form-input" min="0" max="100" value="<?php echo htmlspecialchars($down_payment_percentage); ?>" placeholder="مثال: 10">
-                    </div>
-                    <div class="form-group">
-                        <label for="payment_years"><?php echo t('payment_years'); ?>:</label>
-                        <input type="number" id="payment_years" name="payment_years" class="form-input" step="0.5" min="0.5" value="<?php echo ($payment_years !== null && $payment_years !== '') ? number_format((float)$payment_years, 1, '.', '') : ''; ?>" placeholder="مثال: 7 أو 8.5">
+
+                    <div class="form-group" style="margin-top:15px;">
+                        <label for="payment_plans_notes"><?php echo t('payment_plans_notes'); ?>:</label>
+                        <textarea id="payment_plans_notes" name="payment_plans_notes" class="form-input" rows="3" placeholder="<?php echo t('payment_plans_notes_placeholder'); ?>"><?php echo htmlspecialchars($_POST['payment_plans_notes'] ?? $payment_plans_notes); ?></textarea>
                     </div>
                 </div>
             </div>
@@ -2262,6 +2462,9 @@ if ($att_stmt) {
             }
 
             function togglePropertyTypeFields() {
+                if (!residentialCoastalFields || !commercialFields) {
+                    return;
+                }
                 const selectedIds = getSelectedTypeIds();
                 const residentialCoastalIds = [RESIDENTIAL_ID, COASTAL_ID];
                 const commercialIds = [COMMERCIAL_ID, ADMINISTRATIVE_ID, HOTEL_ID, MEDICAL_ID];
@@ -2335,15 +2538,21 @@ if ($att_stmt) {
             }
 
             // Initial call to set correct fields based on loaded property type
-            togglePropertyTypeFields();
-
-            // Add event listeners for checkbox changes
-            propertyTypeCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    updateHiddenField();
-                    togglePropertyTypeFields();
+            if (residentialCoastalFields && commercialFields) {
+                togglePropertyTypeFields();
+                propertyTypeCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        updateHiddenField();
+                        togglePropertyTypeFields();
+                    });
                 });
-            });
+            } else {
+                propertyTypeCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        updateHiddenField();
+                    });
+                });
+            }
             
             const mapElement = document.getElementById('map');
             const latInput = document.getElementById('latitude');
@@ -2617,6 +2826,88 @@ if ($att_stmt) {
                     }
                 }
             });
+        }
+
+        // Handle Dynamic Payment Plans Repeater
+        const addPlanBtn = document.getElementById('add-payment-plan-btn');
+        const plansContainer = document.getElementById('payment-plans-container');
+
+        function refreshPaymentPlans() {
+            if (!plansContainer) return;
+            const rows = plansContainer.querySelectorAll('.payment-plan-row');
+            rows.forEach((row, idx) => {
+                const idxSpan = row.querySelector('.plan-idx');
+                if (idxSpan) idxSpan.textContent = (idx + 1);
+                const removeBtn = row.querySelector('.remove-plan-btn');
+                if (removeBtn) {
+                    removeBtn.style.display = (rows.length > 1) ? 'inline-block' : 'none';
+                    removeBtn.onclick = function() {
+                        row.remove();
+                        refreshPaymentPlans();
+                    };
+                }
+            });
+        }
+
+        if (addPlanBtn && plansContainer) {
+            addPlanBtn.addEventListener('click', function() {
+                const rowCount = plansContainer.querySelectorAll('.payment-plan-row').length + 1;
+                const newRow = document.createElement('div');
+                newRow.className = 'payment-plan-row';
+                newRow.style.cssText = 'background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:18px; margin-bottom:16px; position:relative;';
+                newRow.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; flex-wrap:wrap;">
+                        <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:250px;">
+                            <span style="font-weight:700; color:#2563eb; font-size:0.95rem; white-space:nowrap;">
+                                <i class="fas fa-layer-group"></i> <?php echo t('plan_number'); ?> #<span class="plan-idx">${rowCount}</span>
+                            </span>
+                            <input type="text" name="plan_title[]" class="form-input plan-title" style="flex:1; max-width:320px; font-size:0.9rem;" placeholder="<?php echo t('plan_title_placeholder'); ?>">
+                        </div>
+                        <button type="button" class="btn remove-plan-btn" style="background:#fee2e2; color:#ef4444; border:none; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:0.85rem;">
+                            <i class="fas fa-trash"></i> <?php echo t('remove_plan'); ?>
+                        </button>
+                    </div>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:12px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label><?php echo t('down_payment_percentage'); ?>:</label>
+                            <input type="number" step="0.01" min="0" max="100" name="plan_down_payment[]" class="form-input plan-dp" placeholder="مثال: 0 أو 5 أو 10">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label><?php echo t('payment_years'); ?>:</label>
+                            <input type="number" step="0.5" min="0.5" max="30" name="plan_installment_years[]" class="form-input plan-years" placeholder="مثال: 7 أو 10">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label><?php echo t('installment_type'); ?>:</label>
+                            <select name="plan_installment_type[]" class="form-input plan-type">
+                                <option value="quarterly"><?php echo t('installment_type_quarterly'); ?></option>
+                                <option value="monthly"><?php echo t('installment_type_monthly'); ?></option>
+                                <option value="semi_annual"><?php echo t('installment_type_semi_annual'); ?></option>
+                                <option value="annual"><?php echo t('installment_type_annual'); ?></option>
+                                <option value="escalating"><?php echo t('installment_type_escalating'); ?></option>
+                                <option value="bulk"><?php echo t('installment_type_bulk'); ?></option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label><?php echo t('delivery_payment_percentage'); ?>:</label>
+                            <input type="number" step="0.01" min="0" max="50" name="plan_delivery_payment[]" class="form-input plan-del" placeholder="<?php echo t('delivery_payment_placeholder'); ?>">
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label><?php echo t('roi_notes'); ?>:</label>
+                            <input type="text" name="plan_roi_notes[]" class="form-input" placeholder="<?php echo t('roi_notes_placeholder'); ?>">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label><?php echo t('plan_notes'); ?>:</label>
+                            <input type="text" name="plan_notes[]" class="form-input" placeholder="<?php echo t('plan_notes_placeholder'); ?>">
+                        </div>
+                    </div>
+                `;
+                plansContainer.appendChild(newRow);
+                refreshPaymentPlans();
+            });
+
+            refreshPaymentPlans();
         }
     });
     </script>
