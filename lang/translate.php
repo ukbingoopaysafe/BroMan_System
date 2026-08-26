@@ -96,3 +96,16 @@ if (!function_exists('formatArabicYears')) {
     }
 }
 
+// Universal input value formatter (strips trailing zeros like .00 while preserving real decimals like .5, suitable for input[type=number])
+if (!function_exists('formatInputValue')) {
+    function formatInputValue($num) {
+        if ($num === null || $num === '' || !is_numeric($num)) {
+            return $num ?? '';
+        }
+        $val = floatval($num);
+        if (fmod($val, 1.0) === 0.0) {
+            return (string)intval($val);
+        }
+        return rtrim(rtrim(sprintf('%.6f', $val), '0'), '.');
+    }
+}

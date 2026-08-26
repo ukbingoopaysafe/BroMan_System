@@ -1565,7 +1565,7 @@ if ($att_stmt) {
                     <div class="form-group">
                         <label for="compound_area"><?php echo t('compound_area'); ?>:</label>
                         <div style="display:flex; gap:8px;">
-                            <input type="number" step="0.01" id="compound_area" name="compound_area" class="form-input" style="flex:1;" value="<?php echo htmlspecialchars($compound_area); ?>" placeholder="مساحة المشروع">
+                            <input type="number" step="1" id="compound_area" name="compound_area" class="form-input" style="flex:1;" value="<?php echo formatInputValue($compound_area); ?>" placeholder="مساحة المشروع">
                             <select name="compound_area_unit" id="compound_area_unit" class="form-input" style="width:130px;">
                                 <option value="faddan" <?php echo ($compound_area_unit === 'faddan') ? 'selected' : ''; ?>><?php echo t('unit_faddan'); ?></option>
                                 <option value="sqm" <?php echo ($compound_area_unit === 'sqm') ? 'selected' : ''; ?>><?php echo t('unit_sqm'); ?></option>
@@ -1594,15 +1594,15 @@ if ($att_stmt) {
                     </div>
                     <div class="form-group">
                         <label for="min_area"><?php echo t('min_area_sqm'); ?>:</label>
-                        <input type="number" step="0.01" id="min_area" name="min_area" class="form-input" value="<?php echo htmlspecialchars($min_area); ?>" placeholder="مثال: 120">
+                        <input type="number" step="1" id="min_area" name="min_area" class="form-input" value="<?php echo formatInputValue($min_area); ?>" placeholder="مثال: 120">
                     </div>
                     <div class="form-group">
                         <label for="max_area"><?php echo t('max_area_sqm'); ?>:</label>
-                        <input type="number" step="0.01" id="max_area" name="max_area" class="form-input" value="<?php echo htmlspecialchars($max_area); ?>" placeholder="مثال: 350">
+                        <input type="number" step="1" id="max_area" name="max_area" class="form-input" value="<?php echo formatInputValue($max_area); ?>" placeholder="مثال: 350">
                     </div>
                     <div class="form-group">
                         <label for="avg_area"><?php echo t('avg_area_sqm'); ?>:</label>
-                        <input type="number" step="0.01" id="avg_area" name="avg_area" class="form-input" value="<?php echo htmlspecialchars($avg_area); ?>">
+                        <input type="number" step="1" id="avg_area" name="avg_area" class="form-input" value="<?php echo formatInputValue($avg_area); ?>">
                     </div>
                     <div class="form-group">
                         <label for="finishing_type_id"><?php echo t('finishing_type'); ?>:</label>
@@ -1631,19 +1631,19 @@ if ($att_stmt) {
                     </div>
                     <div class="form-group">
                         <label for="min_price"><?php echo t('min_price'); ?>:</label>
-                        <input type="number" step="0.01" id="min_price" name="min_price" class="form-input" value="<?php echo htmlspecialchars($min_price); ?>" placeholder="مثال: 3000000">
+                        <input type="number" step="1" id="min_price" name="min_price" class="form-input" value="<?php echo formatInputValue($min_price); ?>" placeholder="مثال: 3000000">
                     </div>
                     <div class="form-group">
                         <label for="max_price"><?php echo t('max_price'); ?>:</label>
-                        <input type="number" step="0.01" id="max_price" name="max_price" class="form-input" value="<?php echo htmlspecialchars($max_price); ?>" placeholder="مثال: 12000000">
+                        <input type="number" step="1" id="max_price" name="max_price" class="form-input" value="<?php echo formatInputValue($max_price); ?>" placeholder="مثال: 12000000">
                     </div>
                     <div class="form-group">
                         <label for="min_meter_price"><?php echo t('min_meter_price'); ?>:</label>
-                        <input type="number" step="0.01" id="min_meter_price" name="min_meter_price" class="form-input" value="<?php echo htmlspecialchars($min_meter_price); ?>" placeholder="مثال: 25000">
+                        <input type="number" step="1" id="min_meter_price" name="min_meter_price" class="form-input" value="<?php echo formatInputValue($min_meter_price); ?>" placeholder="مثال: 25000">
                     </div>
                     <div class="form-group">
                         <label for="max_meter_price"><?php echo t('max_meter_price'); ?>:</label>
-                        <input type="number" step="0.01" id="max_meter_price" name="max_meter_price" class="form-input" value="<?php echo htmlspecialchars($max_meter_price); ?>" placeholder="مثال: 45000">
+                        <input type="number" step="1" id="max_meter_price" name="max_meter_price" class="form-input" value="<?php echo formatInputValue($max_meter_price); ?>" placeholder="مثال: 45000">
                     </div>
                 </div>
 
@@ -1655,11 +1655,11 @@ if ($att_stmt) {
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="cash_discount_percentage"><?php echo t('cash_discount_percentage'); ?>:</label>
-                            <input type="number" step="0.01" id="cash_discount_percentage" name="cash_discount_percentage" class="form-input" min="0" max="100" value="<?php echo htmlspecialchars($cash_discount_percentage ?? ''); ?>" placeholder="مثال: 30">
+                            <input type="number" step="1" id="cash_discount_percentage" name="cash_discount_percentage" class="form-input" min="0" max="100" value="<?php echo formatInputValue($cash_discount_percentage ?? ''); ?>" placeholder="مثال: 30">
                         </div>
                         <div class="form-group">
                             <label for="maintenance_percentage"><?php echo t('maintenance_percentage'); ?>:</label>
-                            <input type="number" step="0.01" id="maintenance_percentage" name="maintenance_percentage" class="form-input" min="0" max="100" value="<?php echo htmlspecialchars($maintenance_percentage ?? ''); ?>" placeholder="مثال: 8 أو 10">
+                            <input type="number" step="1" id="maintenance_percentage" name="maintenance_percentage" class="form-input" min="0" max="100" value="<?php echo formatInputValue($maintenance_percentage ?? ''); ?>" placeholder="مثال: 8 أو 10">
                         </div>
                         <div class="form-group">
                             <label for="maintenance_payment_details"><?php echo t('maintenance_payment_details'); ?>:</label>
@@ -1675,7 +1675,7 @@ if ($att_stmt) {
                         </div>
                         <div class="form-group">
                             <label for="transfer_fee_percentage"><?php echo t('transfer_fee_percentage'); ?>:</label>
-                            <input type="number" step="0.01" id="transfer_fee_percentage" name="transfer_fee_percentage" class="form-input" value="<?php echo htmlspecialchars($transfer_fee_percentage ?? ''); ?>" placeholder="<?php echo t('transfer_fee_placeholder'); ?>">
+                            <input type="number" step="1" id="transfer_fee_percentage" name="transfer_fee_percentage" class="form-input" value="<?php echo formatInputValue($transfer_fee_percentage ?? ''); ?>" placeholder="<?php echo t('transfer_fee_placeholder'); ?>">
                         </div>
                     </div>
                 </div>
@@ -1741,11 +1741,11 @@ if ($att_stmt) {
                             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:12px;">
                                 <div class="form-group" style="margin-bottom:0;">
                                     <label><?php echo t('down_payment_percentage'); ?>:</label>
-                                    <input type="number" step="0.01" min="0" max="100" name="plan_down_payment[]" class="form-input plan-dp" value="<?php echo htmlspecialchars($cur_plan['down_payment_percentage'] ?? ''); ?>" placeholder="مثال: 0 أو 5 أو 10">
+                                    <input type="number" step="1" min="0" max="100" name="plan_down_payment[]" class="form-input plan-dp" value="<?php echo formatInputValue($cur_plan['down_payment_percentage'] ?? ''); ?>" placeholder="مثال: 0 أو 5 أو 10">
                                 </div>
                                 <div class="form-group" style="margin-bottom:0;">
                                     <label><?php echo t('payment_years'); ?>:</label>
-                                    <input type="number" step="0.5" min="0.5" max="30" name="plan_installment_years[]" class="form-input plan-years" value="<?php echo htmlspecialchars($cur_plan['installment_years'] ?? ''); ?>" placeholder="مثال: 7 أو 10">
+                                    <input type="number" step="0.5" min="0.5" max="30" name="plan_installment_years[]" class="form-input plan-years" value="<?php echo formatInputValue($cur_plan['installment_years'] ?? ''); ?>" placeholder="مثال: 7 أو 10">
                                 </div>
                                 <div class="form-group" style="margin-bottom:0;">
                                     <label><?php echo t('installment_type'); ?>:</label>
@@ -1760,7 +1760,7 @@ if ($att_stmt) {
                                 </div>
                                 <div class="form-group" style="margin-bottom:0;">
                                     <label><?php echo t('delivery_payment_percentage'); ?>:</label>
-                                    <input type="number" step="0.01" min="0" max="50" name="plan_delivery_payment[]" class="form-input plan-del" value="<?php echo htmlspecialchars($cur_plan['delivery_payment_percentage'] ?? ''); ?>" placeholder="<?php echo t('delivery_payment_placeholder'); ?>">
+                                    <input type="number" step="1" min="0" max="50" name="plan_delivery_payment[]" class="form-input plan-del" value="<?php echo formatInputValue($cur_plan['delivery_payment_percentage'] ?? ''); ?>" placeholder="<?php echo t('delivery_payment_placeholder'); ?>">
                                 </div>
                             </div>
                             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
@@ -1935,7 +1935,7 @@ if ($att_stmt) {
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="compound_area"><?php echo t('compound_area'); ?> (<?php echo t('faddan'); ?>):</label>
-                            <input type="number" step="0.01" id="compound_area" name="compound_area" class="form-input" value="<?php echo htmlspecialchars($compound_area); ?>">
+                            <input type="number" step="1" id="compound_area" name="compound_area" class="form-input" value="<?php echo htmlspecialchars($compound_area); ?>">
                             <?php if (isset($errors['compound_area'])) {
                                 echo "<span class='error-message'>" . $errors['compound_area'] . "</span>";
                             } ?>
@@ -2092,7 +2092,7 @@ if ($att_stmt) {
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="area"><?php echo t('unit_area'); ?> (<?php echo t('sqm'); ?>):</label>
-                        <input type="number" step="0.01" id="area" name="area" class="form-input" value="<?php echo htmlspecialchars($area); ?>">
+                        <input type="number" step="1" id="area" name="area" class="form-input" value="<?php echo formatInputValue($area); ?>">
                         <small><?php echo t('specific_area_note'); ?></small>
                         <?php if (isset($errors['area'])) {
                             echo "<span class='error-message'>" . $errors['area'] . "</span>";
@@ -2100,23 +2100,23 @@ if ($att_stmt) {
                     </div>
                     <div class="form-group">
                         <label for="min_area"><?php echo t('min_area_sqm'); ?>:</label>
-                        <input type="number" step="0.01" id="min_area" name="min_area" class="form-input" value="<?php echo htmlspecialchars($min_area); ?>">
+                        <input type="number" step="1" id="min_area" name="min_area" class="form-input" value="<?php echo formatInputValue($min_area); ?>">
                     </div>
                     <div class="form-group">
                         <label for="max_area"><?php echo t('max_area_sqm'); ?>:</label>
-                        <input type="number" step="0.01" id="max_area" name="max_area" class="form-input" value="<?php echo htmlspecialchars($max_area); ?>">
+                        <input type="number" step="1" id="max_area" name="max_area" class="form-input" value="<?php echo formatInputValue($max_area); ?>">
                     </div>
                     <div class="form-group">
                         <label for="avg_area"><?php echo t('avg_area_sqm'); ?>:</label>
-                        <input type="number" step="0.01" id="avg_area" name="avg_area" class="form-input" value="<?php echo htmlspecialchars($avg_area); ?>">
+                        <input type="number" step="1" id="avg_area" name="avg_area" class="form-input" value="<?php echo formatInputValue($avg_area); ?>">
                     </div>
                     <div class="form-group">
                         <label for="net_area"><?php echo t('net_area'); ?>:</label>
-                        <input type="number" step="0.01" id="net_area" name="net_area" class="form-input" value="<?php echo htmlspecialchars($net_area); ?>">
+                        <input type="number" step="1" id="net_area" name="net_area" class="form-input" value="<?php echo formatInputValue($net_area); ?>">
                     </div>
                     <div class="form-group">
                         <label for="loading_percentage"><?php echo t('loading_percentage'); ?>:</label>
-                        <input type="number" step="0.01" id="loading_percentage" name="loading_percentage" class="form-input" min="0" max="100" value="<?php echo htmlspecialchars($loading_percentage); ?>">
+                        <input type="number" step="1" id="loading_percentage" name="loading_percentage" class="form-input" min="0" max="100" value="<?php echo formatInputValue($loading_percentage); ?>">
                     </div>
                 </div>
             </div>
@@ -2133,39 +2133,39 @@ if ($att_stmt) {
                     </div>
                     <div class="form-group">
                         <label for="price_cash"><?php echo t('price_cash'); ?>:</label>
-                        <input type="number" step="0.01" id="price_cash" name="price_cash" class="form-input" value="<?php echo htmlspecialchars($price_cash); ?>">
+                        <input type="number" step="1" id="price_cash" name="price_cash" class="form-input" value="<?php echo formatInputValue($price_cash); ?>">
                     </div>
                     <div class="form-group">
                         <label for="price_installments"><?php echo t('price_installments'); ?>:</label>
-                        <input type="number" step="0.01" id="price_installments" name="price_installments" class="form-input" value="<?php echo htmlspecialchars($price_installments); ?>">
+                        <input type="number" step="1" id="price_installments" name="price_installments" class="form-input" value="<?php echo formatInputValue($price_installments); ?>">
                     </div>
                     <div class="form-group">
                         <label for="monthly_rent"><?php echo t('monthly_rent'); ?>:</label>
-                        <input type="number" step="0.01" id="monthly_rent" name="monthly_rent" class="form-input" value="<?php echo htmlspecialchars($monthly_rent); ?>">
+                        <input type="number" step="1" id="monthly_rent" name="monthly_rent" class="form-input" value="<?php echo formatInputValue($monthly_rent); ?>">
                     </div>
                     <div class="form-group">
                         <label for="daily_rent"><?php echo t('daily_rent'); ?>:</label>
-                        <input type="number" step="0.01" id="daily_rent" name="daily_rent" class="form-input" value="<?php echo htmlspecialchars($daily_rent); ?>">
+                        <input type="number" step="1" id="daily_rent" name="daily_rent" class="form-input" value="<?php echo formatInputValue($daily_rent); ?>">
                     </div>
                     <div class="form-group">
                         <label for="yearly_rent"><?php echo t('yearly_rent'); ?>:</label>
-                        <input type="number" step="0.01" id="yearly_rent" name="yearly_rent" class="form-input" value="<?php echo htmlspecialchars($yearly_rent); ?>">
+                        <input type="number" step="1" id="yearly_rent" name="yearly_rent" class="form-input" value="<?php echo formatInputValue($yearly_rent); ?>">
                     </div>
                     <div class="form-group">
                         <label for="meter_price_cash"><?php echo t('meter_price_cash'); ?>:</label>
-                        <input type="number" step="0.01" id="meter_price_cash" name="meter_price_cash" class="form-input" value="<?php echo htmlspecialchars($meter_price_cash); ?>">
+                        <input type="number" step="1" id="meter_price_cash" name="meter_price_cash" class="form-input" value="<?php echo formatInputValue($meter_price_cash); ?>">
                     </div>
                     <div class="form-group">
                         <label for="meter_price_installments"><?php echo t('meter_price_installments'); ?>:</label>
-                        <input type="number" step="0.01" id="meter_price_installments" name="meter_price_installments" class="form-input" value="<?php echo htmlspecialchars($meter_price_installments); ?>">
+                        <input type="number" step="1" id="meter_price_installments" name="meter_price_installments" class="form-input" value="<?php echo formatInputValue($meter_price_installments); ?>">
                     </div>
                     <div class="form-group">
                         <label for="down_payment_percentage"><?php echo t('down_payment_percentage'); ?> (%):</label>
-                        <input type="number" step="0.01" id="down_payment_percentage" name="down_payment_percentage" class="form-input" value="<?php echo htmlspecialchars($down_payment_percentage); ?>">
+                        <input type="number" step="1" id="down_payment_percentage" name="down_payment_percentage" class="form-input" value="<?php echo formatInputValue($down_payment_percentage); ?>">
                     </div>
                     <div class="form-group">
                         <label for="payment_years"><?php echo t('payment_years'); ?>:</label>
-                        <input type="number" id="payment_years" name="payment_years" class="form-input" step="0.5" min="0.5" value="<?php echo ($payment_years !== null && $payment_years !== '') ? number_format((float)$payment_years, 1, '.', '') : ''; ?>" placeholder="مثال: 1.5 للسنة والنصف">
+                        <input type="number" id="payment_years" name="payment_years" class="form-input" step="0.5" min="0.5" value="<?php echo formatInputValue($payment_years); ?>" placeholder="مثال: 1.5 للسنة والنصف">
                     </div>
                     <div class="form-group">
                         <label for="delivery_date"><?php echo t('delivery_date'); ?>:</label>
@@ -2870,7 +2870,7 @@ if ($att_stmt) {
                     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:12px;">
                         <div class="form-group" style="margin-bottom:0;">
                             <label><?php echo t('down_payment_percentage'); ?>:</label>
-                            <input type="number" step="0.01" min="0" max="100" name="plan_down_payment[]" class="form-input plan-dp" placeholder="مثال: 0 أو 5 أو 10">
+                            <input type="number" step="1" min="0" max="100" name="plan_down_payment[]" class="form-input plan-dp" placeholder="مثال: 0 أو 5 أو 10">
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
                             <label><?php echo t('payment_years'); ?>:</label>
@@ -2889,7 +2889,7 @@ if ($att_stmt) {
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
                             <label><?php echo t('delivery_payment_percentage'); ?>:</label>
-                            <input type="number" step="0.01" min="0" max="50" name="plan_delivery_payment[]" class="form-input plan-del" placeholder="<?php echo t('delivery_payment_placeholder'); ?>">
+                            <input type="number" step="1" min="0" max="50" name="plan_delivery_payment[]" class="form-input plan-del" placeholder="<?php echo t('delivery_payment_placeholder'); ?>">
                         </div>
                     </div>
                     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">

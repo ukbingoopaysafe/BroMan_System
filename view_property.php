@@ -545,7 +545,9 @@ function build_property_details_message($property, $types_display, $use_emojis =
             $lines[] = ($use_emojis ? '📦 ' : '') . '*تاريخ التسليم*: ' . date("Y-m-d", strtotime($property['delivery_date']));
         }
         if (!empty($property['construction_status'])) {
-            $lines[] = ($use_emojis ? '🏗️ ' : '') . '*حالة الإنشاءات*: ' . wa_clean_text($property['construction_status']);
+            $c_status_raw = trim($property['construction_status']);
+            $c_status_text = is_numeric($c_status_raw) ? (formatSmartNumber($c_status_raw, 2) . '%') : $c_status_raw;
+            $lines[] = ($use_emojis ? '🏗️ ' : '') . '*حالة الإنشاءات*: ' . wa_clean_text($c_status_text);
         }
 
         // List multiple payment plans if present
@@ -2250,10 +2252,17 @@ if ($map_link !== '') {
                         <span class="detail-value"><?php echo htmlspecialchars($property['delivery_status']); ?></span>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($property['construction_status'])): ?>
+                    <?php if (!empty($property['construction_status'])): 
+                        $c_status_raw = trim($property['construction_status']);
+                        if (is_numeric($c_status_raw)) {
+                            $c_status_display = formatSmartNumber($c_status_raw, 2) . '%';
+                        } else {
+                            $c_status_display = htmlspecialchars($c_status_raw);
+                        }
+                    ?>
                     <div class="detail-item">
                         <span class="detail-label"><?php echo t('construction_status'); ?>:</span>
-                        <span class="detail-value"><?php echo htmlspecialchars($property['construction_status']); ?></span>
+                        <span class="detail-value"><?php echo $c_status_display; ?></span>
                     </div>
                     <?php endif; ?>
                 </div>
