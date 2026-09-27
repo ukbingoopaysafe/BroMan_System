@@ -12,7 +12,7 @@ define("SESSION_WARNING_TIME", 300);
 // Set this constant to your Google Maps JavaScript API key to enable interactive maps.
 // When left empty, map components will display an error message prompting for configuration.
 if (!defined('GOOGLE_MAPS_API_KEY')) {
-	define('GOOGLE_MAPS_API_KEY', 'AIzaSyCiDSS9jli1MPDhnKTgym6hLvY88Nb8ZYg');
+	define('GOOGLE_MAPS_API_KEY', 'AIzaSyAOVYRIgupAurZup5y1PRh8Ismb1A3lLao');
 }
 ?>
 
