@@ -2836,6 +2836,12 @@ if ($map_link !== '') {
             <span class="detail-value"><?php echo htmlspecialchars($property['EmployeeName']); ?></span>
         </div>
         <?php endif; ?>
+        <?php if (!empty($property['property_data_source'])): ?>
+        <div class="detail-item">
+            <span class="detail-label"><?php echo t('property_data_source'); ?>:</span>
+            <span class="detail-value"><?php echo htmlspecialchars($property['property_data_source']); ?></span>
+        </div>
+        <?php endif; ?>
         <?php if (!empty($property['DateAdded'])): ?>
         <div class="detail-item">
             <span class="detail-label"><?php echo t('date_added'); ?>:</span>

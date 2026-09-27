@@ -6,6 +6,7 @@ return [
     'properties' => 'العقارات',
     'clients' => 'العملاء',
     'employees' => 'الموظفين',
+    'property_data_source' => 'مصدر بيانات العقار',
     'logout' => 'تسجيل الخروج',
     'logout_user' => 'تسجيل الخروج (%s)', // %s is username
     'login' => 'تسجيل الدخول',
@@ -768,4 +769,3 @@ return [
     'remove_plan' => 'حذف هذا النظام',
     'view_brochure' => 'عرض بروشور المشروع',
 ];
-

@@ -6,6 +6,7 @@ return [
     'properties' => 'Properties',
     'clients' => 'Clients',
     'employees' => 'Employees',
+    'property_data_source' => 'Property data source',
     'logout' => 'Logout',
     'logout_user' => 'Logout (%s)', // %s is username
     'login' => 'Login',
@@ -760,4 +761,3 @@ return [
     'view_brochure' => 'View Project Brochure',
 ];
 ?>
-

@@ -81,6 +81,7 @@ $min_price = $max_price = $min_meter_price = $max_meter_price = null;
 $seller_type = $seller_name = $seller_phone = "";
 $offer_title = $offer_description = $offer_start_date = $offer_end_date = $brochure_url = "";
 $latitude = $longitude = null;
+$property_data_source = '';
 $property_sellers = [];
 
 $errors = []; // Array to hold errors
@@ -197,6 +198,7 @@ if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
                 $offer_start_date = $row["offer_start_date"] ?? '';
                 $offer_end_date = $row["offer_end_date"] ?? '';
                 $brochure_url = $row["brochure_url"] ?? '';
+                $property_data_source = $row["property_data_source"] ?? '';
 
                 // Fetch Existing Payment Plans
                 $property_payment_plans = [];
@@ -376,6 +378,8 @@ if ($att_stmt) {
     if (empty($property_id_post) || $property_id_post != $property_id) {
         $errors['general'] = t('invalid_property_id');
     }
+
+    $property_data_source_posted = trim($_POST['property_data_source'] ?? '');
 
     // --- Data Sanitization ---
     // Now using checkboxes for all property types (no dropdown)
@@ -673,7 +677,7 @@ if ($att_stmt) {
             monthly_rent = ?, daily_rent = ?, yearly_rent = ?,
             seller_type = ?, seller_name = ?, seller_phone = ?,
             offer_title = ?, offer_description = ?, offer_start_date = ?, offer_end_date = ?, brochure_url = ?,
-            latitude = ?, longitude = ?, Bathrooms = ?, balconies = ?, elevators = ?, currency = ?
+            latitude = ?, longitude = ?, Bathrooms = ?, balconies = ?, elevators = ?, property_data_source = ?, currency = ?
             WHERE PropertyID = ?";
 
         if ($stmt_update = $conn->prepare($sql_update)) {
@@ -709,8 +713,8 @@ if ($att_stmt) {
             $longitude_val = empty($longitude_posted) ? null : $longitude_posted;
             $finishing_type_id_val = empty($finishing_type_id_posted) ? null : intval($finishing_type_id_posted);
 
-            // Total 71 parameters + 1 PropertyID = 72
-            $types = str_repeat('s', 71) . 'i';
+            // Total 72 parameters + 1 PropertyID = 73
+            $types = str_repeat('s', 72) . 'i';
             $stmt_update->bind_param(
                 $types,
                 $property_type_id_posted,
@@ -783,6 +787,7 @@ if ($att_stmt) {
                 $bathrooms_val,
                 $balconies_val,
                 $elevators_val,
+                $property_data_source_posted,
                 $currency,
                 $property_id
             );
@@ -1427,6 +1432,10 @@ if ($att_stmt) {
                         } ?>
                     </div>
                     <div class="form-group">
+                        <label for="property_data_source"><?php echo t('property_data_source'); ?>:</label>
+                        <input type="text" id="property_data_source" name="property_data_source" class="form-input" value="<?php echo htmlspecialchars($_POST['property_data_source'] ?? $property_data_source); ?>" placeholder="مثال: أحمد محمد">
+                    </div>
+                    <div class="form-group">
                         <label for="phase_name"><?php echo t('phase_name'); ?>:</label>
                         <input type="text" id="phase_name" name="phase_name" class="form-input" value="<?php echo htmlspecialchars($phase_name); ?>" placeholder="مثال: المرحلة الأولى / Cluster A">
                     </div>
@@ -1856,6 +1865,10 @@ if ($att_stmt) {
                     <div class="form-group">
                         <label for="project_name"><?php echo t('project_name'); ?></label>
                         <input type="text" id="project_name" name="project_name" value="<?php echo htmlspecialchars($project_name); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="property_data_source"><?php echo t('property_data_source'); ?>:</label>
+                        <input type="text" id="property_data_source" name="property_data_source" class="form-input" value="<?php echo htmlspecialchars($_POST['property_data_source'] ?? $property_data_source); ?>" placeholder="مثال: أحمد محمد">
                     </div>
                 </div>
                 <div class="form-grid">

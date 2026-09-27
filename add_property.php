@@ -194,6 +194,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $construction_status = trim($_POST['construction_status'] ?? null);
     $status = trim($_POST['status'] ?? 'available');
     $employee_id = $_SESSION['employee_id'] ?? null;
+    $property_data_source = trim($_POST['property_data_source'] ?? '');
     $sales_manager_name = trim($_POST['sales_manager_name'] ?? null);
     
     // Concatenate Sales Manager Phone
@@ -359,7 +360,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $currency = $_POST['currency'] ?? 'EGP';
 
     $sql = "INSERT INTO Properties (
-        PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, unit_design,
+        PropertyTypeID, Title, Description, Location, Area, Bedrooms, Status, listing_type, EmployeeID, property_data_source, unit_design,
         finishing_type_id, compound_area, compound_area_unit, down_payment_percentage, cash_discount_percentage, maintenance_percentage, clubhouse_fee, garage_fee, transfer_fee_percentage, maintenance_payment_details, payment_years, payment_plans_notes, delivery_date, delivery_status, construction_status, ProjectName,
         phase_name, min_area, max_area, avg_area, district, governorate, company_name, company_phone, company_phone_2, FloorsCount, sales_director_name,
         sales_director_phone, operation_manager_name, operation_manager_phone, sales_manager_name, sales_manager_phone, salesperson_name, salesperson_phone, year_built, unit_floor, net_area,
@@ -367,7 +368,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         min_meter_price, max_meter_price, seller_type, seller_name, seller_phone, offer_title, offer_description, offer_start_date, offer_end_date, brochure_url,
         latitude, longitude, Bathrooms, balconies, elevators, DateAdded, friendly_id, currency
     ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
@@ -380,7 +381,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($stmt = $conn->prepare($sql)) {
         // Build bind-vars in same order as INSERT and force phone-like fields to be strings
         $bind_vars = [
-            $property_type_id, $title, $description, $location, $area, $rooms, $status, $listing_type, $employee_id, $unit_design,
+            $property_type_id, $title, $description, $location, $area, $rooms, $status, $listing_type, $employee_id, $property_data_source, $unit_design,
             $finishing_type_id, $compound_area, $compound_area_unit, $down_payment_percentage, $cash_discount_percentage, $maintenance_percentage, $clubhouse_fee, $garage_fee, $transfer_fee_percentage, $maintenance_payment_details, $payment_years, $payment_plans_notes, $delivery_date, $delivery_status, $construction_status, $project_name,
             $phase_name, $min_area, $max_area, $avg_area, $district, $governorate, $company_name, $company_phone, $company_phone_2, $floors_count, $sales_director_name,
             $sales_director_phone, $operation_manager_name, $operation_manager_phone, $sales_manager_name, $sales_manager_phone, $salesperson_name, $salesperson_phone, $year_built, $unit_floor, $net_area,
@@ -391,7 +392,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         // Parallel keys for forced typing
         $bind_keys = [
-            'property_type_id', 'title', 'description', 'location', 'area', 'rooms', 'status', 'listing_type', 'employee_id', 'unit_design',
+            'property_type_id', 'title', 'description', 'location', 'area', 'rooms', 'status', 'listing_type', 'employee_id', 'property_data_source', 'unit_design',
             'finishing_type_id', 'compound_area', 'compound_area_unit', 'down_payment_percentage', 'cash_discount_percentage', 'maintenance_percentage', 'clubhouse_fee', 'garage_fee', 'transfer_fee_percentage', 'maintenance_payment_details', 'payment_years', 'payment_plans_notes', 'delivery_date', 'delivery_status', 'construction_status', 'project_name',
             'phase_name', 'min_area', 'max_area', 'avg_area', 'district', 'governorate', 'company_name', 'company_phone', 'company_phone_2', 'floors_count', 'sales_director_name',
             'sales_director_phone', 'operation_manager_name', 'operation_manager_phone', 'sales_manager_name', 'sales_manager_phone', 'salesperson_name', 'salesperson_phone', 'year_built', 'unit_floor', 'net_area',
@@ -916,6 +917,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <input type="text" id="company_name" name="company_name" class="form-input" value="<?php echo htmlspecialchars($_POST['company_name'] ?? ''); ?>">
                     </div>
                 <?php endif; ?>
+                <div class="form-group">
+                    <label for="property_data_source"><?php echo t('property_data_source'); ?>:</label>
+                    <input type="text" id="property_data_source" name="property_data_source" class="form-input" value="<?php echo htmlspecialchars($_POST['property_data_source'] ?? ''); ?>" placeholder="مثال: أحمد محمد">
+                </div>
                 <div class="form-group">
                     <label for="status"><?php echo t('status'); ?>:</label>
                     <select id="status" name="status" class="form-input">
@@ -1927,5 +1932,3 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </body>
 </html>
-
-
