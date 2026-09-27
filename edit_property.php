@@ -1433,7 +1433,7 @@ if ($att_stmt) {
                     </div>
                     <div class="form-group">
                         <label for="property_data_source"><?php echo t('property_data_source'); ?>:</label>
-                        <input type="text" id="property_data_source" name="property_data_source" class="form-input" value="<?php echo htmlspecialchars($_POST['property_data_source'] ?? $property_data_source); ?>" placeholder="مثال: أحمد محمد">
+                        <input type="text" id="property_data_source" name="property_data_source" class="form-input" value="<?php echo htmlspecialchars($_POST['property_data_source'] ?? $property_data_source); ?>">
                     </div>
                     <div class="form-group">
                         <label for="phase_name"><?php echo t('phase_name'); ?>:</label>
@@ -1868,7 +1868,7 @@ if ($att_stmt) {
                     </div>
                     <div class="form-group">
                         <label for="property_data_source"><?php echo t('property_data_source'); ?>:</label>
-                        <input type="text" id="property_data_source" name="property_data_source" class="form-input" value="<?php echo htmlspecialchars($_POST['property_data_source'] ?? $property_data_source); ?>" placeholder="مثال: أحمد محمد">
+                        <input type="text" id="property_data_source" name="property_data_source" class="form-input" value="<?php echo htmlspecialchars($_POST['property_data_source'] ?? $property_data_source); ?>">
                     </div>
                 </div>
                 <div class="form-grid">

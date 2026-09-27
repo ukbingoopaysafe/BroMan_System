@@ -919,7 +919,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <?php endif; ?>
                 <div class="form-group">
                     <label for="property_data_source"><?php echo t('property_data_source'); ?>:</label>
-                    <input type="text" id="property_data_source" name="property_data_source" class="form-input" value="<?php echo htmlspecialchars($_POST['property_data_source'] ?? ''); ?>" placeholder="مثال: أحمد محمد">
+                    <input type="text" id="property_data_source" name="property_data_source" class="form-input" value="<?php echo htmlspecialchars($_POST['property_data_source'] ?? ''); ?>">
                 </div>
                 <div class="form-group">
                     <label for="status"><?php echo t('status'); ?>:</label>
