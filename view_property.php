@@ -2826,7 +2826,7 @@ if ($map_link !== '') {
             </div>
             <?php endif; ?>
 
-            <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'manager'): ?>
+            <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['manager', 'admin'], true)): ?>
 <div class="property-section">
     <h2><?php echo t('additional_information'); ?></h2>
     <div class="detail-grid">
